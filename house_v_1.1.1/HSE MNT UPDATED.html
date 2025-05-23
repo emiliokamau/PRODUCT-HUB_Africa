@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>House Management System</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; 
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+    header {
+      background-color: #333; 
+      color: white;
+      padding: 10px; 
+      text-align: center;
+    }
+    nav {
+      background-color: #555;
+      display: flex; 
+      justify-content: center;
+    }
+    nav button {
+      background-color: #555;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    nav button:hover {
+      background-color: #777;
+    }
+    .section {
+      display: none;
+      padding: 20px;
+    }
+    .active {
+      display: block;
+    }
+    footer {
+      background-color: #333;
+      color: white;
+      text-align: center; 
+      padding: 30px;
+      position: fixed; 
+      bottom: 0; 
+      width: 100%;
+    }
+    .horizontal-photos img {
+      height: 150px; 
+      margin: 10px;
+    }
+    .photo-preview {
+      width: 100px; height: 100px; object-fit: cover; margin: 5px;
+    }
+    .input-section {
+      margin: 10px 0;
+    }
+    .container {
+      max-width: 800px; 
+      margin: auto;
+      background: white; 
+      padding: 20px; 
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>House Management System</h1>
+</header>
+
+<nav>
+  <button onclick="showSection('dashboard')">Dashboard</button>
+  <button onclick="showSection('landlord')">Landlord</button>
+  <button onclick="showSection('tenant')">Tenant</button>
+  <button onclick="showAdminDashboard()">Admin Dashboard</button>
+</nav>
+
+<!-- Dashboard Section -->
+<div id="dashboard" class="section active">
+  <div class="container">
+    <h2>Dashboard</h2>
+    <div class="horizontal-photos">
+      <img src="C:\Users\DIANNA\Documents\HTML.html\house_v_1.1.1\pexels-binyaminmellish-1396132.jpg" alt="House 1">
+      <img src="C:\Users\DIANNA\Documents\HTML.html\house_v_1.1.1\pexels-davidmcbee-1546166.jpg" alt="House 2">
+      <img src="C:\Users\DIANNA\Documents\HTML.html\house_v_1.1.1\pexels-eziz-1475938.jpg" alt="House 3">
+      <img src="C:\Users\DIANNA\Documents\HTML.html\house_v_1.1.1\pexels-pixabay-164338.jpg" alt="House 4">
+    </div>
+    <p>Welcome to our house management platform!</p>
+  </div>
+</div>
+
+<!-- Landlord Section -->
+<div id="landlord" class="section">
+  <div class="container">
+    <h2>Landlord Page</h2>
+
+    <div class="input-section">
+      <label>Landlord Name:</label>
+      <input type="text" id="landlordName">
+    </div>
+
+    <div class="input-section">
+      <label>Upload Profile Photo:</label>
+      <input type="file" id="profilePhoto">
+      <img id="profilePreview" class="photo-preview" src="" alt="">
+    </div>
+
+    <div class="input-section">
+      <label>Upload House Photos:</label>
+      <input type="file" id="housePhotos" multiple>
+      <div id="housePreviews"></div>
+    </div>
+
+    <div class="input-section">
+      <label>Conditions for Houses:</label><br>
+      <textarea id="conditions" rows="4" cols="50"></textarea>
+    </div>
+
+    <div class="input-section">
+      <label>About Landlord:</label><br>
+      <textarea id="aboutLandlord" rows="4" cols="50"></textarea>
+    </div>
+
+    <button onclick="saveLandlordProfile()">Save Profile</button>
+
+    <h3>Preview:</h3>
+    <div id="landlordPreview"></div>
+  </div>
+</div>
+
+<!-- Tenant Section -->
+<div id="tenant" class="section">
+  <div class="container">
+    <h2>Tenant Page</h2>
+
+    <h3>Send Message to Landlord</h3>
+    <div class="input-section">
+      <label>Your Name:</label>
+      <input type="text" id="tenantName">
+    </div>
+    <div class="input-section">
+      <label>Your Email:</label>
+      <input type="email" id="tenantEmail">
+    </div>
+    <div class="input-section">
+      <label>Message:</label><br>
+      <textarea id="tenantMessage" rows="4" cols="50"></textarea>
+    </div>
+    <button onclick="sendTenantMessage()">Send Message</button>
+
+    <h3>Book an Appointment</h3>
+    <div class="input-section">
+      <label>Date:</label>
+      <input type="date" id="appointmentDate">
+    </div>
+    <div class="input-section">
+      <label>Time:</label>
+      <input type="time" id="appointmentTime">
+    </div>
+    <button onclick="bookAppointment()">Book Appointment</button>
+  </div>
+</div>
+
+<!-- Admin Dashboard Section -->
+<div id="adminDashboard" class="section">
+  <div class="container">
+    <h2>Admin Dashboard</h2>
+
+    <div id="adminStats"></div>
+
+    <h3>Landlords</h3>
+    <div id="adminLandlords"></div>
+
+    <h3>Tenants</h3>
+    <div id="adminTenants"></div>
+
+    <h3>Tenant Messages</h3>
+    <div id="adminMessages"></div>
+
+    <h3>Appointments</h3>
+    <div id="adminAppointments"></div>
+  </div>
+</div>
+
+<footer>
+  Follow us on: 
+  <a href="https://web.facebook.com/profile.php?id=61564399229132" target="_blank" class="social-icon">
+    <img src="C:\Users\DIANNA\Downloads\facebook (1).svg" alt="Twitter" />
+      
+</a>
+<a href="https://x.com/KamauEmilio" target="_blank" class="social-icon">
+  <img src="C:\Users\DIANNA\Downloads\twitter-x.svg" alt="Twitter" />
+</a>
+<a href="https://www.linkedin.com/in/emilio-kamau-0837122b5/" target="_blank" class="social-icon">
+  <img src="C:\Users\DIANNA\Downloads\linkedin.svg" alt="LinkedIn" />
+</a>
+CALL:0796526647
+</footer>
+
+<script>
+  // Section display handler
+  function showSection(sectionId) {
+    const sections = document.querySelectorAll('.section');
+    sections.forEach(section => section.classList.remove('active'));
+    document.getElementById(sectionId).classList.add('active');
+  }
+
+  // Landlord functions
+  function saveLandlordProfile() {
+    const name = document.getElementById('landlordName').value;
+    const conditions = document.getElementById('conditions').value;
+    const about = document.getElementById('aboutLandlord').value;
+
+    const profilePhoto = document.getElementById('profilePhoto').files[0];
+    const housePhotos = document.getElementById('housePhotos').files;
+
+    const reader = new FileReader();
+    reader.onloadend = function() {
+      const profilePhotoURL = reader.result;
+      const housePhotoURLs = [];
+
+      if (housePhotos.length > 0) {
+        Array.from(housePhotos).forEach(file => {
+          const houseReader = new FileReader();
+          houseReader.onloadend = function() {
+            housePhotoURLs.push(houseReader.result);
+            if (housePhotoURLs.length === housePhotos.length) {
+              saveToLocalStorage(name, profilePhotoURL, housePhotoURLs, conditions, about);
+            }
+          };
+          houseReader.readAsDataURL(file);
+        });
+      } else {
+        saveToLocalStorage(name, profilePhotoURL, housePhotoURLs, conditions, about);
+      }
+    };
+
+    if (profilePhoto) {
+      reader.readAsDataURL(profilePhoto);
+    } else {
+      saveToLocalStorage(name, '', [], conditions, about);
+    }
+  }
+
+  function saveToLocalStorage(name, profilePhotoURL, housePhotoURLs, conditions, about) {
+    const landlordProfile = {
+      name,
+      profilePhoto: profilePhotoURL,
+      housePhotos: housePhotoURLs,
+      conditions,
+      about
+    };
+    localStorage.setItem('landlordProfile', JSON.stringify(landlordProfile));
+    displayLandlordPreview(landlordProfile);
+    alert('Profile saved successfully!');
+  }
+
+  function displayLandlordPreview(profile) {
+    const preview = document.getElementById('landlordPreview');
+    preview.innerHTML = `
+      <h4>${profile.name}</h4>
+      <img src="${profile.profilePhoto}" class="photo-preview"><br>
+      <p><strong>About:</strong> ${profile.about}</p>
+      <p><strong>Conditions:</strong> ${profile.conditions}</p>
+      <div>${profile.housePhotos.map(photo => `<img src="${photo}" class="photo-preview">`).join('')}</div>
+    `;
+  }
+
+  // Tenant functions
+  function sendTenantMessage() {
+    const name = document.getElementById('tenantName').value;
+    const email = document.getElementById('tenantEmail').value;
+    const message = document.getElementById('tenantMessage').value;
+
+    const messages = JSON.parse(localStorage.getItem('tenantMessages')) || [];
+    messages.push({ name, email, message, date: new Date().toLocaleString() });
+    localStorage.setItem('tenantMessages', JSON.stringify(messages));
+
+    alert('Message sent!');
+  }
+
+  function bookAppointment() {
+    const name = document.getElementById('tenantName').value;
+    const date = document.getElementById('appointmentDate').value;
+    const time = document.getElementById('appointmentTime').value;
+
+    const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+    appointments.push({ name, date, time });
+    localStorage.setItem('appointments', JSON.stringify(appointments));
+
+    alert('Appointment booked!');
+  }
+
+  // Admin Dashboard
+  function showAdminDashboard() {
+    const landlord = JSON.parse(localStorage.getItem('landlordProfile')) || {};
+    const messages = JSON.parse(localStorage.getItem('tenantMessages')) || [];
+    const appointments = JSON.parse(localStorage.getItem('appointments')) || [];
+    const tenants = JSON.parse(localStorage.getItem('tenants')) || [];
+
+    document.getElementById('adminStats').innerHTML = `
+      <p><strong>Total Landlords:</strong> ${landlord && landlord.name ? 1 : 0}</p>
+      <p><strong>Total Tenants:</strong> ${tenants.length}</p>
+      <p><strong>Total Messages:</strong> ${messages.length}</p>
+      <p><strong>Total Appointments:</strong> ${appointments.length}</p>
+    `;
+
+    document.getElementById('adminLandlords').innerHTML = landlord && landlord.name ? `
+      <div>
+        <strong>Name:</strong> ${landlord.name}<br>
+        <strong>About:</strong> ${landlord.about}<br>
+        <strong>Conditions:</strong> ${landlord.conditions}<br>
+        <button onclick="deleteLandlord()">Delete Landlord</button>
+      </div>
+    ` : '<p>No landlords found.</p>';
+
+    document.getElementById('adminTenants').innerHTML = tenants.length === 0 ? '<p>No tenants found.</p>' :
+      tenants.map((tenant, index) => `
+        <div>
+          <strong>Name:</strong> ${tenant.name}<br>
+          <strong>Email:</strong> ${tenant.email}<br>
+          <button onclick="deleteTenant(${index})">Delete Tenant</button>
+        </div>
+      `).join('');
+
+    document.getElementById('adminMessages').innerHTML = messages.length === 0 ? '<p>No messages found.</p>' :
+      messages.map(msg => `
+        <div>
+          <strong>From:</strong> ${msg.name} (${msg.email})<br>
+          <strong>Date:</strong> ${msg.date}<br>
+          <p>${msg.message}</p>
+        </div>
+      `).join('');
+
+    document.getElementById('adminAppointments').innerHTML = appointments.length === 0 ? '<p>No appointments found.</p>' :
+      appointments.map(app => `
+        <div>
+          <strong>Name:</strong> ${app.name}<br>
+          <strong>Date:</strong> ${app.date}<br>
+          <strong>Time:</strong> ${app.time}<br>
+        </div>
+      `).join('');
+
+    showSection('adminDashboard');
+  }
+
+  function deleteLandlord() {
+    if (confirm('Delete landlord?')) {
+      localStorage.removeItem('landlordProfile');
+      alert('Landlord deleted!');
+      showAdminDashboard();
+    }
+  }
+
+  function deleteTenant(index) {
+    let tenants = JSON.parse(localStorage.getItem('tenants')) || [];
+    tenants.splice(index, 1);
+    localStorage.setItem('tenants', JSON.stringify(tenants));
+    alert('Tenant deleted!');
+    showAdminDashboard();
+  }
+
+  // Dummy tenants (optional, for testing)
+  /*if (!localStorage.getItem('tenants')) {
+    const dummyTenants = [
+      { name: 'John Doe', email: 'john@example.com' },
+      { name: 'Mary Smith', email: 'mary@example.com' }
+    ];
+    localStorage.setItem('tenants', JSON.stringify(dummyTenants));
+  }*/
+</script>
+
+</body>
+</html>
