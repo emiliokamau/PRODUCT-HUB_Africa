@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Service Providers{% endblock %}
+{% block content %}
+<h2>Trusted Service Providers</h2>
+
+<div class="service-list">
+  {% for provider in providers %}
+    <div class="provider-card">
+      <h3>{{ provider.name }}</h3>
+      <p><strong>Service:</strong> {{ provider.service }}</p>
+      <p>{{ provider.description }}</p>
+      <p><strong>Contact:</strong> {{ provider.phone }}</p>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

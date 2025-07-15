@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - House Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .login-container {
+      background: #fff;
+      padding: 30px 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .login-container h2 {
+      margin-bottom: 20px;
+    }
+    .login-container input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .login-container button {
+      width: 100%;
+      padding: 12px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .login-container button:hover {
+      background-color: #45a049;
+    }
+    .signup-link {
+      margin-top: 15px;
+    }
+    .signup-link a {
+      color: #4caf50;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <h2>Login</h2>
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <button onclick="login()">Login</button>
+
+    <div class="signup-link">
+      Don't have an account? <a href="signup.html">Sign up</a>
+    </div>
+  </div>
+
+  <script>
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+
+      // Dummy validation - this will be replaced with database logic
+      //if (email === "admin@house.com" && password === "admin123") {
+      //  alert("Admin login successful!");
+      //  window.location.href = "admin.html";
+     // } else if (email === "landlord@house.com" && password === "landlord123") {
+     //   alert("Landlord login successful!");
+     //   window.location.href = "landlord.html";
+      //} else if (email === "tenant@house.com" && password === "tenant123") {
+      //  alert("Tenant login successful!");
+      //  window.location.href = "tenant.html";
+      //} else {
+      //  alert("Invalid credentials!");
+    //  }
+   // }
+  </script>
+
+</body>
+</html>
+
+{% comment %}
+{% extends 'base.html' %}
+{% block title %}Signup{% endblock %}
+{% block content %}
+<h2>Create Account</h2>
+<form method="POST" action="/login">
+  <input type="text" name="name" placeholder="Name" required /><br>
+  <input type="email" name="email" placeholder="Email" required /><br>
+  <input type="password" name="password" placeholder="Password" required /><br>
+  <select name="role" required>
+    <option value="tenant">Tenant</option>
+    <option value="landlord">Landlord</option>
+    <option value="service">Service Provider</option>
+  </select><br>
+  <button type="submit">Sign Up</button>
+</form>
+{% endblock %} {% endcomment %}
