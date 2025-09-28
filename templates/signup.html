@@ -1,0 +1,413 @@
+{% extends 'base.html' %} {% block title %}Signup{% endblock %} {% block content
+%}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Signup</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <style>
+      .password-container {
+        position: relative;
+        width: 100%;
+      }
+      .password-container input {
+        width: 100%;
+        padding-right: 40px;
+      }
+      .password-toggle {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+      }
+      .error-message {
+        color: #b22222; /* Red Clay for errors */
+        font-size: 0.9em;
+        display: none;
+      }
+      .notifications .alert-success {
+        background-color: #4a90e2; /* Sky Blue for success */
+        color: white;
+      }
+      .notifications .alert-danger {
+        background-color: #b22222; /* Red Clay for errors */
+        color: white;
+      }
+      .btn-primary {
+        background-color: #3d8b40; /* Acacia Green */
+        border-color: #3d8b40;
+      }
+      .btn-link {
+        color: #f28c38; /* Sunset Orange */
+      }
+      .btn-help {
+        color: #f28c38; /* Sunset Orange */
+      }
+      .tips-sidebar {
+        background-color: #f5e8c7; /* Savanna Beige */
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 20px;
+      }
+      .language-toggle {
+        background-color: #3d8b40; /* Acacia Green */
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 5px;
+      }
+      .password-strength {
+        font-size: 0.9em;
+      }
+      .password-strength.weak {
+        color: #b22222; /* Red Clay */
+      }
+      .password-strength.strong {
+        color: #4a90e2; /* Sky Blue */
+      }
+      .role-description {
+        background-color: #f5e8c7; /* Savanna Beige */
+        color: #1a1a1a; /* Charcoal Black */
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 20px;
+      }
+      .social-proof {
+        background-color: #4a90e2; /* Sky Blue */
+        color: white;
+        padding: 15px;
+        border-radius: 5px;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1 style="color: #3d8b40">Create Your Account</h1>
+      <p>Join HomeHub to manage properties, leases, or services.</p>
+      <section class="notifications">
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %} {% for category, message in messages %}
+        <div
+          class="alert alert-{{ 'danger' if category == 'error' else 'success' }}"
+        >
+          {{ message }}
+        </div>
+        {% endfor %} {% endif %} {% endwith %}
+      </section>
+      <form
+        method="POST"
+        action="{{ url_for('auth.signup') }}"
+        id="signupForm"
+        enctype="multipart/form-data"
+      >
+        <!-- CSRF Token -->
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="mb-3">
+          <label
+            for="full_name"
+            class="form-label"
+            data-en="Full Name"
+            data-sw="Jina Kamili"
+            >Full Name</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="full_name"
+            id="full_name"
+            placeholder="John Doe"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label
+            for="email"
+            class="form-label"
+            data-en="Email Address"
+            data-sw="Barua Pepe"
+            >Email Address</label
+          >
+          <input
+            type="email"
+            class="form-control"
+            name="email"
+            id="email"
+            placeholder="example@email.com"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label
+            for="phone_number"
+            class="form-label"
+            data-en="Phone Number"
+            data-sw="Nambari ya Simu"
+            >Phone Number</label
+          >
+          <input
+            type="tel"
+            class="form-control"
+            name="phone_number"
+            id="phone_number"
+            placeholder="+254712345678"
+            required
+          />
+          <p id="phoneError" class="error-message">
+            Phone number must be in the format +254XXXXXXXXX.
+          </p>
+        </div>
+        <div class="mb-3 password-container">
+          <label
+            for="password"
+            class="form-label"
+            data-en="Password"
+            data-sw="Nenosiri"
+            >Password</label
+          >
+          <input
+            type="password"
+            class="form-control"
+            name="password"
+            id="password"
+            placeholder="Enter strong password"
+            required
+          />
+          <span
+            class="password-toggle"
+            onclick="togglePassword('password', 'togglePasswordIcon')"
+          >
+            <i id="togglePasswordIcon" class="bi bi-eye"></i>
+          </span>
+          <span class="password-strength" id="passwordStrength">Weak</span>
+        </div>
+        <div class="mb-3 password-container">
+          <label
+            for="confirm_password"
+            class="form-label"
+            data-en="Confirm Password"
+            data-sw="Hakikisha Nenosiri"
+            >Confirm Password</label
+          >
+          <input
+            type="password"
+            class="form-control"
+            name="confirm_password"
+            id="confirm_password"
+            placeholder="Confirm password"
+            required
+          />
+          <span
+            class="password-toggle"
+            onclick="togglePassword('confirm_password', 'toggleConfirmPasswordIcon')"
+          >
+            <i id="toggleConfirmPasswordIcon" class="bi bi-eye"></i>
+          </span>
+        </div>
+        <div class="mb-3">
+          <p id="passwordError" class="error-message">
+            Password must be at least 8 characters long and contain letters,
+            digits, and at least one special character (e.g., !@#$%^&*).
+          </p>
+          <p id="confirmPasswordError" class="error-message">
+            Passwords do not match.
+          </p>
+        </div>
+        <div class="mb-3">
+          <label
+            for="role"
+            class="form-label"
+            data-en="User Role"
+            data-sw="Jukumu la Mtumiaji"
+            >User Role</label
+          >
+          <select name="role" id="role" class="form-control" required>
+            <option value="tenant">Tenant</option>
+            <option value="landlord">Landlord</option>
+            <option value="service">Service Provider</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="mb-3" id="mpesa_details_container" style="display: none">
+          <label
+            for="mpesa_details"
+            class="form-label"
+            data-en="M-Pesa Paybill/Till Number"
+            data-sw="Nambari ya M-Pesa Paybill/Till"
+            >M-Pesa Paybill/Till Number</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="mpesa_details"
+            id="mpesa_details"
+            placeholder="Paybill 123456"
+          />
+        </div>
+        <div class="mb-3">
+          <label
+            for="profile_picture"
+            class="form-label"
+            data-en="Profile Picture (JPG/PNG, max 2MB)"
+            data-sw="Picha ya Wasifu (JPG/PNG, max 2MB)"
+            >Profile Picture (JPG/PNG, max 2MB)</label
+          >
+          <input
+            type="file"
+            class="form-control"
+            name="profile_picture"
+            id="profile_picture"
+            accept="image/jpeg,image/png"
+          />
+        </div>
+        <div class="mb-3">
+          <label
+            for="language"
+            class="form-label"
+            data-en="Language Preference"
+            data-sw="Mapendeleo ya Lugha"
+            >Language Preference</label
+          >
+          <select name="language" id="language" class="form-control">
+            <option value="en">English</option>
+            <option value="sw">Swahili</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <input type="checkbox" name="terms" id="terms" required />
+          <label
+            for="terms"
+            data-en="I agree to the Terms and Conditions"
+            data-sw="Nakubali Sheria na Masharti"
+            >I agree to the
+            <a href="{{ url_for('auth.terms') }}">Terms and Conditions</a
+            >.</label
+          >
+          <p id="termsError" class="error-message">
+            You must agree to the terms and conditions.
+          </p>
+        </div>
+        <button type="submit" class="btn btn-primary">Register</button>
+      </form>
+      <p class="mt-3">
+        <a href="{{ url_for('auth.login') }}" class="btn btn-link"
+          >Already have an account? Log In</a
+        >
+      </p>
+      <p class="mt-3">
+        <a href="{{ url_for('auth.support') }}" class="btn btn-help"
+          >Need Help?</a
+        >
+      </p>
+      <button class="language-toggle" onclick="toggleLanguage()">
+        Switch to Swahili
+      </button>
+      <aside class="tips-sidebar">
+        <h4>Registration Tips</h4>
+        <ul>
+          <li>
+            Use a strong password with letters, numbers, and special characters.
+          </li>
+          <li>
+            Provide a valid M-Pesa number for payments (Landlord/Service
+            Provider).
+          </li>
+          <li>Ensure your email and phone number are unique.</li>
+        </ul>
+      </aside>
+      <section class="role-description">
+        <h4>User Roles</h4>
+        <p><strong>Landlord:</strong> Manage properties and tenants.</p>
+        <p><strong>Tenant:</strong> Browse and book properties.</p>
+        <p>
+          <strong>Service Provider:</strong> Offer maintenance or other
+          services.
+        </p>
+        <p><strong>Admin:</strong> Manage platform operations.</p>
+      </section>
+      <section class="social-proof">
+        <p>Join 10,000+ happy users managing properties in Kenya.</p>
+      </section>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      function togglePassword(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (input.type === "password") {
+          input.type = "text";
+          icon.classList.remove("bi-eye");
+          icon.classList.add("bi-eye-slash");
+        } else {
+          input.type = "password";
+          icon.classList.remove("bi-eye-slash");
+          icon.classList.add("bi-eye");
+        }
+      }
+
+      function toggleLanguage() {
+        const select = document.getElementById("language");
+        const labels = document.querySelectorAll("label");
+        if (select.value === "en") {
+          select.value = "sw";
+          labels.forEach((label) => {
+            if (label.getAttribute("data-sw")) {
+              label.textContent = label.getAttribute("data-sw");
+            }
+          });
+        } else {
+          select.value = "en";
+          labels.forEach((label) => {
+            if (label.getAttribute("data-en")) {
+              label.textContent = label.getAttribute("data-en");
+            }
+          });
+        }
+      }
+
+      document.getElementById("role").addEventListener("change", function () {
+        const mpesaContainer = document.getElementById(
+          "mpesa_details_container"
+        );
+        if (this.value === "landlord" || this.value === "service") {
+          mpesaContainer.style.display = "block";
+        } else {
+          mpesaContainer.style.display = "none";
+        }
+      });
+
+      document
+        .getElementById("password")
+        .addEventListener("input", function () {
+          const password = this.value;
+          const strengthSpan = document.getElementById("passwordStrength");
+          const passwordRegex =
+            /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]).{8,}$/;
+          if (passwordRegex.test(password)) {
+            strengthSpan.textContent = "Strong";
+            strengthSpan.classList.remove("weak");
+            strengthSpan.classList.add("strong");
+          } else {
+            strengthSpan.textContent = "Weak";
+            strengthSpan.classList.remove("strong");
+            strengthSpan.classList.add("weak");
+          }
+        });
+
+      document
+        .getElementById("signupForm")
+        .addEventListener("submit", function (event) {
+          console.log("Form submitted"); // Debug log
+        });
+    </script>
+  </body>
+</html>
+{% endblock %}

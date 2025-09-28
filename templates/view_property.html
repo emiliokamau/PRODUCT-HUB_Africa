@@ -1,0 +1,142 @@
+{% extends 'base.html' %} {% block title %}View Property - {{ property.title
+}}{% endblock %} {% block content %}
+<div class="property-container">
+  <!-- Sidebar (Simplified for Property View) -->
+  <aside class="property-sidebar">
+    <h2>Property Navigation</h2>
+    <ul>
+      {% if current_user.is_authenticated and current_user.role.lower() ==
+      'landlord' and property.owner_id == current_user.id %}
+      <li>
+        <a href="{{ url_for('house.edit_property', property_id=property.id) }}"
+          >Edit Property</a
+        >
+      </li>
+      {% endif %}
+      <li><a href="{{ url_for('house.hotels') }}">Back to Properties</a></li>
+      <li><a href="{{ url_for('auth.profile') }}">Profile</a></li>
+      <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="property-main">
+    <h1>{{ property.title }}</h1>
+
+    <!-- Property Details -->
+    <section class="property-details">
+      <div class="card">
+        <h2>Location</h2>
+        <p>{{ property.location }}</p>
+      </div>
+      <div class="card">
+        <h2>Description</h2>
+        <p>{{ property.description | safe }}</p>
+      </div>
+      <div class="card">
+        <h2>Owner</h2>
+        <p>{{ property.owner.name }} ({{ property.owner.email }})</p>
+      </div>
+      {% if property.image_urls %}
+      <div class="card">
+        <h2>Images</h2>
+
+        <!-- Temporary debug -->
+        <img
+          src="{{ url_for('static', filename='images/' ~ property.image_urls) }}"
+          alt="{{ property.title }}"
+          style="
+            max-width: 200px;
+            border-radius: 8px;
+            display: block;
+            margin-bottom: 10px;
+            cursor: pointer;
+          "
+          onerror="this.style.display='none'; console.log('Image failed. Filename: {{ image|trim }}, URL: {{ url_for('static', filename='images/' ~ image|trim) }}');"
+        />
+      </div>
+      {% else %}
+      <div class="card">
+        <h2>Images</h2>
+        <p>
+          No image available (image_urls is None or empty for property ID: {{
+          property.id }}, Owner ID: {{ property.owner_id }})
+        </p>
+      </div>
+      {% endif %}
+    </section>
+
+    <!-- Actions (Tenant-Specific) -->
+    {% if current_user.is_authenticated and current_user.role.lower() ==
+    'tenant' %}
+    <section class="property-actions">
+      <form
+        action="{{ url_for('house.request_rental', property_id=property.id) }}"
+        method="POST"
+      >
+        <button type="submit" class="btn btn-primary">Request Rental</button>
+      </form>
+    </section>
+    {% endif %}
+  </main>
+</div>
+
+<style>
+  .property-container {
+    display: flex;
+  }
+  .property-sidebar {
+    width: 220px;
+    background: #2c3e50;
+    color: white;
+    padding: 20px;
+    height: 100vh;
+    position: fixed;
+    top: 56px; /* Adjust for navbar height */
+    left: 0;
+  }
+  .property-sidebar ul {
+    list-style: none;
+    padding: 0;
+  }
+  .property-sidebar ul li {
+    margin-bottom: 10px;
+  }
+  .property-sidebar ul li a {
+    color: white;
+    text-decoration: none;
+    display: block;
+  }
+  .property-sidebar ul li a:hover {
+    color: #d3d3d3;
+  }
+  .property-main {
+    flex: 1;
+    padding: 20px;
+    margin-left: 220px; /* Match sidebar width */
+    margin-top: 56px; /* Adjust for navbar height */
+  }
+  .property-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  .card {
+    background: #f4f4f4;
+    padding: 10px 20px;
+    border-radius: 6px;
+    flex: 1;
+    min-width: 250px;
+  }
+  .property-actions {
+    margin-top: 20px;
+  }
+  .dark-mode .card {
+    background: #2c2c2c;
+    color: #ffffff;
+  }
+  .dark-mode .property-main {
+    background: #1a1a1a;
+  }
+</style>
+{% endblock %}

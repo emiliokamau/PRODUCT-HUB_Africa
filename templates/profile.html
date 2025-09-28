@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Your Profile{% endblock %}
+{% block content %}
+<h2>Profile Details</h2>
+<p><strong>Name:</strong> {{ current_user.name }}</p>
+<p><strong>Email:</strong> {{ current_user.email }}</p>
+<p><strong>Role:</strong> {{ current_user.role }}</p>
+
+<form method="POST" action="/update_profile">
+  <input type="text" name="name" value="{{ current_user.name }}" />
+  <input type="email" name="email" value="{{ current_user.email }}" />
+  <button type="submit">Update</button>
+</form>
+{% endblock %}
+
+

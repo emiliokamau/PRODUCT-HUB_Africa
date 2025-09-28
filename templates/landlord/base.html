@@ -1,0 +1,27 @@
+{% extends "base.html" %} {% block content %}
+<div class="landlord-layout" style="display: flex; min-height: 100vh">
+  <!-- Sidebar -->
+  <aside
+    class="sidebar"
+    style="width: 250px; background: #2c3e50; color: #fff; padding: 20px"
+  >
+    <h3>Landlord Panel</h3>
+    <ul>
+      <li><a href="{{ url_for('landlord.dashboard') }}">Dashboard</a></li>
+      <li><a href="{{ url_for('landlord.properties') }}">Properties</a></li>
+      <li><a href="{{ url_for('landlord.tenants') }}">Tenants</a></li>
+      <li><a href="{{ url_for('landlord.payments') }}">Payments</a></li>
+      <li><a href="{{ url_for('landlord.maintenance') }}">Maintenance</a></li>
+      <li><a href="{{ url_for('landlord.reports') }}">Reports</a></li>
+      <li><a href="{{ url_for('landlord.messages') }}">Messages</a></li>
+      <li><a href="{{ url_for('landlord.settings') }}">Settings</a></li>
+      <li><a href="{{ url_for('landlord.profile') }}">Profile</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main style="flex: 1; padding: 20px">
+    {% block landlord_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}
