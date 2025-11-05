@@ -1,5 +1,6 @@
-{% extends 'base.html' %} {% block title %}Your Profile{% endblock %} {% block
-content %}
+{% extends 'base.html' %} 
+{% block title %}Your Profile{% endblock %} 
+{% block content %}
 
 <style>
   :root {
@@ -337,6 +338,27 @@ content %}
     box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
   }
 
+  .form-control.is-invalid {
+    border-color: var(--danger);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc354c'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc354c' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+    padding-right: calc(1.5em + 0.75rem);
+  }
+
+  .invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: var(--danger);
+  }
+
+  .form-control.is-invalid ~ .invalid-feedback {
+    display: block;
+  }
+
   textarea.form-control {
     resize: vertical;
     min-height: 120px;
@@ -458,61 +480,43 @@ content %}
     box-shadow: var(--shadow);
   }
 
-  /* Notification Toast */
-  .notification-toast {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    min-width: 300px;
-    padding: 1rem 1.5rem;
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow);
-    z-index: 2000;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    animation: slideIn 0.3s ease, slideOut 0.3s ease 2.7s;
-    animation-fill-mode: forwards;
+  /* Security Info */
+  .security-info {
+    background: rgba(67, 97, 238, 0.05);
+    border-left: 4px solid var(--primary);
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    font-size: 0.9rem;
+    color: #495057;
   }
 
-  @keyframes slideIn {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
+  .security-info i {
+    color: var(--primary);
+    margin-right: 0.5rem;
   }
 
-  @keyframes slideOut {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(100%);
-      opacity: 0;
-    }
+  /* Password Strength Indicator */
+  .password-strength {
+    height: 5px;
+    border-radius: 3px;
+    margin-top: 0.5rem;
+    transition: var(--transition);
   }
 
-  .notification-success {
-    background: linear-gradient(
-      135deg,
-      rgba(6, 255, 165, 0.9),
-      rgba(0, 180, 216, 0.9)
-    );
-    color: white;
+  .strength-weak {
+    background-color: var(--danger);
+    width: 33.33%;
   }
 
-  .notification-danger {
-    background: linear-gradient(
-      135deg,
-      rgba(247, 37, 133, 0.9),
-      rgba(230, 57, 70, 0.9)
-    );
-    color: white;
+  .strength-medium {
+    background-color: var(--warning);
+    width: 66.66%;
+  }
+
+  .strength-strong {
+    background-color: var(--success);
+    width: 100%;
   }
 
   /* Responsive */
@@ -577,7 +581,7 @@ content %}
         </div>
         <div class="user-profile">
           <img
-            src="https://randomuser.me/api/portraits/men/32.jpg"
+            src="{{ url_for('static', filename=current_user.profile_picture) if current_user.profile_picture else url_for('static', filename='images/default-avatar.png') }}"
             alt="User Avatar"
             class="user-avatar"
           />
@@ -590,11 +594,26 @@ content %}
     </div>
   </div>
 
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  {% for category, message in messages %}
+  <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+    <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}"></i>
+    <span>{{ message }}</span>
+    <button class="alert-close" onclick="this.parentElement.remove()">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
+
   <!-- Profile Card -->
   <div class="profile-card">
     <div class="profile-avatar-container">
       <img
-        src="https://randomuser.me/api/portraits/men/32.jpg"
+        src="{{ url_for('static', filename=current_user.profile_picture) if current_user.profile_picture else url_for('static', filename='images/default-avatar.png') }}"
         alt="Profile Picture"
         class="profile-avatar"
         id="profileAvatar"
@@ -640,7 +659,10 @@ content %}
       </h3>
     </div>
 
-    <form id="profileForm" method="POST" action="/update_profile">
+    <form id="profileForm" method="POST" action="{{ url_for('update_profile') }}" enctype="multipart/form-data">
+      <!-- CSRF Token with ID -->
+      <input type="hidden" name="csrf_token" id="profile_csrf_token" value="{{ csrf_token() }}">
+      
       <div class="form-row">
         <div class="form-group">
           <label for="name">Full Name</label>
@@ -652,6 +674,7 @@ content %}
             value="{{ current_user.name }}"
             required
           />
+          <div class="invalid-feedback">Please enter your full name</div>
         </div>
 
         <div class="form-group">
@@ -664,6 +687,7 @@ content %}
             value="{{ current_user.email }}"
             required
           />
+          <div class="invalid-feedback">Please enter a valid email address</div>
         </div>
       </div>
 
@@ -678,6 +702,7 @@ content %}
             value="{{ current_user.phone_number or '' }}"
             placeholder="Enter your phone number"
           />
+          <div class="invalid-feedback">Please enter a valid phone number</div>
         </div>
 
         <div class="form-group">
@@ -690,6 +715,7 @@ content %}
             value="{{ current_user.location or '' }}"
             placeholder="Enter your location"
           />
+          <div class="invalid-feedback">Please enter your location</div>
         </div>
       </div>
 
@@ -701,15 +727,14 @@ content %}
           class="form-control"
           rows="4"
           placeholder="Tell us about yourself"
-        >
-{{ current_user.bio or '' }}</textarea
-        >
+        >{{ current_user.bio or '' }}</textarea>
+        <div class="invalid-feedback">Bio must be less than 500 characters</div>
       </div>
 
       <div class="form-actions">
         <a
           href="{% if current_user.role == 'tenant' %}
-            {{ url_for('tenant.tenant_dashboard') }}
+            {{ url_for('tenant.dashboard') }}
         {% elif current_user.role == 'service' %}
             {{ url_for('service_provider.dashboard') }}
         {% elif current_user.role == 'landlord' %}
@@ -739,7 +764,16 @@ content %}
         Change Password
       </h3>
     </div>
-    <form id="passwordForm" method="POST" action="/change_password">
+    
+    <div class="security-info">
+      <i class="fas fa-shield-alt"></i>
+      For your security, please choose a strong password with at least 8 characters, including uppercase, lowercase, numbers, and special characters.
+    </div>
+    
+    <form id="passwordForm" method="POST" action="{{ url_for('change_password') }}">
+      <!-- CSRF Token with ID -->
+      <input type="hidden" name="csrf_token" id="password_csrf_token" value="{{ csrf_token() }}">
+      
       <div class="form-row">
         <div class="form-group">
           <label for="current_password">Current Password</label>
@@ -750,6 +784,7 @@ content %}
             class="form-control"
             required
           />
+          <div class="invalid-feedback">Please enter your current password</div>
         </div>
 
         <div class="form-group">
@@ -761,6 +796,9 @@ content %}
             class="form-control"
             required
           />
+          <div class="password-strength" id="passwordStrength"></div>
+          <small class="form-text text-muted">Password must be at least 8 characters long</small>
+          <div class="invalid-feedback">Password does not meet requirements</div>
         </div>
       </div>
 
@@ -773,6 +811,7 @@ content %}
           class="form-control"
           required
         />
+        <div class="invalid-feedback">Passwords do not match</div>
       </div>
 
       <button type="submit" class="btn btn-success">
@@ -782,9 +821,20 @@ content %}
   </div>
 </div>
 
-{% endblock %} {% block extra_js %}
+{% endblock %} 
+
+{% block scripts %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    // Scope CSRF Token Retrieval - Get token from specific form
+    function getCsrfToken(formId) {
+      const form = document.getElementById(formId);
+      if (form) {
+        return form.querySelector('input[name="csrf_token"]').value;
+      }
+      return null;
+    }
+
     // Notification Toast Function
     function showToast(message, type = "success") {
       // Remove any existing toasts
@@ -815,18 +865,167 @@ content %}
       }, 3000);
     }
 
-    // Avatar Upload Preview
+    // Form Validation Helper
+    function validateForm(formId) {
+      const form = document.getElementById(formId);
+      let isValid = true;
+      
+      // Reset all validation states
+      form.querySelectorAll('.form-control').forEach(input => {
+        input.classList.remove('is-invalid');
+      });
+      
+      // Validate required fields
+      form.querySelectorAll('.form-control[required]').forEach(input => {
+        if (!input.value.trim()) {
+          input.classList.add('is-invalid');
+          isValid = false;
+        }
+      });
+      
+      // Validate email format
+      const emailInput = form.querySelector('#email');
+      if (emailInput && emailInput.value) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailInput.value)) {
+          emailInput.classList.add('is-invalid');
+          isValid = false;
+        }
+      }
+      
+      // Validate phone format
+      const phoneInput = form.querySelector('#phone');
+      if (phoneInput && phoneInput.value) {
+        const phoneRegex = /^[\d\s\-\+\(\)]+$/;
+        if (!phoneRegex.test(phoneInput.value)) {
+          phoneInput.classList.add('is-invalid');
+          isValid = false;
+        }
+      }
+      
+      // Validate bio length
+      const bioInput = form.querySelector('#bio');
+      if (bioInput && bioInput.value && bioInput.value.length > 500) {
+        bioInput.classList.add('is-invalid');
+        isValid = false;
+      }
+      
+      return isValid;
+    }
+
+    // Password Strength Checker
+    function checkPasswordStrength(password) {
+      let strength = 0;
+      
+      // Length check
+      if (password.length >= 8) strength++;
+      if (password.length >= 12) strength++;
+      
+      // Complexity checks
+      if (/[a-z]/.test(password)) strength++;
+      if (/[A-Z]/.test(password)) strength++;
+      if (/[0-9]/.test(password)) strength++;
+      if (/[^a-zA-Z0-9]/.test(password)) strength++;
+      
+      return strength;
+    }
+
+    // Update password strength indicator
+    function updatePasswordStrength(password) {
+      const strengthBar = document.getElementById('passwordStrength');
+      const strength = checkPasswordStrength(password);
+      
+      // Remove all strength classes
+      strengthBar.classList.remove('strength-weak', 'strength-medium', 'strength-strong');
+      
+      if (password.length === 0) {
+        strengthBar.style.width = '0';
+      } else if (strength <= 2) {
+        strengthBar.classList.add('strength-weak');
+        strengthBar.style.width = '33.33%';
+      } else if (strength <= 4) {
+        strengthBar.classList.add('strength-medium');
+        strengthBar.style.width = '66.66%';
+      } else {
+        strengthBar.classList.add('strength-strong');
+        strengthBar.style.width = '100%';
+      }
+    }
+
+    // Avatar Upload Preview and Submission
     const avatarUpload = document.getElementById("avatarUpload");
     const profileAvatar = document.getElementById("profileAvatar");
 
     avatarUpload.addEventListener("change", function (e) {
       const file = e.target.files[0];
       if (file) {
+        // Enhanced client-side validation
+        // Check file type
+        if (!file.type.match('image.*')) {
+          showToast("Please select an image file (JPEG, PNG, GIF, etc.)", "danger");
+          return;
+        }
+
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          showToast("Image size should be less than 5MB", "danger");
+          return;
+        }
+
+        // Check for common image file extensions
+        const fileName = file.name.toLowerCase();
+        const validExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+        const isValidExtension = validExtensions.some(ext => fileName.endsWith(ext));
+        
+        if (!isValidExtension) {
+          showToast("Please select a valid image file (JPEG, PNG, GIF, or WebP)", "danger");
+          return;
+        }
+
         const reader = new FileReader();
 
         reader.onload = function (event) {
           profileAvatar.src = event.target.result;
-          showToast("Profile picture updated successfully", "success");
+          
+          // Create a FormData object to send the image
+          const formData = new FormData();
+          formData.append('profile_picture', file);
+          
+          // Send the image to the server with CSRF token in header
+          fetch('{{ url_for("upload_profile_picture") }}', {
+            method: 'POST',
+            headers: {
+              'X-CSRFToken': getCsrfToken('profileForm')
+            },
+            body: formData
+          })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Server responded with status: ' + response.status);
+            }
+            return response.json();
+          })
+          .then(data => {
+            if (data.success) {
+              showToast("Profile picture updated successfully", "success");
+              // Update the profile picture in the header as well
+              document.querySelector('.user-avatar').src = event.target.result;
+              
+              // If the server returned the new filename, update the image source
+              if (data.filename) {
+                // Update the image source to point to the newly uploaded file
+                const newImageUrl = "{{ url_for('static', filename='') }}" + data.filename;
+                profileAvatar.src = newImageUrl;
+                document.querySelector('.user-avatar').src = newImageUrl;
+              }
+            } else {
+              showToast(data.message || "Error uploading profile picture", "danger");
+            }
+          })
+          .catch(error => {
+            showToast("Error uploading profile picture. Please try again.", "danger");
+            console.error('Error:', error);
+          });
         };
 
         reader.readAsDataURL(file);
@@ -838,6 +1037,12 @@ content %}
 
     profileForm.addEventListener("submit", function (e) {
       e.preventDefault();
+      
+      // Validate form before submission
+      if (!validateForm('profileForm')) {
+        showToast("Please fix the errors in the form", "danger");
+        return;
+      }
 
       // Show loading state
       const submitButton = this.querySelector('button[type="submit"]');
@@ -849,9 +1054,12 @@ content %}
       // Get form data
       const formData = new FormData(this);
 
-      // Send form data using fetch
+      // Send form data using fetch with CSRF token in header
       fetch(this.action, {
         method: "POST",
+        headers: {
+          'X-CSRFToken': getCsrfToken('profileForm')
+        },
         body: formData,
       })
         .then((response) => {
@@ -867,6 +1075,12 @@ content %}
 
           // Show success message
           showToast("Profile updated successfully!", "success");
+          
+          // Update the name in the header if it was changed
+          if (formData.get('name')) {
+            document.querySelector('.user-info h4').textContent = formData.get('name');
+            document.querySelector('.profile-name').textContent = formData.get('name');
+          }
         })
         .catch((error) => {
           // Reset button state
@@ -881,17 +1095,48 @@ content %}
 
     // Password Form Submission
     const passwordForm = document.getElementById("passwordForm");
+    const newPasswordInput = document.getElementById("new_password");
+    const confirmPasswordInput = document.getElementById("confirm_password");
+
+    // Add password strength checker
+    newPasswordInput.addEventListener("input", function() {
+      updatePasswordStrength(this.value);
+    });
 
     passwordForm.addEventListener("submit", function (e) {
       e.preventDefault();
 
-      // Validate passwords match
-      const newPassword = document.getElementById("new_password").value;
-      const confirmPassword = document.getElementById("confirm_password").value;
+      // Enhanced password validation
+      const newPassword = newPasswordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
 
       if (newPassword !== confirmPassword) {
+        confirmPasswordInput.classList.add('is-invalid');
         showToast("Passwords do not match", "danger");
         return;
+      } else {
+        confirmPasswordInput.classList.remove('is-invalid');
+      }
+
+      // Validate password strength
+      if (newPassword.length < 8) {
+        newPasswordInput.classList.add('is-invalid');
+        showToast("Password must be at least 8 characters long", "danger");
+        return;
+      }
+
+      // Check for password complexity
+      const hasUpperCase = /[A-Z]/.test(newPassword);
+      const hasLowerCase = /[a-z]/.test(newPassword);
+      const hasNumbers = /\d/.test(newPassword);
+      const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(newPassword);
+
+      if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasSpecialChar) {
+        newPasswordInput.classList.add('is-invalid');
+        showToast("Password must include uppercase, lowercase, numbers, and special characters", "danger");
+        return;
+      } else {
+        newPasswordInput.classList.remove('is-invalid');
       }
 
       // Show loading state
@@ -904,9 +1149,12 @@ content %}
       // Get form data
       const formData = new FormData(this);
 
-      // Send form data using fetch
+      // Send form data using fetch with CSRF token in header
       fetch(this.action, {
         method: "POST",
+        headers: {
+          'X-CSRFToken': getCsrfToken('passwordForm')
+        },
         body: formData,
       })
         .then((response) => {
@@ -920,6 +1168,9 @@ content %}
           submitButton.innerHTML = originalText;
           submitButton.disabled = false;
           this.reset();
+          
+          // Reset password strength indicator
+          document.getElementById('passwordStrength').style.width = '0';
 
           // Show success message
           showToast("Password updated successfully!", "success");

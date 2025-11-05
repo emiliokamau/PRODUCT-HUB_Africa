@@ -1,20 +1,113 @@
 from asyncio import Event
 import base64
-from datetime import datetime
+from datetime import date, date, datetime
 from io import BytesIO
 import os
 from models.models import Document
-from flask import Blueprint, current_app, flash, render_template, request, redirect, url_for
+from flask import Blueprint, current_app, flash, jsonify, render_template, request, redirect, url_for
 from flask_login import login_required, current_user
 import pyotp
 from models.models import Booking, MaintenanceRequest, Message, House, Notification, Payment, User
 from extensions import db
 from models.models import Event
 from werkzeug.utils import secure_filename
+import base64
+from .forms import BookingForm
+from utils import booking_to_dict
 
 
+from routes.service_routes import requests  # Needed for encoding password for STK push
 
 tenant_bp = Blueprint('tenant', __name__, url_prefix='/tenant')
+
+# Safaricom Daraja sandbox config
+DARJA_CONSUMER_KEY = "YOUR_CONSUMER_KEY"
+DARJA_CONSUMER_SECRET = "YOUR_CONSUMER_SECRET"
+BUSINESS_SHORTCODE = "174379"
+PASSKEY = "YOUR_PASSKEY"
+CALLBACK_URL = "https://yourdomain.com/tenant/mpesa_callback"  # Update to your real callback URL
+
+def get_mpesa_token():
+    """Fetch OAuth token from Safaricom"""
+    auth_url = "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials"
+    r = requests.get(auth_url, auth=(DARJA_CONSUMER_KEY, DARJA_CONSUMER_SECRET))
+    r.raise_for_status()
+    token = r.json().get("access_token")
+    return token
+
+def initiate_stk_push(phone_number, amount, account_reference):
+    """Initiate STK Push"""
+    token = get_mpesa_token()
+    stk_url = "https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest"
+    
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    password = base64.b64encode(f"{BUSINESS_SHORTCODE}{PASSKEY}{timestamp}".encode()).decode()
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    payload = {
+        "BusinessShortCode": BUSINESS_SHORTCODE,
+        "Password": password,
+        "Timestamp": timestamp,
+        "TransactionType": "CustomerPayBillOnline",
+        "Amount": float(amount),
+        "PartyA": phone_number,
+        "PartyB": BUSINESS_SHORTCODE,
+        "PhoneNumber": phone_number,
+        "CallBackURL": CALLBACK_URL,
+        "AccountReference": account_reference,
+        "TransactionDesc": "Rent Payment"
+    }
+    
+    r = requests.post(stk_url, json=payload, headers=headers)
+    return r.json()
+
+# ---------------- Initiate payment route ----------------
+@tenant_bp.route('/pay_rent_mpesa', methods=['POST'])
+@login_required
+def pay_rent_mpesa():
+    phone_number = request.form.get('phone')
+    amount = request.form.get('amount')
+
+    if not phone_number or not amount:
+        return jsonify({"error": "Phone number and amount are required"}), 400
+
+    account_ref = f"Rent-{current_user.id}-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}"
+    response = initiate_stk_push(phone_number, amount, account_ref)
+
+    # Optionally, store a pending payment record
+    pending_payment = Payment(
+        tenant_id=current_user.id,
+        amount=float(amount),
+        date=datetime.utcnow(),
+        status='Pending'
+    )
+    db.session.add(pending_payment)
+    db.session.commit()
+
+    return jsonify(response)
+
+# ---------------- Callback endpoint ----------------
+@tenant_bp.route('/mpesa_callback', methods=['POST'])
+def mpesa_callback():
+    """Safaricom will POST transaction results here"""
+    data = request.get_json()
+    try:
+        result_code = data['Body']['stkCallback']['ResultCode']
+        checkout_request_id = data['Body']['stkCallback']['CheckoutRequestID']
+
+        # Find the pending payment in DB
+        payment = Payment.query.filter_by(status='Pending').order_by(Payment.date.desc()).first()
+
+        if payment:
+            if result_code == 0:
+                payment.status = 'Paid'
+            else:
+                payment.status = 'Failed'
+            db.session.commit()
+    except Exception as e:
+        current_app.logger.error(f"MPESA callback error: {str(e)}")
+    return jsonify({"ResultCode": 0, "ResultDesc": "Accepted"})
+
 
 @tenant_bp.route('/dashboard')
 @login_required
@@ -82,13 +175,56 @@ def dashboard():
 
 
 # Make a booking for a house
-@tenant_bp.route('/bookings/<int:house_id>')
+@tenant_bp.route('/book/<int:house_id>', methods=['GET', 'POST'])
 @login_required
 def bookings(house_id):
-    booking = Booking(tenant_id=current_user.id, house_id=house_id, status='pending')
-    db.session.add(booking)
-    db.session.commit()
-    return redirect(url_for('tenant.dashboard'))
+    # 🏠 Fetch the house details
+    house = House.query.get_or_404(house_id)
+
+    # ✅ Initialize Booking Form
+    form = BookingForm()
+
+    if form.validate_on_submit():
+        # 🗓️ Get move-in date safely
+        move_in_date = form.move_in_date.data
+
+        # 🧾 Create the booking
+        booking = Booking(
+            tenant_id=current_user.id,
+            house_id=house.id,
+            first_name=form.first_name.data,
+            last_name=form.last_name.data,
+            email=form.email.data,
+            phone=form.phone.data,
+            current_address=form.current_address.data,
+            move_in_date=move_in_date,  # ✅ Tenant's chosen move-in date
+            lease_term=form.lease_term.data,
+            special_requests=form.special_requests.data,
+            occupants_count=form.occupants_count.data,
+            pets=form.pets.data,
+            emergency_contact_name=form.emergency_contact_name.data,
+            emergency_contact_phone=form.emergency_contact_phone.data,
+            emergency_contact_relationship=form.emergency_contact_relationship.data,
+            payment_method=form.payment_method.data,
+            status="Pending",
+            created_at=date.today()
+        )
+
+        # 💾 Save to database
+        db.session.add(booking)
+        db.session.commit()
+
+        flash("✅ Booking request submitted successfully!", "success")
+
+        # ✅ Redirect back to property details
+        return redirect(url_for('tenant.property_details', house_id=house.id))
+
+    # 📄 Render booking form page
+    return render_template('tenant/book_property.html', house=house, form=form)
+
+
+
+
 
 @tenant_bp.route("/properties", methods=['GET'])
 def properties():
@@ -104,6 +240,23 @@ def properties():
         houses = House.query.all()
     print(f"Found houses: {len(houses)}")
     return render_template('index.html', houses=houses, query=query, is_guest=is_guest)
+
+@tenant_bp.route('/booking/<int:booking_id>')
+@login_required
+def booking_page(booking_id):
+    # Fetch booking from database
+    booking = Booking.query.get_or_404(booking_id)
+
+    # Ensure the current tenant owns this booking
+    if booking.tenant_id != current_user.id:
+        os.abort(403)
+
+    # Convert to dictionary for template
+    booking_data = booking_to_dict(booking)
+
+    # Render template
+    return render_template('tenant/tenant_booking_page.html', booking=booking_data)
+
 
 
 @tenant_bp.route('/upload_document', methods=['GET', 'POST'])
@@ -149,6 +302,58 @@ def announcements():
 
 
 
+@tenant_bp.route('/lease/<int:id>')
+def lease(id):
+    # Your logic here
+    return render_template('lease.html', lease_id=id)
+
+
+# -----------------------------
+# Process Payment (Mock Gateway)
+# -----------------------------
+@tenant_bp.route('/process_payment/<int:payment_id>', methods=['GET', 'POST'])
+@login_required
+def process_payment(payment_id):
+    payment = Payment.query.filter_by(id=payment_id, tenant_id=current_user.id).first_or_404()
+
+    if request.method == 'POST':
+        # Simulate payment success (replace with real gateway integration)
+        payment.status = 'Paid'
+        payment.date = datetime.utcnow()
+        db.session.commit()
+
+        # Generate receipt
+        receipt = receipt(
+            tenant_id=current_user.id,
+            payment_id=payment.id,
+            amount=payment.amount,
+            date=datetime.utcnow()
+        )
+        db.session.add(receipt)
+        db.session.commit()
+
+        flash("Payment successful! Receipt generated.", "success")
+        return redirect(url_for('tenant.receipts'))
+
+    return render_template('process_payment.html', payment=payment)
+
+# -----------------------------
+# Payment History
+# -----------------------------
+@tenant_bp.route('/payment_history')
+@login_required
+def payment_history():
+    payments = Payment.query.filter_by(tenant_id=current_user.id).order_by(Payment.date.desc()).all()
+    return render_template('tenant/payment_history.html', payments=payments)
+# -----------------------------
+# Receipts
+# -----------------------------
+@tenant_bp.route('/receipts')
+@login_required
+def receipts():
+    receipts = receipts.query.filter_by(tenant_id=current_user.id).order_by(receipts.date.desc()).all()
+    return render_template('tenant/receipts.html', receipts=receipts)
+
 @tenant_bp.route('/submit_request', methods=['GET', 'POST'])
 @login_required
 def submit_request():
@@ -172,11 +377,24 @@ def submit_request():
 
     return render_template('submit_request.html')
 
+# -----------------------------
+# Pay Rent - Submit Payment
+# -----------------------------
 @tenant_bp.route('/pay_rent', methods=['GET', 'POST'])
 @login_required
 def pay_rent():
     if request.method == 'POST':
-        amount = request.form.get('amount')
+        # Validate amount
+        try:
+            amount = float(request.form.get('amount'))
+            if amount <= 0:
+                flash("Invalid payment amount.", "danger")
+                return redirect(url_for('tenant.pay_rent'))
+        except (ValueError, TypeError):
+            flash("Please enter a valid numeric amount.", "danger")
+            return redirect(url_for('tenant.pay_rent'))
+
+        # Create payment record with 'Pending' status
         payment = Payment(
             tenant_id=current_user.id,
             amount=amount,
@@ -185,8 +403,9 @@ def pay_rent():
         )
         db.session.add(payment)
         db.session.commit()
-        flash("Rent payment submitted!", "success")
-        return redirect(url_for('tenant.dashboard'))
+
+        flash("Payment initiated. Please complete the payment.", "success")
+        return redirect(url_for('tenant.process_payment', payment_id=payment.id))
 
     return render_template('pay_rent.html')
 
@@ -276,7 +495,7 @@ def move_out(booking_id):
 @login_required
 def all_bookings():
     bookings = Booking.query.filter_by(tenant_id=current_user.id).all()
-    return render_template('tenant_bookings.html', bookings=bookings)
+    return render_template('tenant/tenant_bookings.html', bookings=bookings)
 
 @tenant_bp.route('/messages')
 @login_required
@@ -350,3 +569,16 @@ def settings():
 def view_notifications():
     # Fetch notifications
     return render_template('tenant/notifications.html')
+
+
+# ✅ Tenant Property Details Route
+@tenant_bp.route('/property/<int:house_id>', methods=['GET'])
+@login_required
+def property_details(house_id):
+    # Fetch house record
+    house = House.query.get_or_404(house_id)
+
+    # Render property details page for tenants
+    return render_template('tenant/property_details.html', property=house)
+
+

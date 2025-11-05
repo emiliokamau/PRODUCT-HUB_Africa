@@ -1,7 +1,7 @@
 from extensions import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import date, datetime
 
 
 class User(db.Model, UserMixin):
@@ -17,9 +17,12 @@ class User(db.Model, UserMixin):
     profile_picture = db.Column(db.String(255), nullable=True)
     language = db.Column(db.String(10), default='en')
 
+    first_name = db.Column(db.String(100))
+    last_name = db.Column(db.String(100))
+    profile_picture = db.Column(db.String(255))
+
     # Relationships
     houses = db.relationship('House', backref='owner', lazy=True)
-    bookings = db.relationship('Booking', backref='tenant', lazy=True)
     sent_messages = db.relationship(
         'Message',
         foreign_keys='Message.sender_id',
@@ -65,41 +68,153 @@ class User(db.Model, UserMixin):
 
 
 class House(db.Model):
+    __tablename__ = "house"
+
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200))
-    description = db.Column(db.Text)
-    category = db.Column(db.String(50))
-    image_urls = db.Column(db.Text)
-    location = db.Column(db.String(255))
-    lat = db.Column(db.Float)
-    lng = db.Column(db.Float)
-    available = db.Column(db.Boolean, default=True)
-    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
-    address_line1 = db.Column(db.String(255))
-    address_line2 = db.Column(db.String(255))
-    city = db.Column(db.String(100))
-    state_province = db.Column(db.String(100))
-    postal_code = db.Column(db.String(20))
-    country = db.Column(db.String(100))
+    # Basic info
+    title = db.Column(db.String(200), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    property_type = db.Column(db.String(50), nullable=False)
 
-    rent_amount = db.Column(db.Float)
-    property_type = db.Column(db.String(50))
-    bedrooms = db.Column(db.Integer)
-    bathrooms = db.Column(db.Float)
-    size = db.Column(db.String(50))
-    lease_term = db.Column(db.String(50))
-    availability_date = db.Column(db.Date)
+    # Multiple image paths stored as comma-separated string
+    image_urls = db.Column(db.Text, nullable=False, default='/static/images/default-house.jpg')
 
-    utilities = db.Column(db.Text)
-    pets_allowed = db.Column(db.String(10))
-    pet_restrictions = db.Column(db.String(255))
-    parking_availability = db.Column(db.String(50))
-    furnished_status = db.Column(db.String(50))
-    amenities = db.Column(db.Text)
-    security_deposit = db.Column(db.Float)
-    smoking_policy = db.Column(db.String(50))
-    accessibility_features = db.Column(db.Text)
+    location = db.Column(db.String(255), nullable=False)
+    available = db.Column(db.Boolean, default=True, nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+    # Address
+    address_line1 = db.Column(db.String(255), nullable=False)
+    address_line2 = db.Column(db.String(255), nullable=True)  # Optional
+    city = db.Column(db.String(100), nullable=False)
+    state_province = db.Column(db.String(100), nullable=False)
+    postal_code = db.Column(db.String(20), nullable=False)
+    country = db.Column(db.String(100), nullable=False)
+
+    # Property details
+    rent_amount = db.Column(db.Float, nullable=False)
+    bedrooms = db.Column(db.Integer, nullable=False)
+    bathrooms = db.Column(db.Float, nullable=False)
+    size = db.Column(db.String(50), nullable=False)
+    lease_term = db.Column(db.String(50), nullable=False)
+    availability_date = db.Column(db.Date, nullable=False, default=date.today)
+
+    # Features
+    utilities = db.Column(db.Text, nullable=False)
+    pets_allowed = db.Column(db.String(10), nullable=False)
+    pet_restrictions = db.Column(db.String(255), nullable=True)  # Optional
+    parking_availability = db.Column(db.String(50), nullable=False)
+    furnished_status = db.Column(db.String(50), nullable=False)
+    amenities = db.Column(db.Text, nullable=False)
+    security_deposit = db.Column(db.Float, nullable=False)
+    smoking_policy = db.Column(db.String(50), nullable=False)
+    accessibility_features = db.Column(db.Text, nullable=True)  # Optional
+
+    def get_image_list(self):
+        """Return a list of image URLs from the comma-separated string."""
+        return self.image_urls.split(',') if self.image_urls else []
+    
+
+# models.py
+
+class PaymentMethods(db.Model):
+    __tablename__ = 'payment_methods'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    house_id = db.Column(db.Integer, db.ForeignKey('house.id'), nullable=False)
+    
+    # M-Pesa Till Number
+    mpesa_till_number = db.Column(db.String(10))
+    mpesa_business_name = db.Column(db.String(100))
+    mpesa_enabled = db.Column(db.Boolean, default=False)
+    
+    # Paybill Number``
+    paybill_number = db.Column(db.String(10))
+    paybill_account_number = db.Column(db.String(50))
+    paybill_enabled = db.Column(db.Boolean, default=False)
+    
+    # Bank Transfer
+    bank_name = db.Column(db.String(100))
+    bank_branch = db.Column(db.String(100))
+    account_name = db.Column(db.String(100))
+    account_number = db.Column(db.String(50))
+    bank_enabled = db.Column(db.Boolean, default=False)
+    
+    # M-Pesa Send Money
+    send_money_phone = db.Column(db.String(20))
+    send_money_name = db.Column(db.String(100))
+    send_money_enabled = db.Column(db.Boolean, default=False)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    def __repr__(self):
+        return f'<PaymentMethods {self.id}>'
+    
+
+class PaymentTransaction(db.Model):
+    __tablename__ = "payment_transactions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    booking_id = db.Column(db.Integer, db.ForeignKey('booking.id'), nullable=False)
+    house_id = db.Column(db.Integer, db.ForeignKey('house.id'), nullable=False)
+    phone_number = db.Column(db.String(20))
+    amount = db.Column(db.Float)
+    mpesa_receipt = db.Column(db.String(100))
+    result_code = db.Column(db.String(10))
+    status = db.Column(db.String(20), default="Pending")  # Pending, Success, Failed
+    transaction_time = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<PaymentTransaction {self.mpesa_receipt}>"
+
+
+    
+class Booking(db.Model):
+    __tablename__ = "bookings"
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    # ✅ FIX: Only one FK linking to User table
+    tenant_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=True)
+
+    tenant = db.relationship("User", backref="bookings")
+
+    house_id = db.Column(db.Integer, db.ForeignKey("house.id"), nullable=False)
+
+    house = db.relationship("House", backref="bookings", lazy=True)
+
+    move_in_date = db.Column(db.Date, nullable=False)
+    stay_duration = db.Column(db.String(50))
+    special_requests = db.Column(db.Text)
+    status = db.Column(db.String(50), default="Pending")
+    created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(150), nullable=False)
+    phone = db.Column(db.String(50), nullable=False)
+    current_address = db.Column(db.String(255))
+
+    lease_start_date = db.Column(db.Date)
+    lease_term = db.Column(db.String(20))
+    occupants_count = db.Column(db.Integer)
+    pets = db.Column(db.String(10))
+
+    emergency_contact_name = db.Column(db.String(100))
+    emergency_contact_phone = db.Column(db.String(50))
+    emergency_contact_relationship = db.Column(db.String(100))
+
+    deposit_paid = db.Column(db.Boolean, default=False)
+
+    payment_method = db.Column(db.String(50))
+    agree_terms = db.Column(db.Boolean, default=False)
+    payment_status = db.Column(db.String(20), default="Pending")  # Pending, Paid, Failed
+
+
+
+
     
 
 class ServiceRequest(db.Model):
@@ -149,13 +264,23 @@ class Review(db.Model):
     service_provider = db.relationship('ServiceProvider', backref='reviews')
 
 
-class Booking(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    tenant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    house_id = db.Column(db.Integer, db.ForeignKey('house.id'))
-    status = db.Column(db.String(50))
-    lease_start_date = db.Column(db.Date)
-    lease_end_date = db.Column(db.Date)
+lease_start_date = db.Column(db.Date, nullable=False)
+lease_term = db.Column(db.String(50), nullable=False)
+
+occupants_count = db.Column(db.Integer, nullable=False)
+pets = db.Column(db.String(10), nullable=True)
+
+emergency_contact_name = db.Column(db.String(100), nullable=False)
+emergency_contact_phone = db.Column(db.String(50), nullable=False)
+emergency_contact_relationship = db.Column(db.String(50), nullable=False)
+
+payment_method = db.Column(db.String(50), nullable=False)
+first_name = db.Column(db.String(100), nullable=False)
+last_name = db.Column(db.String(100), nullable=False)
+email = db.Column(db.String(100), nullable=False)
+phone = db.Column(db.String(50), nullable=False)
+current_address = db.Column(db.String(255), nullable=False)
+
 
 class Document(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -196,9 +321,12 @@ class Payment(db.Model):
 class MaintenanceRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tenant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    house_id = db.Column(db.Integer, db.ForeignKey('house.id'))  # 🏡 link to house
     issue = db.Column(db.String(200), nullable=False)
     status = db.Column(db.String(20), default='Open')
     date_submitted = db.Column(db.DateTime, default=db.func.current_timestamp())
+
+    house = db.relationship('House', backref='maintenance_requests')
 
 
 class Notification(db.Model):
@@ -227,6 +355,17 @@ class ChatMessage(db.Model):
     # Relationships (use back_populates to avoid conflicts)
     user = db.relationship('User', foreign_keys=[user_id], back_populates='sent_chat_messages')
     agent = db.relationship('User', foreign_keys=[support_agent_id], back_populates='received_chat_messages')
+
+class Receipt(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'))
+    amount = db.Column(db.Float, nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+
+    tenant = db.relationship('User', backref='receipts')
+    payment = db.relationship('Payment', backref='receipt')
+
 
 
 # ----------------- SupportTicket -----------------

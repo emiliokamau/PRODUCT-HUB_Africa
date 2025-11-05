@@ -1,0 +1,1210 @@
+{% extends "base.html" %} 
+{% block title %}Submit Maintenance Request{% endblock %}
+
+{% block content %}
+
+<style>
+  :root {
+    --primary-color: #2563eb;
+    --secondary-color: #4f46e5;
+    --accent-color: #f59e0b;
+    --dark-color: #1f2937;
+    --light-color: #f9fafb;
+    --white-color: #ffffff;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #3b82f6;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    --border-radius: 12px;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--light-color);
+    color: var(--dark-color);
+    line-height: 1.6;
+  }
+
+  /* Main Content */
+  .main-content {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Page Header */
+  .page-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: var(--border-radius);
+    padding: 30px;
+    color: var(--white-color);
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(100px, -100px);
+  }
+
+  .page-header-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .page-subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+  }
+
+  /* Alert Styles */
+  .alert {
+    padding: 15px 20px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .alert-success {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+    border-left: 4px solid var(--success-color);
+  }
+
+  .alert-danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+    border-left: 4px solid var(--danger-color);
+  }
+
+  .alert-info {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--info-color);
+    border-left: 4px solid var(--info-color);
+  }
+
+  .alert-warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+    border-left: 4px solid var(--warning-color);
+  }
+
+  .alert-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0.7;
+  }
+
+  .alert-close:hover {
+    opacity: 1;
+  }
+
+  /* Content Grid */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+  }
+
+  /* Content Cards */
+  .content-card {
+    background-color: var(--white-color);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+  }
+
+  .content-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-5px);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--dark-color);
+  }
+
+  .card-action {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+
+  .card-body {
+    color: #666;
+  }
+
+  /* Forms */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--dark-color);
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    font-size: 0.95rem;
+    transition: var(--transition);
+  }
+
+  .form-control:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  }
+
+  .form-control.error {
+    border-color: var(--danger-color);
+  }
+
+  .error-message {
+    color: var(--danger-color);
+    font-size: 0.85rem;
+    margin-top: 5px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+
+  /* Textarea */
+  .form-control-textarea {
+    min-height: 120px;
+    resize: vertical;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.95rem;
+    gap: 8px;
+  }
+
+  .btn i {
+    font-size: 1rem;
+  }
+
+  .btn-primary {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+  }
+
+  .btn-primary:hover {
+    background-color: #1d4ed8;
+  }
+
+  .btn-secondary {
+    background-color: var(--secondary-color);
+    color: var(--white-color);
+  }
+
+  .btn-secondary:hover {
+    background-color: #4338ca;
+  }
+
+  .btn-danger {
+    background-color: var(--danger-color);
+    color: var(--white-color);
+  }
+
+  .btn-danger:hover {
+    background-color: #dc2626;
+  }
+
+  .btn-outline {
+    background-color: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+  }
+
+  .btn-outline:hover {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+  }
+
+  .btn-sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+
+  .btn-block {
+    display: block;
+    width: 100%;
+  }
+
+  /* File Upload */
+  .file-upload {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    width: 100%;
+  }
+
+  .file-upload input[type=file] {
+    position: absolute;
+    left: -9999px;
+  }
+
+  .file-upload-label {
+    display: block;
+    padding: 12px 15px;
+    border: 2px dashed #ddd;
+    border-radius: var(--border-radius);
+    background-color: var(--light-color);
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .file-upload-label:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(37, 99, 235, 0.05);
+  }
+
+  .file-upload-label i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+  }
+
+  .file-upload-text {
+    color: var(--dark-color);
+    font-weight: 500;
+  }
+
+  .file-upload-hint {
+    color: #666;
+    font-size: 0.85rem;
+    margin-top: 5px;
+  }
+
+  .file-preview {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background-color: var(--light-color);
+    border-radius: var(--border-radius);
+  }
+
+  .file-preview i {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+  }
+
+  .file-preview-info {
+    flex: 1;
+  }
+
+  .file-preview-name {
+    font-weight: 500;
+    color: var(--dark-color);
+  }
+
+  .file-preview-size {
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  .file-preview-remove {
+    color: var(--danger-color);
+    cursor: pointer;
+  }
+
+  /* Priority Levels */
+  .priority-levels {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .priority-option {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid #eee;
+    border-radius: var(--border-radius);
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .priority-option:hover {
+    transform: translateY(-2px);
+  }
+
+  .priority-option.selected {
+    border-color: var(--primary-color);
+    background-color: rgba(37, 99, 235, 0.05);
+  }
+
+  .priority-option.low.selected {
+    border-color: var(--success-color);
+    background-color: rgba(16, 185, 129, 0.05);
+  }
+
+  .priority-option.medium.selected {
+    border-color: var(--warning-color);
+    background-color: rgba(245, 158, 11, 0.05);
+  }
+
+  .priority-option.high.selected {
+    border-color: var(--danger-color);
+    background-color: rgba(239, 68, 68, 0.05);
+  }
+
+  .priority-option i {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+  }
+
+  .priority-option.low i {
+    color: var(--success-color);
+  }
+
+  .priority-option.medium i {
+    color: var(--warning-color);
+  }
+
+  .priority-option.high i {
+    color: var(--danger-color);
+  }
+
+  .priority-option span {
+    font-weight: 500;
+    color: var(--dark-color);
+  }
+
+  /* Issue Categories */
+  .issue-categories {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .issue-category {
+    padding: 15px;
+    border: 2px solid #eee;
+    border-radius: var(--border-radius);
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .issue-category:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary-color);
+  }
+
+  .issue-category.selected {
+    border-color: var(--primary-color);
+    background-color: rgba(37, 99, 235, 0.05);
+  }
+
+  .issue-category i {
+    font-size: 1.5rem;
+    margin-bottom: 5px;
+    color: var(--primary-color);
+  }
+
+  .issue-category span {
+    font-weight: 500;
+    color: var(--dark-color);
+  }
+
+  /* Request History */
+  .request-item {
+    padding: 15px;
+    border-radius: var(--border-radius);
+    background-color: var(--light-color);
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .request-info {
+    flex: 1;
+  }
+
+  .request-title {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 5px;
+  }
+
+  .request-date {
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  .request-status {
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+  }
+
+  .status-pending {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+  }
+
+  .status-in-progress {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--info-color);
+  }
+
+  .status-completed {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+  }
+
+  .status-rejected {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+  }
+
+  /* Property Info */
+  .property-info {
+    background-color: var(--light-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+
+  .property-info-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .property-info-header i {
+    font-size: 1.2rem;
+    color: var(--primary-color);
+  }
+
+  .property-info-header h4 {
+    font-weight: 600;
+    color: var(--dark-color);
+  }
+
+  .property-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .property-detail {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .property-detail i {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+  }
+
+  .property-detail span {
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  /* Loading Spinner */
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Responsive Styles */
+  @media (max-width: 992px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+    
+    .priority-levels {
+      flex-direction: column;
+    }
+    
+    .issue-categories {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .page-title {
+      font-size: 2rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .page-header {
+      padding: 20px;
+    }
+    
+    .page-title {
+      font-size: 1.5rem;
+    }
+    
+    .content-card {
+      padding: 15px;
+    }
+    
+    .card-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    
+    .issue-categories {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<!-- Main Content -->
+<main class="main-content">
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if
+  messages %} {% for category, message in messages %}
+  <div
+    class="alert alert-{{ 'danger' if category == 'error' else 'success' }}"
+  >
+    <i
+      class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}"
+    ></i>
+    <span>{{ message }}</span>
+    <button class="alert-close">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  {% endfor %} {% endif %} {% endwith %}
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-content">
+      <h1 class="page-title">Submit Maintenance Request</h1>
+      <p class="page-subtitle">
+        Report issues with your property and track their resolution
+      </p>
+    </div>
+  </div>
+
+  <!-- Content Grid -->
+  <div class="content-grid">
+    <!-- Request Form -->
+    <div class="content-card">
+      <div class="card-header">
+        <h3 class="card-title">New Maintenance Request</h3>
+      </div>
+      <div class="card-body">
+        <!-- Property Info -->
+        <div class="property-info">
+          <div class="property-info-header">
+            <i class="fas fa-home"></i>
+            <h4>Property Information</h4>
+          </div>
+          <div class="property-details">
+            <div class="property-detail">
+              <i class="fas fa-map-marker-alt"></i>
+              <span>{{ property.address_line1 if property else 'N/A' }}</span>
+            </div>
+            <div class="property-detail">
+              <i class="fas fa-door-open"></i>
+              <span>Unit: {{ property.unit_number if property else 'N/A' }}</span>
+            </div>
+            <div class="property-detail">
+              <i class="fas fa-bed"></i>
+              <span>{{ property.bedrooms if property else 'N/A' }} Bedroom(s)</span>
+            </div>
+            <div class="property-detail">
+              <i class="fas fa-bath"></i>
+              <span>{{ property.bathrooms if property else 'N/A' }} Bathroom(s)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Request Form -->
+        <form id="requestForm" method="POST" action="{{ url_for('tenant.submit_request') }}" enctype="multipart/form-data">
+          <input type="hidden" name="property_id" value="{{ property.id if property else '' }}">
+          
+          <!-- Issue Category -->
+          <div class="form-group">
+            <label class="form-label">Issue Category</label>
+            <div class="issue-categories">
+              <div class="issue-category" data-category="plumbing" onclick="selectCategory('plumbing')">
+                <i class="fas fa-wrench"></i>
+                <span>Plumbing</span>
+              </div>
+              <div class="issue-category" data-category="electrical" onclick="selectCategory('electrical')">
+                <i class="fas fa-bolt"></i>
+                <span>Electrical</span>
+              </div>
+              <div class="issue-category" data-category="hvac" onclick="selectCategory('hvac')">
+                <i class="fas fa-wind"></i>
+                <span>HVAC</span>
+              </div>
+              <div class="issue-category" data-category="appliance" onclick="selectCategory('appliance')">
+                <i class="fas fa-blender"></i>
+                <span>Appliance</span>
+              </div>
+              <div class="issue-category" data-category="pest" onclick="selectCategory('pest')">
+                <i class="fas fa-bug"></i>
+                <span>Pest Control</span>
+              </div>
+              <div class="issue-category" data-category="structural" onclick="selectCategory('structural')">
+                <i class="fas fa-home"></i>
+                <span>Structural</span>
+              </div>
+              <div class="issue-category" data-category="other" onclick="selectCategory('other')">
+                <i class="fas fa-ellipsis-h"></i>
+                <span>Other</span>
+              </div>
+            </div>
+            <input type="hidden" id="issueCategory" name="category" value="">
+            <div id="categoryError" class="error-message"></div>
+          </div>
+
+          <!-- Priority Level -->
+          <div class="form-group">
+            <label class="form-label">Priority Level</label>
+            <div class="priority-levels">
+              <div class="priority-option low" data-priority="low" onclick="selectPriority('low')">
+                <i class="fas fa-arrow-down"></i>
+                <span>Low</span>
+              </div>
+              <div class="priority-option medium" data-priority="medium" onclick="selectPriority('medium')">
+                <i class="fas fa-minus"></i>
+                <span>Medium</span>
+              </div>
+              <div class="priority-option high" data-priority="high" onclick="selectPriority('high')">
+                <i class="fas fa-arrow-up"></i>
+                <span>High</span>
+              </div>
+            </div>
+            <input type="hidden" id="priorityLevel" name="priority" value="">
+            <div id="priorityError" class="error-message"></div>
+          </div>
+
+          <!-- Issue Description -->
+          <div class="form-group">
+            <label class="form-label" for="issueDescription">Issue Description</label>
+            <textarea id="issueDescription" name="description" class="form-control form-control-textarea" placeholder="Please describe the issue in detail..." required></textarea>
+            <div id="descriptionError" class="error-message"></div>
+          </div>
+
+          <!-- Preferred Date -->
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="preferredDate">Preferred Date</label>
+              <input type="date" id="preferredDate" name="preferred_date" class="form-control">
+              <div id="dateError" class="error-message"></div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="preferredTime">Preferred Time</label>
+              <input type="time" id="preferredTime" name="preferred_time" class="form-control">
+              <div id="timeError" class="error-message"></div>
+            </div>
+          </div>
+
+          <!-- Permission to Enter -->
+          <div class="form-group">
+            <label class="form-label">Permission to Enter</label>
+            <select id="permissionToEnter" name="permission_to_enter" class="form-control">
+              <option value="anytime">Anytime</option>
+              <option value="weekdays">Weekdays Only</option>
+              <option value="weekends">Weekends Only</option>
+              <option value="appointment">By Appointment Only</option>
+              <option value="not_home">When I'm Not Home</option>
+            </select>
+          </div>
+
+          <!-- Contact Number -->
+          <div class="form-group">
+            <label class="form-label" for="contactNumber">Contact Number</label>
+            <input type="tel" id="contactNumber" name="contact_number" class="form-control" placeholder="0712345678" value="{{ current_user.phone if current_user.phone else '' }}">
+            <div id="contactError" class="error-message"></div>
+          </div>
+
+          <!-- File Upload -->
+          <div class="form-group">
+            <label class="form-label">Upload Photos (Optional)</label>
+            <div class="file-upload">
+              <input type="file" id="fileInput" name="photos" multiple accept="image/*" onchange="handleFileSelect(event)">
+              <label for="fileInput" class="file-upload-label">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <div class="file-upload-text">Click to upload or drag and drop</div>
+                <div class="file-upload-hint">Supports: JPG, PNG, GIF (Max. 5MB)</div>
+              </label>
+            </div>
+            <div id="filePreview"></div>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+            <i class="fas fa-paper-plane"></i> Submit Request
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div>
+      <!-- Recent Requests -->
+      <div class="content-card" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <h3 class="card-title">Recent Requests</h3>
+          <a href="{{ url_for('tenant.requests') }}" class="card-action">View All</a>
+        </div>
+        <div class="card-body">
+          {% if recent_requests %}
+          {% for request in recent_requests %}
+          <div class="request-item">
+            <div class="request-info">
+              <div class="request-title">{{ request.issue }}</div>
+              <div class="request-date">{{ request.date_submitted.strftime('%b %d, %Y') if request.date_submitted else 'N/A' }}</div>
+            </div>
+            <div>
+              <span class="request-status status-{{ request.status.replace('-', '') }}">
+                {{ request.status|replace('-', ' ')|title }}
+              </span>
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <p>No recent requests found.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Emergency Contact -->
+      <div class="content-card" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <h3 class="card-title">Emergency Contact</h3>
+        </div>
+        <div class="card-body">
+          <div class="property-details">
+            <div class="property-detail">
+              <i class="fas fa-phone-alt"></i>
+              <span>{{ landlord.phone if landlord else 'N/A' }}</span>
+            </div>
+            <div class="property-detail">
+              <i class="fas fa-envelope"></i>
+              <span>{{ landlord.email if landlord else 'N/A' }}</span>
+            </div>
+          </div>
+          {% if landlord %}
+          <a href="{{ url_for('tenant.chat', landlord_id=landlord.id) }}" class="btn btn-primary btn-block">
+            <i class="fas fa-comment"></i> Contact Landlord
+          </a>
+          {% else %}
+          <a href="#" class="btn btn-secondary btn-block disabled">
+            <i class="fas fa-comment"></i> No Landlord Assigned
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Quick Links</h3>
+        </div>
+        <div class="card-body">
+          <a href="{{ url_for('tenant.requests') }}" class="btn btn-outline btn-block" style="margin-bottom: 10px;">
+            <i class="fas fa-list"></i> All Requests
+          </a>
+          <a href="{{ url_for('tenant.pay_rent') }}" class="btn btn-outline btn-block" style="margin-bottom: 10px;">
+            <i class="fas fa-money-bill-wave"></i> Pay Rent
+          </a>
+          <a href="{{ url_for('tenant.documents') }}" class="btn btn-outline btn-block">
+            <i class="fas fa-file-alt"></i> Documents
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Global variables
+  let selectedCategory = '';
+  let selectedPriority = '';
+  let uploadedFiles = [];
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Maintenance request page loaded');
+    
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('preferredDate').setAttribute('min', today);
+  });
+
+  // Category selection
+  function selectCategory(category) {
+    console.log('Selecting category:', category);
+    
+    // Update global variable
+    selectedCategory = category;
+    
+    // Update hidden input
+    document.getElementById('issueCategory').value = category;
+    
+    // Remove selected class from all categories
+    document.querySelectorAll('.issue-category').forEach(el => {
+      el.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked category
+    const selectedElement = document.querySelector(`.issue-category[data-category="${category}"]`);
+    if (selectedElement) {
+      selectedElement.classList.add('selected');
+    }
+    
+    // Clear error
+    document.getElementById('categoryError').textContent = '';
+  }
+
+  // Priority selection
+  function selectPriority(priority) {
+    console.log('Selecting priority:', priority);
+    
+    // Update global variable
+    selectedPriority = priority;
+    
+    // Update hidden input
+    document.getElementById('priorityLevel').value = priority;
+    
+    // Remove selected class from all priorities
+    document.querySelectorAll('.priority-option').forEach(el => {
+      el.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked priority
+    const selectedElement = document.querySelector(`.priority-option[data-priority="${priority}"]`);
+    if (selectedElement) {
+      selectedElement.classList.add('selected');
+    }
+    
+    // Clear error
+    document.getElementById('priorityError').textContent = '';
+  }
+
+  // File handling
+  function handleFileSelect(event) {
+    const files = event.target.files;
+    const filePreview = document.getElementById('filePreview');
+    
+    // Clear previous previews
+    filePreview.innerHTML = '';
+    uploadedFiles = [];
+    
+    // Check file limit
+    if (files.length > 5) {
+      showAlert('danger', 'You can upload a maximum of 5 files.');
+      event.target.value = '';
+      return;
+    }
+    
+    // Process each file
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        showAlert('danger', `File "${file.name}" exceeds the 5MB size limit.`);
+        continue;
+      }
+      
+      // Check file type
+      if (!file.type.match('image.*')) {
+        showAlert('danger', `File "${file.name}" is not a valid image file.`);
+        continue;
+      }
+      
+      // Add to uploaded files array
+      uploadedFiles.push(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const preview = document.createElement('div');
+        preview.className = 'file-preview';
+        preview.innerHTML = `
+          <i class="fas fa-image"></i>
+          <div class="file-preview-info">
+            <div class="file-preview-name">${file.name}</div>
+            <div class="file-preview-size">${formatFileSize(file.size)}</div>
+          </div>
+          <i class="fas fa-times file-preview-remove" onclick="removeFile(${i})"></i>
+        `;
+        filePreview.appendChild(preview);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Remove file from preview
+  function removeFile(index) {
+    uploadedFiles.splice(index, 1);
+    
+    // Rebuild file input
+    const fileInput = document.getElementById('fileInput');
+    const dt = new DataTransfer();
+    
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      dt.items.add(uploadedFiles[i]);
+    }
+    
+    fileInput.files = dt.files;
+    
+    // Rebuild preview
+    const filePreview = document.getElementById('filePreview');
+    filePreview.innerHTML = '';
+    
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      const file = uploadedFiles[i];
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const preview = document.createElement('div');
+        preview.className = 'file-preview';
+        preview.innerHTML = `
+          <i class="fas fa-image"></i>
+          <div class="file-preview-info">
+            <div class="file-preview-name">${file.name}</div>
+            <div class="file-preview-size">${formatFileSize(file.size)}</div>
+          </div>
+          <i class="fas fa-times file-preview-remove" onclick="removeFile(${i})"></i>
+        `;
+        filePreview.appendChild(preview);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Format file size
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  // Form validation
+  function validateForm() {
+    let isValid = true;
+    
+    // Clear previous errors
+    document.querySelectorAll('.error-message').forEach(el => {
+      el.textContent = '';
+    });
+    
+    // Validate category
+    if (!selectedCategory) {
+      document.getElementById('categoryError').textContent = 'Please select an issue category';
+      isValid = false;
+    }
+    
+    // Validate priority
+    if (!selectedPriority) {
+      document.getElementById('priorityError').textContent = 'Please select a priority level';
+      isValid = false;
+    }
+    
+    // Validate description
+    const description = document.getElementById('issueDescription').value.trim();
+    if (!description) {
+      document.getElementById('descriptionError').textContent = 'Please describe the issue';
+      isValid = false;
+    } else if (description.length < 10) {
+      document.getElementById('descriptionError').textContent = 'Please provide a more detailed description (at least 10 characters)';
+      isValid = false;
+    }
+    
+    // Validate contact number
+    const contactNumber = document.getElementById('contactNumber').value.trim();
+    if (!contactNumber) {
+      document.getElementById('contactError').textContent = 'Please provide a contact number';
+      isValid = false;
+    } else if (!validatePhoneNumber(contactNumber)) {
+      document.getElementById('contactError').textContent = 'Please enter a valid phone number';
+      isValid = false;
+    }
+    
+    return isValid;
+  }
+
+  // Phone number validation
+  function validatePhoneNumber(number) {
+    // Remove any non-digit characters
+    const cleaned = number.replace(/\D/g, '');
+    
+    // Check if it's a valid Kenyan phone number (9 digits starting with 7)
+    return cleaned.length === 9 && /^7/.test(cleaned);
+  }
+
+  // Show alert
+  function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type}`;
+    alertDiv.innerHTML = `
+      <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+      <span>${message}</span>
+      <button class="alert-close" onclick="this.parentElement.remove()">
+        <i class="fas fa-times"></i>
+      </button>
+    `;
+    
+    // Insert at the top of the main content
+    const mainContent = document.querySelector('.main-content');
+    mainContent.insertBefore(alertDiv, mainContent.firstChild);
+    
+    // Scroll to top
+    window.scrollTo(0, 0);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (alertDiv.parentNode) {
+        alertDiv.remove();
+      }
+    }, 5000);
+  }
+
+  // Form submission
+  document.getElementById('requestForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+    
+    // Show loading state
+    const submitBtn = document.getElementById('submitBtn');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner"></span> Submitting...';
+    
+    // Create FormData to handle file uploads
+    const formData = new FormData(this);
+    
+    // Simulate form submission
+    setTimeout(() => {
+      // Generate request ID
+      const requestId = 'REQ' + Date.now();
+      
+      // Show success message
+      showAlert('success', `Your maintenance request has been submitted successfully! Request ID: ${requestId}. We will notify you once it's reviewed.`);
+      
+      // Reset form
+      this.reset();
+      
+      // Reset selections
+      selectedCategory = '';
+      selectedPriority = '';
+      uploadedFiles = [];
+      
+      // Clear file preview
+      document.getElementById('filePreview').innerHTML = '';
+      
+      // Reset button
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = originalText;
+      
+      // Scroll to top
+      window.scrollTo(0, 0);
+    }, 2000);
+  });
+
+  // Alert close functionality
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('alert-close')) {
+      e.target.parentElement.remove();
+    }
+  });
+</script>
+{% endblock %}

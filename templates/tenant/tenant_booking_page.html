@@ -1,0 +1,1154 @@
+{% extends "base.html" %}
+{% block title %}Booking Details #{{ booking.id }} - HomeHub{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --primary: #4361ee;
+    --primary-dark: #3a0ca3;
+    --secondary: #7209b7;
+    --accent: #f72585;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --success: #06ffa5;
+    --info: #00b4d8;
+    --warning: #ffbe0b;
+    --danger: #e63946;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    --border-radius: 15px;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--light);
+    color: var(--dark);
+    line-height: 1.6;
+  }
+
+  .booking-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .page-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 2.5rem 2rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,133.3C960,128,1056,96,1152,90.7C1248,85,1344,133.3C960,128,1056,96,1152,90.7C1248,85,1344,133.3C960,128,1056,96,1152,90.7C1248,85,1344,133.3C960,128,1056,96,1152,90.7L1392,320L0,320L1392,320L0,320Z"></path></svg>')
+      no-repeat bottom;
+    background-size: cover;
+  }
+
+  .header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .page-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+
+  .booking-id {
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+
+  .booking-status {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+  }
+
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .info-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+  }
+
+  .info-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .card-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+    margin-right: 1rem;
+  }
+
+  .property-icon {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  }
+
+  .tenant-icon {
+    background: linear-gradient(135deg, var(--secondary), var(--accent));
+  }
+
+  .card-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  .info-item {
+    display: flex;
+    margin-bottom: 1rem;
+  }
+
+  .info-label {
+    font-weight: 600;
+    color: #6c757d;
+    width: 40%;
+    padding-right: 1rem;
+  }
+
+  .info-value {
+    width: 60%;
+    color: var(--dark);
+  }
+
+  .payment-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--shadow);
+    margin-top: 2rem;
+  }
+
+  .payment-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .payment-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--success), #00b4d8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+    margin-right: 1rem;
+  }
+
+  .payment-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  .payment-form {
+    margin-bottom: 1.5rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, var(--success), #00b4d8);
+    color: white;
+  }
+
+  .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(6, 255, 165, 0.3);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, var(--danger), #d63447);
+    color: white;
+  }
+
+  .btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(247, 37, 133, 0.3);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+  }
+
+  .btn-outline:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  .status-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .status-pending { 
+    background: rgba(0, 180, 216, 0.1); 
+    color: var(--info);
+  }
+  .status-approved { 
+    background: rgba(6, 255, 165, 0.1); 
+    color: var(--success);
+  }
+  .status-rejected { 
+    background: rgba(247, 37, 133, 0.1); 
+    color: var(--danger);
+  }
+  .status-occupied { 
+    background: rgba(6, 255, 165, 0.1); 
+    color: var(--success);
+  }
+  .status-vacant { 
+    background: rgba(255, 190, 11, 0.1); 
+    color: var(--warning);
+  }
+
+  .payment-status {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    display: none;
+  }
+
+  .payment-status.show {
+    display: block;
+  }
+
+  .payment-status.success {
+    background: rgba(6, 255, 165, 0.1);
+    color: var(--success);
+  }
+
+  .payment-status.error {
+    background: rgba(247, 37, 133, 0.1);
+    color: var(--danger);
+  }
+
+  .payment-status.info {
+    background: rgba(0, 180, 216, 0.1);
+    color: var(--info);
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  .timeline {
+    position: relative;
+    margin-top: 2rem;
+  }
+
+  .timeline-item {
+    display: flex;
+    margin-bottom: 1.5rem;
+  }
+
+  .timeline-marker {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary);
+    margin-right: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .timeline-marker::after {
+    content: "";
+    position: absolute;
+    top: 20px;
+    left: 9px;
+    width: 2px;
+    height: calc(100% + 10px);
+    background: #e9ecef;
+  }
+
+  .timeline-item:last-child .timeline-marker::after {
+    display: none;
+  }
+
+  .timeline-content {
+    flex: 1;
+    padding-bottom: 1rem;
+  }
+
+  .timeline-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .timeline-date {
+    font-size: 0.85rem;
+    color: #6c757d;
+  }
+
+  .property-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: var(--border-radius);
+    margin-bottom: 1.5rem;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  .toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .toast-success {
+    background-color: var(--success);
+    color: white;
+  }
+
+  .toast-error {
+    background-color: var(--danger);
+    color: white;
+  }
+
+  .toast-info {
+    background-color: var(--info);
+    color: white;
+  }
+
+  /* Payment Options Styles */
+  .payment-options {
+    margin-bottom: 1.5rem;
+  }
+
+  .payment-option {
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .payment-option:hover {
+    border-color: var(--primary);
+    background: rgba(67, 97, 238, 0.05);
+  }
+
+  .payment-option.selected {
+    border-color: var(--primary);
+    background: rgba(67, 97, 238, 0.1);
+  }
+
+  .payment-option input[type="radio"] {
+    margin-right: 1rem;
+  }
+
+  .payment-option-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    color: white;
+  }
+
+  .mpesa-icon {
+    background: linear-gradient(135deg, #7C3AED, #5B21B6);
+  }
+
+  .bank-icon {
+    background: linear-gradient(135deg, #0EA5E9, #0284C7);
+  }
+
+  .card-icon {
+    background: linear-gradient(135deg, #10B981, #059669);
+  }
+
+  .payment-option-details {
+    flex: 1;
+  }
+
+  .payment-option-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+
+  .payment-option-desc {
+    font-size: 0.85rem;
+    color: #6c757d;
+  }
+
+  .payment-form-container {
+    display: none;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+  }
+
+  .payment-form-container.active {
+    display: block;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: var(--transition);
+  }
+
+  .form-control:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+    outline: none;
+  }
+
+  .form-select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: var(--transition);
+    background-color: white;
+  }
+
+  .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+    outline: none;
+  }
+
+  .mpesa-instructions {
+    background: rgba(124, 58, 237, 0.1);
+    border-left: 4px solid #7C3AED;
+    padding: 1rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 1rem;
+  }
+
+  .mpesa-instructions h5 {
+    color: #7C3AED;
+    margin-bottom: 0.5rem;
+  }
+
+  .mpesa-instructions ol {
+    margin: 0;
+    padding-left: 1.5rem;
+  }
+
+  .mpesa-instructions li {
+    margin-bottom: 0.5rem;
+  }
+
+  .form-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -15px;
+    margin-left: -15px;
+  }
+
+  .col-md-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  @media (max-width: 992px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .booking-page {
+      padding: 1rem;
+    }
+    
+    .page-title {
+      font-size: 1.8rem;
+    }
+    
+    .header-content {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .booking-status {
+      margin-top: 1rem;
+    }
+    
+    .info-item {
+      flex-direction: column;
+    }
+    
+    .info-label, .info-value {
+      width: 100%;
+    }
+    
+    .action-buttons {
+      flex-direction: column;
+    }
+    
+    .col-md-6 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+  }
+</style>
+
+<div class="booking-page">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div>
+        <h1 class="page-title">Booking Details</h1>
+        <p class="booking-id">Booking ID: #{{ booking.id }}</p>
+      </div>
+      <div class="booking-status status-badge status-{{ booking.status.lower() }}">
+        {{ booking.status }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Content Grid -->
+  <div class="content-grid">
+    <!-- Property Information -->
+    <div class="info-card">
+      <div class="card-header">
+        <div class="card-icon property-icon">
+          <i class="fas fa-home"></i>
+        </div>
+        <h2 class="card-title">Property Information</h2>
+      </div>
+      
+      {% if booking.house_image %}
+      <img src="{{ url_for('static', filename=booking.house_image) }}" alt="{{ booking.house_title }}" class="property-image">
+      {% endif %}
+      
+      <div class="info-item">
+        <div class="info-label">Property:</div>
+        <div class="info-value">{{ booking.house_title }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Address:</div>
+        <div class="info-value">{{ booking.house_address }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Status:</div>
+        <div class="info-value">
+          <span class="status-badge status-{{ booking.status.lower() }}">{{ booking.status }}</span>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Lease Term:</div>
+        <div class="info-value">{{ booking.lease_term or 'Not specified' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Move-in Date:</div>
+        <div class="info-value">{{ booking.move_in_date or 'Not specified' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Special Requests:</div>
+        <div class="info-value">{{ booking.special_requests or 'None' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Created At:</div>
+        <div class="info-value">{{ booking.created_at }}</div>
+      </div>
+    </div>
+
+    <!-- Tenant Information -->
+    <div class="info-card">
+      <div class="card-header">
+        <div class="card-icon tenant-icon">
+          <i class="fas fa-user"></i>
+        </div>
+        <h2 class="card-title">Tenant Information</h2>
+      </div>
+      
+      <div class="info-item">
+        <div class="info-label">Tenant Name:</div>
+        <div class="info-value">{{ booking.tenant_name }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Email:</div>
+        <div class="info-value">{{ booking.tenant_email }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Phone:</div>
+        <div class="info-value">{{ booking.tenant_phone }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Stay Duration:</div>
+        <div class="info-value">{{ booking.stay_duration or 'Not specified' }}</div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Deposit Paid:</div>
+        <div class="info-value">
+          {% if booking.deposit_paid %}
+            <span class="status-badge status-approved">Yes</span>
+          {% else %}
+            <span class="status-badge status-pending">No</span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-label">Payment Method:</div>
+        <div class="info-value">{{ booking.payment_method or 'Not specified' }}</div>
+      </div>
+      
+      <!-- Contact Actions -->
+      <div class="action-buttons">
+        <a href="mailto:{{ booking.tenant_email }}" class="btn btn-outline">
+          <i class="fas fa-envelope"></i> Email
+        </a>
+        <a href="tel:{{ booking.tenant_phone }}" class="btn btn-outline">
+          <i class="fas fa-phone"></i> Call
+        </a>
+        <a href="https://wa.me/{{ booking.tenant_phone | replace(' ', '') | replace('-', '') }}" class="btn btn-success">
+          <i class="fab fa-whatsapp"></i> WhatsApp
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Section -->
+  {% if not booking.deposit_paid %}
+  <div class="payment-section">
+    <div class="payment-header">
+      <div class="payment-icon">
+        <i class="fas fa-credit-card"></i>
+      </div>
+      <h2 class="payment-title">Pay Deposit</h2>
+    </div>
+    
+    <div class="payment-options">
+      <h5>Select Payment Method</h5>
+      
+      <div class="payment-option" data-payment="mpesa">
+        <input type="radio" name="paymentMethod" id="mpesaOption" value="mpesa">
+        <div class="payment-option-icon mpesa-icon">
+          <i class="fas fa-mobile-alt"></i>
+        </div>
+        <div class="payment-option-details">
+          <div class="payment-option-title">M-Pesa</div>
+          <div class="payment-option-desc">Pay using your M-Pesa account</div>
+        </div>
+      </div>
+      
+      <div class="payment-option" data-payment="bank">
+        <input type="radio" name="paymentMethod" id="bankOption" value="bank">
+        <div class="payment-option-icon bank-icon">
+          <i class="fas fa-university"></i>
+        </div>
+        <div class="payment-option-details">
+          <div class="payment-option-title">Bank Transfer</div>
+          <div class="payment-option-desc">Transfer directly to our bank account</div>
+        </div>
+      </div>
+      
+      <div class="payment-option" data-payment="card">
+        <input type="radio" name="paymentMethod" id="cardOption" value="card">
+        <div class="payment-option-icon card-icon">
+          <i class="fas fa-credit-card"></i>
+        </div>
+        <div class="payment-option-details">
+          <div class="payment-option-title">Credit/Debit Card</div>
+          <div class="payment-option-desc">Pay using your Visa or Mastercard</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- M-Pesa form -->
+    <div class="payment-form-container" id="mpesaForm">
+      <input type="hidden" id="booking_id" value="{{ booking.id }}">
+
+      <div class="mpesa-instructions">
+        <h5><i class="fas fa-info-circle"></i> M-Pesa Payment Instructions</h5>
+        <ol>
+          <li>Enter your M-Pesa registered phone number (Kenyan number: 07XX XXX XXX)</li>
+          <li>Click "Send Payment Request" to initiate the payment</li>
+          <li>You will receive a prompt on your phone within 30 seconds</li>
+          <li>Enter your M-Pesa PIN to complete the transaction</li>
+          <li>You will receive a confirmation message once payment is successful</li>
+        </ol>
+        <div class="alert alert-info">
+          <i class="fas fa-exclamation-triangle"></i>
+          <strong>Development Mode:</strong> This is a test environment. No actual money will be deducted.
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="phone_number" class="form-label">
+          <i class="fas fa-mobile-alt"></i> M-Pesa Phone Number
+        </label>
+        <input type="tel" 
+               class="form-control" 
+               id="phone_number"   
+               placeholder="07XX XXX XXX" 
+               pattern="07[0-9]{8}" 
+               maxlength="10"
+               required>
+        <small class="form-text text-muted">
+          <i class="fas fa-info-circle"></i> Enter a valid Kenyan Safaricom number
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="mpesaAmount" class="form-label">
+          <i class="fas fa-money-bill-wave"></i> Amount (KES)
+        </label>
+        <input type="number" 
+               class="form-control" 
+               id="mpesaAmount"
+               value="{{ booking.deposit_amount or '1000' }}" 
+               readonly>
+      </div>
+
+      <button 
+          type="button" 
+          class="btn btn-primary btn-lg" 
+          id="mpesaPayBtn"
+          onclick="processMpesaPayment()">
+          <i class="fas fa-mobile-alt"></i> Send Payment Request
+      </button>
+    </div>
+    
+    <!-- Bank Transfer Form -->
+    <div class="payment-form-container" id="bankForm">
+      <div class="form-group">
+        <label for="accountName" class="form-label">Account Name</label>
+        <input type="text" class="form-control" id="accountName" placeholder="Your full name as appears on bank account" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="bankName" class="form-label">Bank Name</label>
+        <select class="form-select" id="bankName" required>
+          <option value="">Select your bank</option>
+          <option value="kcb">KCB Bank</option>
+          <option value="equity">Equity Bank</option>
+          <option value="cooperative">Cooperative Bank</option>
+          <option value="standard">Standard Chartered</option>
+          <option value="absa">Absa Bank</option>
+          <option value="family">Family Bank</option>
+          <option value="ncba">NCBA Bank</option>
+          <option value="diamond">Diamond Trust Bank</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="transactionRef" class="form-label">Transaction Reference</label>
+        <input type="text" class="form-control" id="transactionRef" placeholder="Enter transaction reference number" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="bankAmount" class="form-label">Amount (KES)</label>
+        <input type="number" class="form-control" id="bankAmount" value="{{ booking.deposit_amount or '10000' }}" readonly>
+      </div>
+      
+      <button type="button" class="btn btn-primary" id="bankPayBtn">
+        <i class="fas fa-university"></i> Verify Payment
+      </button>
+    </div>
+    
+    <!-- Card Payment Form -->
+    <div class="payment-form-container" id="cardForm">
+      <div class="form-group">
+        <label for="cardName" class="form-label">Cardholder Name</label>
+        <input type="text" class="form-control" id="cardName" placeholder="Name on card" required>
+      </div>
+      
+      <div class="form-group">
+        <label for="cardNumber" class="form-label">Card Number</label>
+        <input type="text" class="form-control" id="cardNumber" placeholder="1234 5678 9012 3456" pattern="[0-9]{4} [0-9]{4} [0-9]{4} [0-9]{4}" required>
+      </div>
+      
+      <div class="row">
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="cardExpiry" class="form-label">Expiry Date</label>
+            <input type="text" class="form-control" id="cardExpiry" placeholder="MM/YY" pattern="(0[1-9]|1[0-2])\/[0-9]{2}" required>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group">
+            <label for="cardCvv" class="form-label">CVV</label>
+            <input type="text" class="form-control" id="cardCvv" placeholder="123" pattern="[0-9]{3}" required>
+          </div>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="cardAmount" class="form-label">Amount (KES)</div>
+        <input type="number" class="form-control" id="cardAmount" value="{{ booking.deposit_amount or '10000' }}" readonly>
+      </div>
+      
+      <button type="button" class="btn btn-primary" id="cardPayBtn">
+        <i class="fas fa-credit-card"></i> Process Payment
+      </button>
+    </div>
+    
+    <div id="paymentStatus" class="payment-status"></div>
+  </div>
+  {% else %}
+  <div class="payment-section">
+    <div class="payment-header">
+      <div class="payment-icon">
+        <i class="fas fa-check-circle"></i>
+      </div>
+      <h2 class="payment-title">Payment Status</h2>
+    </div>
+    
+    <div class="payment-status success show">
+      <i class="fas fa-check-circle"></i> Deposit has been paid successfully.
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Timeline -->
+  <div class="info-card">
+    <div class="card-header">
+      <div class="card-icon property-icon">
+        <i class="fas fa-history"></i>
+      </div>
+      <h2 class="card-title">Booking Timeline</h2>
+    </div>
+    
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-marker"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">Booking Created</div>
+          <div class="timeline-date">{{ booking.created_at }}</div>
+        </div>
+      </div>
+      
+      {% if booking.status == 'Approved' %}
+      <div class="timeline-item">
+        <div class="timeline-marker"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">Booking Approved</div>
+          <div class="timeline-date">{{ booking.updated_at or 'Not specified' }}</div>
+        </div>
+      </div>
+      {% endif %}
+      
+      {% if booking.deposit_paid %}
+      <div class="timeline-item">
+        <div class="timeline-marker"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">Deposit Paid</div>
+          <div class="timeline-date">{{ booking.payment_date or 'Not specified' }}</div>
+        </div>
+      </div>
+      {% endif %}
+      
+      {% if booking.move_in_date %}
+      <div class="timeline-item">
+        <div class="timeline-marker"></div>
+        <div class="timeline-content">
+          <div class="timeline-title">Move-in Date</div>
+          <div class="timeline-date">{{ booking.move_in_date }}</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+// Global functions - defined outside DOMContentLoaded
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 100);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+
+function checkMpesaPaymentStatus(paymentId) {
+    if (!paymentId) {
+        console.error('No payment ID provided');
+        return;
+    }
+    
+    fetch(`/api/pay/mpesa/status/${paymentId}`)
+      .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        const paymentStatus = document.getElementById("paymentStatus");
+        
+        if (data.success && data.paid) {
+          paymentStatus.className = 'payment-status success show';
+          paymentStatus.innerHTML = '<i class="fas fa-check-circle"></i> Payment received successfully! Reloading page...';
+          
+          // Show toast notification
+          showToast('Payment received successfully!', 'success');
+          
+          // Reload page after a delay
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        } else if (data.success && !data.paid) {
+          paymentStatus.className = 'payment-status info show';
+          paymentStatus.innerHTML = '<i class="fas fa-clock"></i> Payment is still pending. Please check your phone and complete the transaction.';
+          
+          // Check again after a delay
+          setTimeout(() => {
+            checkMpesaPaymentStatus(paymentId);
+          }, 10000);
+        } else {
+          paymentStatus.className = 'payment-status error show';
+          paymentStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Failed to check payment status.';
+        }
+      })
+      .catch(err => {
+        console.error('Error checking payment status:', err);
+        const paymentStatus = document.getElementById("paymentStatus");
+        paymentStatus.className = 'payment-status error show';
+        paymentStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Failed to check payment status. Please try again.';
+      });
+}
+
+async function processMpesaPayment() {
+    const phoneInput = document.getElementById("phone_number");
+    const bookingInput = document.getElementById("booking_id");
+    const paymentStatus = document.getElementById("paymentStatus");
+    const payButton = document.getElementById("mpesaPayBtn");
+
+    if (!phoneInput || !bookingInput) {
+        showToast("Missing phone number or booking ID field in the HTML!", "error");
+        return;
+    }
+
+    const phoneNumber = phoneInput.value;
+    const bookingId = bookingInput.value;
+
+    // Validate phone number
+    if (!phoneNumber || !phoneNumber.match(/^07[0-9]{8}$/)) {
+        paymentStatus.className = 'payment-status error show';
+        paymentStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please enter a valid M-Pesa phone number (format: 07XX XXX XXX)';
+        return;
+    }
+
+    // Show loading state
+    payButton.disabled = true;
+    payButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending prompt...';
+    
+    // Show processing status
+    paymentStatus.className = 'payment-status info show';
+    paymentStatus.innerHTML = '<i class="fas fa-mobile-alt"></i> Sending payment prompt to ' + phoneNumber + '...';
+
+    try {
+        const response = await fetch(`/api/pay/deposit/${bookingId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ phone: phoneNumber })
+        });
+
+        // Check if response is ok before parsing JSON
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            paymentStatus.className = 'payment-status success show';
+            paymentStatus.innerHTML = `
+                <i class="fas fa-check-circle"></i> 
+                Payment prompt sent to ${phoneNumber}!<br>
+                <small>Check your phone and enter your M-Pesa PIN to complete the payment.</small>
+            `;
+            
+            // Store payment ID for status checking
+            if (data.payment_id) {
+                window.currentPaymentId = data.payment_id;
+                
+                // Start checking payment status
+                setTimeout(() => {
+                    checkMpesaPaymentStatus(data.payment_id);
+                }, 5000);
+            }
+            
+            // Show toast notification
+            showToast(`Payment prompt sent to ${phoneNumber}!`, 'success');
+        } else {
+            paymentStatus.className = 'payment-status error show';
+            paymentStatus.innerHTML = `<i class="fas fa-exclamation-circle"></i> Failed to send prompt: ${data.message || 'Unknown error'}`;
+            showToast('Failed to send payment prompt', 'error');
+        }
+        
+        // Reset button
+        payButton.disabled = false;
+        payButton.innerHTML = '<i class="fas fa-mobile-alt"></i> Send Payment Request';
+    } catch (error) {
+        console.error("Error:", error);
+        paymentStatus.className = 'payment-status error show';
+        paymentStatus.innerHTML = '<i class="fas fa-exclamation-circle"></i> Network error. Please try again.';
+        showToast('Network error. Please try again.', 'error');
+        
+        // Reset button
+        payButton.disabled = false;
+        payButton.innerHTML = '<i class="fas fa-mobile-alt"></i> Send Payment Request';
+    }
+}
+
+// Initialize everything when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  // Payment option selection
+  const paymentOptions = document.querySelectorAll('.payment-option');
+  const paymentForms = document.querySelectorAll('.payment-form-container');
+  
+  paymentOptions.forEach(option => {
+    option.addEventListener('click', function() {
+      // Remove selected class from all options
+      paymentOptions.forEach(opt => opt.classList.remove('selected'));
+      
+      // Add selected class to clicked option
+      this.classList.add('selected');
+      
+      // Get the payment method
+      const paymentMethod = this.dataset.payment;
+      
+      // Hide all payment forms
+      paymentForms.forEach(form => form.classList.remove('active'));
+      
+      // Show the selected payment form
+      const selectedForm = document.getElementById(`${paymentMethod}Form`);
+      if (selectedForm) {
+        selectedForm.classList.add('active');
+      }
+    });
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,1292 @@
+{% extends 'base.html' %} 
+{% block title %}Reports - HomeHub{% endblock %} 
+{% block content %}
+
+<style>
+  :root {
+    --primary: #4361ee;
+    --primary-dark: #3a0ca3;
+    --secondary: #7209b7;
+    --accent: #f72585;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --success: #06ffa5;
+    --info: #00b4d8;
+    --warning: #ffbe0b;
+    --danger: #e63946;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    --border-radius: 15px;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
+    background-color: #f8f9fa;
+    color: var(--dark);
+    line-height: 1.6;
+  }
+
+  .reports-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  /* Header Section */
+  .reports-header {
+    background: linear-gradient(
+      135deg,
+      var(--primary) 0%,
+      var(--primary-dark) 100%
+    );
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .reports-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,133.3C960,128,1056,96,1152,90.7C1248,85,1344,107,1392,117.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>')
+      no-repeat bottom;
+    background-size: cover;
+  }
+
+  .header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .header-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+
+  .header-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+  }
+
+  /* Filters Section */
+  .filters-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+  }
+
+  .filters-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    align-items: end;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .filter-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--dark);
+  }
+
+  .form-control {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: var(--transition);
+  }
+
+  .form-control:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+  }
+
+  /* Stats Cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+  }
+
+  .stat-card.revenue::before { background: var(--success); }
+  .stat-card.properties::before { background: var(--primary); }
+  .stat-card.occupancy::before { background: var(--info); }
+  .stat-card.maintenance::before { background: var(--warning); }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+  }
+
+  .stat-card.revenue .stat-icon { background: linear-gradient(135deg, var(--success), #00b4d8); }
+  .stat-card.properties .stat-icon { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+  .stat-card.occupancy .stat-icon { background: linear-gradient(135deg, var(--info), #0077b6); }
+  .stat-card.maintenance .stat-icon { background: linear-gradient(135deg, var(--warning), #ff9f1c); }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dark);
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-change {
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .stat-change.positive {
+    color: var(--success);
+  }
+
+  .stat-change.negative {
+    color: var(--danger);
+  }
+
+  /* Charts Section */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .chart-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .chart-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .chart-title i {
+    color: var(--primary);
+  }
+
+  .chart-controls {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .chart-control {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background: white;
+    color: var(--dark);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .chart-control:hover,
+  .chart-control.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  .chart-container {
+    position: relative;
+    height: 300px;
+  }
+
+  /* Tables */
+  .table-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+  }
+
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .table-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .table-title i {
+    color: var(--primary);
+  }
+
+  .table-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .reports-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .reports-table th,
+  .reports-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .reports-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: var(--dark);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .reports-table tr:hover {
+    background-color: rgba(67, 97, 238, 0.05);
+  }
+
+  .status-badge {
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .status-paid {
+    background: rgba(6, 255, 165, 0.1);
+    color: var(--success);
+  }
+
+  .status-pending {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--warning);
+  }
+
+  .status-overdue {
+    background: rgba(247, 37, 133, 0.1);
+    color: var(--danger);
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, var(--success), #00b4d8);
+    color: white;
+  }
+
+  .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(6, 255, 165, 0.3);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+  }
+
+  .btn-outline:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  .btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  /* Export Options */
+  .export-options {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e9ecef;
+  }
+
+  /* Progress Bars */
+  .progress-item {
+    margin-bottom: 1.5rem;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+  }
+
+  .progress-label {
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  .progress-value {
+    font-weight: 600;
+    color: var(--primary);
+  }
+
+  .progress-bar {
+    height: 10px;
+    background: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+    border-radius: 5px;
+    transition: width 1s ease;
+  }
+
+  /* Responsive */
+  @media (max-width: 992px) {
+    .charts-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .reports-container {
+      padding: 1rem;
+    }
+
+    .header-title {
+      font-size: 2rem;
+    }
+
+    .filters-row {
+      grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .table-container {
+      font-size: 0.875rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="reports-container">
+  <!-- Reports Header -->
+  <div class="reports-header">
+    <div class="header-content">
+      <div>
+        <h1 class="header-title">Reports & Analytics</h1>
+        <p class="header-subtitle">
+          Track your property performance and financial insights
+        </p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-light" onclick="exportReport('all')">
+          <i class="fas fa-download"></i> Export All
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="filter-group">
+        <label class="filter-label">Date Range</label>
+        <select class="form-control" id="dateRange">
+          <option value="7">Last 7 Days</option>
+          <option value="30" selected>Last 30 Days</option>
+          <option value="90">Last 3 Months</option>
+          <option value="365">Last Year</option>
+          <option value="custom">Custom Range</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">Property</label>
+        <select class="form-control" id="propertyFilter">
+          <option value="all">All Properties</option>
+          <option value="1">Property A - Apartment 101</option>
+          <option value="2">Property B - House 202</option>
+          <option value="3">Property C - Studio 305</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">Report Type</label>
+        <select class="form-control" id="reportType">
+          <option value="all">All Reports</option>
+          <option value="financial">Financial</option>
+          <option value="occupancy">Occupancy</option>
+          <option value="maintenance">Maintenance</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <button class="btn btn-primary" onclick="applyFilters()">
+          <i class="fas fa-filter"></i> Apply Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card revenue">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-dollar-sign"></i>
+        </div>
+      </div>
+      <div class="stat-value">$24,580</div>
+      <div class="stat-label">Total Revenue</div>
+      <div class="stat-change positive">
+        <i class="fas fa-arrow-up"></i>
+        <span>12.5% from last month</span>
+      </div>
+    </div>
+
+    <div class="stat-card properties">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-building"></i>
+        </div>
+      </div>
+      <div class="stat-value">12</div>
+      <div class="stat-label">Total Properties</div>
+      <div class="stat-change positive">
+        <i class="fas fa-arrow-up"></i>
+        <span>2 added this month</span>
+      </div>
+    </div>
+
+    <div class="stat-card occupancy">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-percentage"></i>
+        </div>
+      </div>
+      <div class="stat-value">87.5%</div>
+      <div class="stat-label">Occupancy Rate</div>
+      <div class="stat-change positive">
+        <i class="fas fa-arrow-up"></i>
+        <span>5.2% improvement</span>
+      </div>
+    </div>
+
+    <div class="stat-card maintenance">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-tools"></i>
+        </div>
+      </div>
+      <div class="stat-value">3</div>
+      <div class="stat-label">Pending Requests</div>
+      <div class="stat-change negative">
+        <i class="fas fa-arrow-up"></i>
+        <span>1 new today</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Section -->
+  <div class="charts-grid">
+    <!-- Revenue Chart -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3 class="chart-title">
+          <i class="fas fa-chart-line"></i>
+          Revenue Trend
+        </h3>
+        <div class="chart-controls">
+          <button class="chart-control active" onclick="updateRevenueChart('monthly')">Monthly</button>
+          <button class="chart-control" onclick="updateRevenueChart('quarterly')">Quarterly</button>
+          <button class="chart-control" onclick="updateRevenueChart('yearly')">Yearly</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="revenueChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Occupancy Chart -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3 class="chart-title">
+          <i class="fas fa-chart-pie"></i>
+          Occupancy Distribution
+        </h3>
+        <div class="chart-controls">
+          <button class="chart-control active" onclick="updateOccupancyChart('current')">Current</button>
+          <button class="chart-control" onclick="updateOccupancyChart('historical')">Historical</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="occupancyChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Property Performance Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <h3 class="table-title">
+        <i class="fas fa-building"></i>
+        Property Performance
+      </h3>
+      <div class="table-actions">
+        <button class="btn btn-sm btn-outline" onclick="exportTable('properties')">
+          <i class="fas fa-download"></i> Export
+        </button>
+      </div>
+    </div>
+    <div class="table-container">
+      <table class="reports-table">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Type</th>
+            <th>Status</th>
+            <th>Monthly Rent</th>
+            <th>Occupancy</th>
+            <th>Revenue</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div>
+                <strong>Apartment 101</strong><br>
+                <small class="text-muted">123 Main St</small>
+              </div>
+            </td>
+            <td>2BR Apartment</td>
+            <td><span class="status-badge status-occupied">Occupied</span></td>
+            <td>$1,200</td>
+            <td>100%</td>
+            <td>$14,400</td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="viewPropertyDetails(1)">View</button>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div>
+                <strong>House 202</strong><br>
+                <small class="text-muted">456 Oak Ave</small>
+              </div>
+            </td>
+            <td>3BR House</td>
+            <td><span class="status-badge status-occupied">Occupied</span></td>
+            <td>$2,000</td>
+            <td>100%</td>
+            <td>$24,000</td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="viewPropertyDetails(2)">View</button>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div>
+                <strong>Studio 305</strong><br>
+                <small class="text-muted">789 Pine Rd</small>
+              </div>
+            </td>
+            <td>Studio</td>
+            <td><span class="status-badge status-vacant">Vacant</span></td>
+            <td>$800</td>
+            <td>0%</td>
+            <td>$0</td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="viewPropertyDetails(3)">View</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Rent Collection Report -->
+  <div class="table-card">
+    <div class="table-header">
+      <h3 class="table-title">
+        <i class="fas fa-money-bill-wave"></i>
+        Rent Collection Report
+      </h3>
+      <div class="table-actions">
+        <button class="btn btn-sm btn-success" onclick="sendReminders()">
+          <i class="fas fa-bell"></i> Send Reminders
+        </button>
+        <button class="btn btn-sm btn-outline" onclick="exportTable('rent')">
+          <i class="fas fa-download"></i> Export
+        </button>
+      </div>
+    </div>
+    <div class="table-container">
+      <table class="reports-table">
+        <thead>
+          <tr>
+            <th>Tenant</th>
+            <th>Property</th>
+            <th>Due Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Payment Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div>
+                <strong>John Doe</strong><br>
+                <small class="text-muted">john.doe@email.com</small>
+              </div>
+            </td>
+            <td>Apartment 101</td>
+            <td>Dec 1, 2024</td>
+            <td>$1,200</td>
+            <td><span class="status-badge status-paid">Paid</span></td>
+            <td>Nov 30, 2024</td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="viewReceipt(1)">Receipt</button>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div>
+                <strong>Jane Smith</strong><br>
+                <small class="text-muted">jane.smith@email.com</small>
+              </div>
+            </td>
+            <td>House 202</td>
+            <td>Dec 1, 2024</td>
+            <td>$2,000</td>
+            <td><span class="status-badge status-paid">Paid</span></td>
+            <td>Dec 1, 2024</td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="viewReceipt(2)">Receipt</button>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div>
+                <strong>Mike Johnson</strong><br>
+                <small class="text-muted">mike.j@email.com</small>
+              </div>
+            </td>
+            <td>Studio 305</td>
+            <td>Dec 1, 2024</td>
+            <td>$800</td>
+            <td><span class="status-badge status-pending">Pending</span></td>
+            <td>-</td>
+            <td>
+              <button class="btn btn-sm btn-primary" onclick="sendReminder(3)">Remind</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Maintenance Summary -->
+  <div class="table-card">
+    <div class="table-header">
+      <h3 class="table-title">
+        <i class="fas fa-tools"></i>
+        Maintenance Summary
+      </h3>
+      <div class="table-actions">
+        <button class="btn btn-sm btn-primary" onclick="createMaintenanceReport()">
+          <i class="fas fa-plus"></i> New Report
+        </button>
+        <button class="btn btn-sm btn-outline" onclick="exportTable('maintenance')">
+          <i class="fas fa-download"></i> Export
+        </button>
+      </div>
+    </div>
+    
+    <!-- Maintenance Progress -->
+    <div class="progress-item">
+      <div class="progress-header">
+        <span class="progress-label">Plumbing Issues</span>
+        <span class="progress-value">2 of 3 resolved</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 66.67%"></div>
+      </div>
+    </div>
+    
+    <div class="progress-item">
+      <div class="progress-header">
+        <span class="progress-label">Electrical Issues</span>
+        <span class="progress-value">5 of 5 resolved</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 100%"></div>
+      </div>
+    </div>
+    
+    <div class="progress-item">
+      <div class="progress-header">
+        <span class="progress-label">General Repairs</span>
+        <span class="progress-value">1 of 2 resolved</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: 50%"></div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="reports-table">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Issue Type</th>
+            <th>Description</th>
+            <th>Reported Date</th>
+            <th>Status</th>
+            <th>Cost</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Apartment 101</td>
+            <td>Plumbing</td>
+            <td>Leaking faucet in kitchen</td>
+            <td>Nov 28, 2024</td>
+            <td><span class="status-badge status-pending">In Progress</span></td>
+            <td>$150</td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="viewMaintenanceDetails(1)">Details</button>
+            </td>
+          </tr>
+          <tr>
+            <td>House 202</td>
+            <td>Electrical</td>
+            <td>Broken light fixture in bedroom</td>
+            <td>Nov 25, 2024</td>
+            <td><span class="status-badge status-paid">Completed</span></td>
+            <td>$75</td>
+            <td>
+              <button class="btn btn-sm btn-outline" onclick="viewMaintenanceDetails(2)">Details</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Export Options -->
+  <div class="export-options">
+    <button class="btn btn-outline" onclick="exportReport('pdf')">
+      <i class="fas fa-file-pdf"></i> Export as PDF
+    </button>
+    <button class="btn btn-outline" onclick="exportReport('excel')">
+      <i class="fas fa-file-excel"></i> Export as Excel
+    </button>
+    <button class="btn btn-outline" onclick="exportReport('csv')">
+      <i class="fas fa-file-csv"></i> Export as CSV
+    </button>
+    <button class="btn btn-primary" onclick="scheduleReport()">
+      <i class="fas fa-clock"></i> Schedule Report
+    </button>
+  </div>
+</div>
+
+{% endblock %} 
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    initializeCharts();
+    setupEventListeners();
+    animateProgressBars();
+  });
+
+  function initializeCharts() {
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    const revenueChart = new Chart(revenueCtx, {
+      type: 'line',
+      data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+        datasets: [{
+          label: 'Revenue',
+          data: [18000, 19500, 21000, 19800, 22000, 23500, 24580, 23000, 24000, 22000, 24580, 26000],
+          borderColor: 'rgba(67, 97, 238, 1)',
+          backgroundColor: 'rgba(67, 97, 238, 0.1)',
+          borderWidth: 3,
+          tension: 0.4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return '$' + context.parsed.y.toLocaleString();
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return '$' + value.toLocaleString();
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Occupancy Chart
+    const occupancyCtx = document.getElementById('occupancyChart').getContext('2d');
+    const occupancyChart = new Chart(occupancyCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Occupied', 'Vacant', 'Maintenance'],
+        datasets: [{
+          data: [10, 1, 1],
+          backgroundColor: [
+            'rgba(6, 255, 165, 0.8)',
+            'rgba(255, 190, 11, 0.8)',
+            'rgba(247, 37, 133, 0.8)'
+          ],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom'
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.label + ': ' + context.parsed + ' units';
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Store chart instances for updates
+    window.revenueChart = revenueChart;
+    window.occupancyChart = occupancyChart;
+  }
+
+  function updateRevenueChart(period) {
+    // Update active button
+    document.querySelectorAll('.chart-control').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // Update chart data based on period
+    let labels, data;
+    
+    switch(period) {
+      case 'monthly':
+        labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        data = [18000, 19500, 21000, 19800, 22000, 23500, 24580, 23000, 24000, 22000, 24580, 26000];
+        break;
+      case 'quarterly':
+        labels = ['Q1', 'Q2', 'Q3', 'Q4'];
+        data = [58500, 65380, 71680, 72580];
+        break;
+      case 'yearly':
+        labels = ['2021', '2022', '2023', '2024'];
+        data = [198000, 235000, 268140, 290000];
+        break;
+    }
+    
+    window.revenueChart.data.labels = labels;
+    window.revenueChart.data.datasets[0].data = data;
+    window.revenueChart.update();
+  }
+
+  function updateOccupancyChart(type) {
+    // Update active button
+    event.target.parentElement.querySelectorAll('.chart-control').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // Update chart data based on type
+    if (type === 'historical') {
+      window.occupancyChart.data.datasets[0].data = [8, 9, 10, 10, 11, 12];
+      window.occupancyChart.update();
+    }
+  }
+
+  function setupEventListeners() {
+    // Filter applications
+    document.getElementById('dateRange').addEventListener('change', function() {
+      console.log('Date range changed:', this.value);
+      // Apply date filter logic here
+    });
+
+    document.getElementById('propertyFilter').addEventListener('change', function() {
+      console.log('Property filter changed:', this.value);
+      // Apply property filter logic here
+    });
+
+    document.getElementById('reportType').addEventListener('change', function() {
+      console.log('Report type changed:', this.value);
+      // Apply report type filter logic here
+    });
+  }
+
+  function applyFilters() {
+    const dateRange = document.getElementById('dateRange').value;
+    const property = document.getElementById('propertyFilter').value;
+    const reportType = document.getElementById('reportType').value;
+    
+    console.log('Applying filters:', { dateRange, property, reportType });
+    
+    // Show loading state
+    showLoadingState();
+    
+    // Simulate API call
+    setTimeout(() => {
+      hideLoadingState();
+      showToast('Filters applied successfully', 'success');
+      // Update charts and tables with filtered data
+    }, 1000);
+  }
+
+  function exportReport(format) {
+    console.log('Exporting report as:', format);
+    
+    // Show loading state
+    showLoadingState();
+    
+    // Simulate export
+    setTimeout(() => {
+      hideLoadingState();
+      showToast(`Report exported successfully as ${format.toUpperCase()}`, 'success');
+      
+      // In production, trigger actual download
+      if (format === 'pdf') {
+        // Generate and download PDF
+      downloadFile('report.pdf', 'application/pdf');
+      } else if (format === 'excel') {
+        // Generate and download Excel
+        downloadFile('report.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      } else if (format === 'csv') {
+        // Generate and download CSV
+        downloadFile('report.csv', 'text/csv');
+      }
+    }, 1500);
+  }
+
+  function exportTable(tableType) {
+    console.log('Exporting table:', tableType);
+    showToast(`${tableType} data exported successfully`, 'success');
+  }
+
+  function downloadFile(filename, mimeType) {
+    // Create a dummy file for demonstration
+    const content = 'Report data would be here';
+    const blob = new Blob([content], { type: mimeType });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }
+
+  function sendReminders() {
+    const pendingTenants = document.querySelectorAll('.status-pending');
+    if (pendingTenants.length === 0) {
+      showToast('No pending payments to remind', 'info');
+      return;
+    }
+    
+    showLoadingState();
+    
+    setTimeout(() => {
+      hideLoadingState();
+      showToast(`Payment reminders sent to ${pendingTenants.length} tenants`, 'success');
+    }, 1500);
+  }
+
+  function sendReminder(tenantId) {
+    console.log('Sending reminder to tenant:', tenantId);
+    showToast('Payment reminder sent successfully', 'success');
+  }
+
+  function viewReceipt(paymentId) {
+    console.log('Viewing receipt for payment:', paymentId);
+    // Open receipt modal or navigate to receipt page
+    showToast('Opening receipt...', 'info');
+  }
+
+  function viewPropertyDetails(propertyId) {
+    console.log('Viewing details for property:', propertyId);
+    // Navigate to property details page
+    showToast('Loading property details...', 'info');
+  }
+
+  function viewMaintenanceDetails(maintenanceId) {
+    console.log('Viewing maintenance details:', maintenanceId);
+    // Open maintenance details modal
+    showToast('Loading maintenance details...', 'info');
+  }
+
+  function createMaintenanceReport() {
+    console.log('Creating new maintenance report');
+    // Open maintenance report form
+    showToast('Opening maintenance report form...', 'info');
+  }
+
+  function scheduleReport() {
+    console.log('Opening report scheduler');
+    // Open schedule report modal
+    showToast('Opening report scheduler...', 'info');
+  }
+
+  function showLoadingState() {
+    // Create loading overlay
+    const loading = document.createElement('div');
+    loading.id = 'loadingOverlay';
+    loading.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    `;
+    loading.innerHTML = `
+      <div style="background: white; padding: 2rem; border-radius: 15px; text-align: center;">
+        <div class="spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; margin: 0 auto 1rem; animation: spin 1s linear infinite;"></div>
+        <p style="margin: 0; color: var(--dark);">Loading...</p>
+      </div>
+    `;
+    
+    // Add spinner animation
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    document.body.appendChild(loading);
+  }
+
+  function hideLoadingState() {
+    const loading = document.getElementById('loadingOverlay');
+    if (loading) {
+      loading.remove();
+    }
+  }
+
+  function showToast(message, type = 'success') {
+    // Remove existing toasts
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+      existingToast.remove();
+    }
+
+    // Create new toast
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      min-width: 300px;
+      padding: 1rem 1.5rem;
+      border-radius: 15px;
+      box-shadow: var(--shadow);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideIn 0.3s ease;
+      background: ${type === 'success' ? 'linear-gradient(135deg, rgba(6, 255, 165, 0.9), rgba(0, 180, 216, 0.9))' : 'linear-gradient(135deg, rgba(0, 180, 216, 0.9), rgba(0, 119, 182, 0.9))'};
+      color: white;
+    `;
+    
+    const icon = type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+    toast.innerHTML = `
+      <i class="fas ${icon}"></i>
+      <span>${message}</span>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+      toast.style.animation = 'slideIn 0.3s ease reverse';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  function animateProgressBars() {
+    // Animate progress bars on page load
+    const progressFills = document.querySelectorAll('.progress-fill');
+    progressFills.forEach((fill, index) => {
+      const width = fill.style.width;
+      fill.style.width = '0';
+      setTimeout(() => {
+        fill.style.width = width;
+      }, 100 * (index + 1));
+    });
+  }
+</script>
+{% endblock %}

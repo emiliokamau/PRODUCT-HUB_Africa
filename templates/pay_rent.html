@@ -1,0 +1,1642 @@
+{% extends "base.html" %} 
+{% block title %}Pay Rent{% endblock %}
+
+{% block content %}
+
+<style>
+  :root {
+    --primary-color: #2563eb;
+    --secondary-color: #4f46e5;
+    --accent-color: #f59e0b;
+    --dark-color: #1f2937;
+    --light-color: #f9fafb;
+    --white-color: #ffffff;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #3b82f6;
+    --mpesa-color: #52B788;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    --border-radius: 12px;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: var(--light-color);
+    color: var(--dark-color);
+    line-height: 1.6;
+  }
+
+  /* Main Content */
+  .main-content {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Page Header */
+  .page-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-radius: var(--border-radius);
+    padding: 30px;
+    color: var(--white-color);
+    margin-bottom: 30px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(100px, -100px);
+  }
+
+  .page-header-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .page-subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+  }
+
+  /* Alert Styles */
+  .alert {
+    padding: 15px 20px;
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .alert-success {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+    border-left: 4px solid var(--success-color);
+  }
+
+  .alert-danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+    border-left: 4px solid var(--danger-color);
+  }
+
+  .alert-info {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--info-color);
+    border-left: 4px solid var(--info-color);
+  }
+
+  .alert-warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+    border-left: 4px solid var(--warning-color);
+  }
+
+  .alert-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    opacity: 0.7;
+  }
+
+  .alert-close:hover {
+    opacity: 1;
+  }
+
+  /* Content Grid */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+  }
+
+  /* Content Cards */
+  .content-card {
+    background-color: var(--white-color);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+  }
+
+  .content-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-5px);
+  }
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+  }
+
+  .card-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--dark-color);
+  }
+
+  .card-action {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+
+  .card-body {
+    color: #666;
+  }
+
+  /* Payment Summary */
+  .payment-summary {
+    background-color: var(--light-color);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .summary-row:last-child {
+    margin-bottom: 0;
+    padding-top: 10px;
+    border-top: 1px dashed #ddd;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+
+  /* Payment Methods */
+  .payment-methods {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+
+  .payment-method {
+    border: 2px solid #eee;
+    border-radius: var(--border-radius);
+    padding: 15px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .payment-method:hover {
+    border-color: var(--primary-color);
+  }
+
+  .payment-method.selected {
+    border-color: var(--primary-color);
+    background-color: rgba(37, 99, 235, 0.05);
+  }
+
+  .payment-method.mpesa.selected {
+    border-color: var(--mpesa-color);
+    background-color: rgba(82, 183, 136, 0.05);
+  }
+
+  .payment-method i {
+    font-size: 1.8rem;
+  }
+
+  .payment-method.credit-card i, .payment-method.debit-card i {
+    color: var(--primary-color);
+  }
+
+  .payment-method.bank-transfer i {
+    color: var(--info-color);
+  }
+
+  .payment-method.paypal i {
+    color: #00457C;
+  }
+
+  .payment-method.mpesa i {
+    color: var(--mpesa-color);
+  }
+
+  /* Forms */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--dark-color);
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    font-size: 0.95rem;
+    transition: var(--transition);
+  }
+
+  .form-control:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  }
+
+  .form-control.error {
+    border-color: var(--danger-color);
+  }
+
+  .error-message {
+    color: var(--danger-color);
+    font-size: 0.85rem;
+    margin-top: 5px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    font-size: 0.95rem;
+    gap: 8px;
+    position: relative;
+  }
+
+  .btn i {
+    font-size: 1rem;
+  }
+
+  .btn-primary {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+  }
+
+  .btn-primary:hover {
+    background-color: #1d4ed8;
+  }
+
+  .btn-mpesa {
+    background-color: var(--mpesa-color);
+    color: var(--white-color);
+  }
+
+  .btn-mpesa:hover {
+    background-color: #40916c;
+  }
+
+  .btn-secondary {
+    background-color: var(--secondary-color);
+    color: var(--white-color);
+  }
+
+  .btn-secondary:hover {
+    background-color: #4338ca;
+  }
+
+  .btn-danger {
+    background-color: var(--danger-color);
+    color: var(--white-color);
+  }
+
+  .btn-danger:hover {
+    background-color: #dc2626;
+  }
+
+  .btn-outline {
+    background-color: transparent;
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+  }
+
+  .btn-outline:hover {
+    background-color: var(--primary-color);
+    color: var(--white-color);
+  }
+
+  .btn-sm {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+
+  .btn-block {
+    display: block;
+    width: 100%;
+  }
+
+  .btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* Loading Spinner */
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Tables */
+  .table-container {
+    overflow-x: auto;
+    margin-bottom: 20px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th,
+  td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+  }
+
+  th {
+    background-color: var(--light-color);
+    font-weight: 600;
+    color: var(--dark-color);
+  }
+
+  tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+
+  .table-action {
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+
+  /* Status Badges */
+  .status-badge {
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+  }
+
+  .status-paid {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+  }
+
+  .status-pending {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+  }
+
+  .status-overdue {
+    background-color: rgba(239, 68, 68, 0.1);
+    color: var(--danger-color);
+  }
+
+  /* Auto-pay Toggle */
+  .toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+  }
+
+  .toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: var(--transition);
+    border-radius: 30px;
+  }
+
+  .toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: var(--transition);
+    border-radius: 50%;
+  }
+
+  input:checked + .toggle-slider {
+    background-color: var(--primary-color);
+  }
+
+  input:checked + .toggle-slider:before {
+    transform: translateX(30px);
+  }
+
+  /* Payment Schedule */
+  .schedule-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-radius: var(--border-radius);
+    background-color: var(--light-color);
+    margin-bottom: 10px;
+  }
+
+  .schedule-date {
+    font-weight: 600;
+    color: var(--dark-color);
+  }
+
+  .schedule-amount {
+    font-weight: 600;
+    color: var(--primary-color);
+  }
+
+  /* M-Pesa Options */
+  .mpesa-options {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .mpesa-option {
+    border: 1px solid #eee;
+    border-radius: var(--border-radius);
+    padding: 15px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .mpesa-option:hover {
+    border-color: var(--mpesa-color);
+    background-color: rgba(82, 183, 136, 0.05);
+  }
+
+  .mpesa-option.selected {
+    border-color: var(--mpesa-color);
+    background-color: rgba(82, 183, 136, 0.1);
+  }
+
+  .mpesa-option-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .mpesa-option-title {
+    font-weight: 600;
+    color: var(--dark-color);
+  }
+
+  .mpesa-option-description {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .mpesa-instructions {
+    background-color: var(--light-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-top: 15px;
+  }
+
+  .mpesa-instructions h4 {
+    margin-bottom: 10px;
+    color: var(--mpesa-color);
+  }
+
+  .mpesa-instructions ol {
+    padding-left: 20px;
+  }
+
+  .mpesa-instructions li {
+    margin-bottom: 8px;
+  }
+
+  /* Payment Confirmation Modal */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s;
+  }
+
+  .modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-content {
+    background-color: var(--white-color);
+    border-radius: var(--border-radius);
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    animation: slideIn 0.3s;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--dark-color);
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+  }
+
+  .modal-body {
+    margin-bottom: 20px;
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+
+  .confirmation-details {
+    background-color: var(--light-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+
+  .confirmation-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .confirmation-row:last-child {
+    margin-bottom: 0;
+    padding-top: 10px;
+    border-top: 1px dashed #ddd;
+    font-weight: 600;
+  }
+
+  /* M-Pesa Status Check */
+  .mpesa-status {
+    background-color: var(--light-color);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    margin-top: 15px;
+    text-align: center;
+  }
+
+  .mpesa-status i {
+    font-size: 2rem;
+    color: var(--mpesa-color);
+    margin-bottom: 10px;
+  }
+
+  .mpesa-status h4 {
+    margin-bottom: 10px;
+    color: var(--dark-color);
+  }
+
+  .mpesa-status p {
+    margin-bottom: 15px;
+    color: #666;
+  }
+
+  /* Responsive Styles */
+  @media (max-width: 992px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+    
+    .payment-methods {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .page-title {
+      font-size: 2rem;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .page-header {
+      padding: 20px;
+    }
+    
+    .page-title {
+      font-size: 1.5rem;
+    }
+    
+    .content-card {
+      padding: 15px;
+    }
+    
+    .card-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    
+    .payment-methods {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Debug styles */
+  .debug-info {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    z-index: 9999;
+  }
+</style>
+
+<!-- Main Content -->
+<main class="main-content">
+  <!-- Debug Info -->
+  <div class="debug-info" id="debugInfo">
+    Debug: JavaScript loaded
+  </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if
+  messages %} {% for category, message in messages %}
+  <div
+    class="alert alert-{{ 'danger' if category == 'error' else 'success' }}"
+  >
+    <i
+      class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}"
+    ></i>
+    <span>{{ message }}</span>
+    <button class="alert-close">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  {% endfor %} {% endif %} {% endwith %}
+
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="page-header-content">
+      <h1 class="page-title">Pay Rent</h1>
+      <p class="page-subtitle">
+        Manage your rent payments and view payment history
+      </p>
+    </div>
+  </div>
+
+  <!-- Content Grid -->
+  <div class="content-grid">
+    <!-- Payment Form -->
+    <div class="content-card">
+      <div class="card-header">
+        <h3 class="card-title">Make a Payment</h3>
+      </div>
+      <div class="card-body">
+        <!-- Payment Summary -->
+        <div class="payment-summary">
+          <div class="summary-row">
+            <span>Property:</span>
+            <span>{{ property.address_line1 if property else 'N/A' }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Rent Amount:</span>
+            <span>KSh {{ property.rent_amount if property else '0.00' }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Late Fee:</span>
+            <span>KSh {{ late_fee if late_fee else '0.00' }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Previous Balance:</span>
+            <span>KSh {{ previous_balance if previous_balance else '0.00' }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Total Amount Due:</span>
+            <span>KSh {{ total_amount_due if total_amount_due else '0.00' }}</span>
+          </div>
+        </div>
+
+        <!-- Payment Form -->
+        <form id="paymentForm" method="POST">
+          <input type="hidden" name="property_id" value="{{ property.id if property else '' }}">
+          <input type="hidden" name="amount" value="{{ total_amount_due if total_amount_due else '0.00' }}">
+          
+          <!-- Payment Method Selection -->
+          <div class="form-group">
+            <label class="form-label">Select Payment Method</label>
+            <div class="payment-methods">
+              <div class="payment-method" data-method="credit-card">
+                <i class="fas fa-credit-card"></i>
+                <span>Credit Card</span>
+              </div>
+              <div class="payment-method" data-method="debit-card">
+                <i class="fas fa-credit-card"></i>
+                <span>Debit Card</span>
+              </div>
+              <div class="payment-method" data-method="bank-transfer">
+                <i class="fas fa-university"></i>
+                <span>Bank Transfer</span>
+              </div>
+              <div class="payment-method" data-method="paypal">
+                <i class="fab fa-paypal"></i>
+                <span>PayPal</span>
+              </div>
+              <div class="payment-method mpesa" data-method="mpesa">
+                <i class="fas fa-mobile-alt"></i>
+                <span>M-Pesa</span>
+              </div>
+            </div>
+            <input type="hidden" id="paymentMethod" name="payment_method" value="credit-card">
+            <div id="paymentMethodError" class="error-message"></div>
+          </div>
+
+          <!-- Credit/Debit Card Form -->
+          <div id="cardForm" class="payment-form">
+            <div class="form-group">
+              <label class="form-label" for="cardNumber">Card Number</label>
+              <input type="text" id="cardNumber" name="card_number" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19" required>
+              <div id="cardNumberError" class="error-message"></div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="expiryDate">Expiry Date</label>
+                <input type="text" id="expiryDate" name="expiry_date" class="form-control" placeholder="MM/YY" maxlength="5" required>
+                <div id="expiryDateError" class="error-message"></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="cvv">CVV</label>
+                <input type="text" id="cvv" name="cvv" class="form-control" placeholder="123" maxlength="4" required>
+                <div id="cvvError" class="error-message"></div>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="cardName">Name on Card</label>
+              <input type="text" id="cardName" name="card_name" class="form-control" placeholder="John Doe" required>
+              <div id="cardNameError" class="error-message"></div>
+            </div>
+          </div>
+
+          <!-- Bank Transfer Form -->
+          <div id="bankForm" class="payment-form" style="display: none;">
+            <div class="form-group">
+              <label class="form-label" for="accountName">Account Name</label>
+              <input type="text" id="accountName" name="account_name" class="form-control" placeholder="John Doe" required>
+              <div id="accountNameError" class="error-message"></div>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="accountNumber">Account Number</label>
+              <input type="text" id="accountNumber" name="account_number" class="form-control" placeholder="1234567890" required>
+              <div id="accountNumberError" class="error-message"></div>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="routingNumber">Routing Number</label>
+              <input type="text" id="routingNumber" name="routing_number" class="form-control" placeholder="123456789" required>
+              <div id="routingNumberError" class="error-message"></div>
+            </div>
+          </div>
+
+          <!-- PayPal Form -->
+          <div id="paypalForm" class="payment-form" style="display: none;">
+            <div class="form-group">
+              <label class="form-label" for="paypalEmail">PayPal Email</label>
+              <input type="email" id="paypalEmail" name="paypal_email" class="form-control" placeholder="john@example.com" required>
+              <div id="paypalEmailError" class="error-message"></div>
+            </div>
+          </div>
+
+          <!-- M-Pesa Form -->
+          <div id="mpesaForm" class="payment-form" style="display: none;">
+            <div class="form-group">
+              <label class="form-label">Select M-Pesa Payment Option</label>
+              <div class="mpesa-options">
+                <div class="mpesa-option" data-mpesa-option="paybill">
+                  <div class="mpesa-option-header">
+                    <i class="fas fa-building"></i>
+                    <span class="mpesa-option-title">Paybill</span>
+                  </div>
+                  <p class="mpesa-option-description">Pay using M-Pesa Paybill number</p>
+                </div>
+                
+                <div class="mpesa-option" data-mpesa-option="till">
+                  <div class="mpesa-option-header">
+                    <i class="fas fa-cash-register"></i>
+                    <span class="mpesa-option-title">Till Number</span>
+                  </div>
+                  <p class="mpesa-option-description">Pay using M-Pesa Till number</p>
+                </div>
+                
+                <div class="mpesa-option" data-mpesa-option="send-money">
+                  <div class="mpesa-option-header">
+                    <i class="fas fa-paper-plane"></i>
+                    <span class="mpesa-option-title">Send Money</span>
+                  </div>
+                  <p class="mpesa-option-description">Pay directly to our M-Pesa number</p>
+                </div>
+              </div>
+              <input type="hidden" id="mpesaOption" name="mpesa_option" value="paybill">
+              <div id="mpesaOptionError" class="error-message"></div>
+            </div>
+            
+            <!-- Paybill Instructions -->
+            <div id="paybillInstructions" class="mpesa-instructions">
+              <h4>How to Pay via M-Pesa Paybill</h4>
+              <ol>
+                <li>Go to M-Pesa menu on your phone</li>
+                <li>Select Lipa na M-Pesa</li>
+                <li>Select Paybill</li>
+                <li>Enter business number: <strong>174379</strong></li>
+                <li>Enter account number: <strong>{{ current_user.id }}</strong></li>
+                <li>Enter amount: <strong>KSh {{ total_amount_due if total_amount_due else '0.00' }}</strong></li>
+                <li>Enter your M-Pesa PIN and confirm</li>
+                <li>You will receive a confirmation SMS from M-Pesa</li>
+              </ol>
+            </div>
+            
+            <!-- Till Number Instructions -->
+            <div id="tillInstructions" class="mpesa-instructions" style="display: none;">
+              <h4>How to Pay via M-Pesa Till Number</h4>
+              <ol>
+                <li>Go to M-Pesa menu on your phone</li>
+                <li>Select Lipa na M-Pesa</li>
+                <li>Select Buy Goods and Services</li>
+                <li>Enter till number: <strong>987654</strong></li>
+                <li>Enter amount: <strong>KSh {{ total_amount_due if total_amount_due else '0.00' }}</strong></li>
+                <li>Enter your M-Pesa PIN and confirm</li>
+                <li>You will receive a confirmation SMS from M-Pesa</li>
+              </ol>
+            </div>
+            
+            <!-- Send Money Instructions -->
+            <div id="sendMoneyInstructions" class="mpesa-instructions" style="display: none;">
+              <h4>How to Pay via M-Pesa Send Money</h4>
+              <ol>
+                <li>Go to M-Pesa menu on your phone</li>
+                <li>Select Send Money</li>
+                <li>Enter phone number: <strong>+254712345678</strong></li>
+                <li>Enter amount: <strong>KSh {{ total_amount_due if total_amount_due else '0.00' }}</strong></li>
+                <li>Enter your M-Pesa PIN and confirm</li>
+                <li>You will receive a confirmation SMS from M-Pesa</li>
+              </ol>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="mpesaNumber">Your M-Pesa Phone Number</label>
+              <input type="tel" id="mpesaNumber" name="mpesa_number" class="form-control" placeholder="0712345678" required>
+              <div id="mpesaNumberError" class="error-message"></div>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label" for="mpesaTransactionId">M-Pesa Transaction ID (Optional)</label>
+              <input type="text" id="mpesaTransactionId" name="mpesa_transaction_id" class="form-control" placeholder="ABC123DEF456">
+              <small>Enter the transaction ID from your M-Pesa confirmation message</small>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" class="btn btn-primary btn-block" id="paymentSubmitBtn">
+            <i class="fas fa-lock"></i> Pay KSh {{ total_amount_due if total_amount_due else '0.00' }}
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div>
+      <!-- Upcoming Payments -->
+      <div class="content-card" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <h3 class="card-title">Upcoming Payments</h3>
+        </div>
+        <div class="card-body">
+          {% if upcoming_payments %}
+          {% for payment in upcoming_payments %}
+          <div class="schedule-item">
+            <div>
+              <div class="schedule-date">{{ payment.due_date.strftime('%b %d, %Y') }}</div>
+              <div>{{ payment.type|title }}</div>
+            </div>
+            <div class="schedule-amount">KSh {{ payment.amount }}</div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <p>No upcoming payments scheduled.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Auto-pay Settings -->
+      <div class="content-card" style="margin-bottom: 20px;">
+        <div class="card-header">
+          <h3 class="card-title">Auto-pay Settings</h3>
+        </div>
+        <div class="card-body">
+          <div class="toggle-container">
+            <div>
+              <h4>Enable Auto-pay</h4>
+              <p>Automatically pay your rent on the due date</p>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="autopayToggle" {% if current_user.autopay_enabled %}checked{% endif %}>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          
+          <div id="autopaySettings" {% if not current_user.autopay_enabled %}style="display: none;"{% endif %}>
+            <div class="form-group">
+              <label class="form-label" for="autopayMethod">Payment Method</label>
+              <select id="autopayMethod" class="form-control">
+                <option value="credit-card">Credit Card</option>
+                <option value="debit-card">Debit Card</option>
+                <option value="bank-transfer">Bank Transfer</option>
+                <option value="mpesa">M-Pesa</option>
+              </select>
+            </div>
+            
+            <button type="button" id="saveAutopay" class="btn btn-primary btn-block">
+              <i class="fas fa-save"></i> Save Settings
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Quick Links</h3>
+        </div>
+        <div class="card-body">
+          <a href="{{ url_for('tenant.payment_history') }}" class="btn btn-outline btn-block" style="margin-bottom: 10px;">
+            <i class="fas fa-history"></i> Payment History
+          </a>
+          <a href="{{ url_for('tenant.receipts') }}" class="btn btn-outline btn-block" style="margin-bottom: 10px;">
+            <i class="fas fa-receipt"></i> View Receipts
+          </a>
+          <a href="{{ url_for('tenant.settings') }}" class="btn btn-outline btn-block">
+            <i class="fas fa-cog"></i> Payment Settings
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment History -->
+  <div class="content-card">
+    <div class="card-header">
+      <h3 class="card-title">Recent Payment History</h3>
+      <a href="{{ url_for('tenant.payment_history') }}" class="card-action">View All</a>
+    </div>
+    <div class="card-body">
+      <div class="table-container">
+        <table aria-label="Payment history">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Amount</th>
+              <th>Method</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payment in recent_payments %}
+            <tr>
+              <td>{{ payment.date.strftime('%b %d, %Y') }}</td>
+              <td>KSh {{ payment.amount }}</td>
+              <td>{{ payment.method|title }}</td>
+              <td>
+                <span class="status-badge {% if payment.status == 'paid' %}status-paid{% elif payment.status == 'pending' %}status-pending{% else %}status-overdue{% endif %}">
+                  {{ payment.status|title }}
+                </span>
+              </td>
+              <td>
+                <a href="{{ url_for('tenant.view_receipt', id=payment.id) }}" class="table-action">
+                  <i class="fas fa-receipt"></i> View Receipt
+                </a>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" style="text-align: center;">No payment history found.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Payment Confirmation Modal -->
+<div id="paymentModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">Confirm Payment</h3>
+      <button class="modal-close" onclick="closePaymentModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="confirmation-details">
+        <div class="confirmation-row">
+          <span>Payment Method:</span>
+          <span id="confirmMethod"></span>
+        </div>
+        <div class="confirmation-row">
+          <span>Amount:</span>
+          <span id="confirmAmount"></span>
+        </div>
+        <div class="confirmation-row">
+          <span>Property:</span>
+          <span id="confirmProperty"></span>
+        </div>
+        <div class="confirmation-row">
+          <span>Total:</span>
+          <span id="confirmTotal"></span>
+        </div>
+      </div>
+      <p id="confirmMessage"></p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" onclick="closePaymentModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" id="confirmPaymentBtn">
+        <i class="fas fa-check"></i> Confirm Payment
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- M-Pesa Status Modal -->
+<div id="mpesaStatusModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title">M-Pesa Payment Status</h3>
+      <button class="modal-close" onclick="closeMpesaStatusModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="mpesa-status">
+        <i class="fas fa-mobile-alt"></i>
+        <h4>Payment Initiated</h4>
+        <p>An M-Pesa STK push has been sent to your phone. Please enter your PIN to complete the payment.</p>
+        <p>You will receive a confirmation SMS once the payment is complete.</p>
+        <div id="mpesaStatusMessage"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" onclick="checkMpesaStatus()">
+        <i class="fas fa-sync"></i> Check Status
+      </button>
+      <button type="button" class="btn btn-primary" onclick="closeMpesaStatusModal()">
+        Close
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    console.log('Payment page script loaded');
+
+    // ================================
+    // 1. ALERT CLOSE
+    // ================================
+    document.querySelectorAll('.alert-close').forEach(btn => {
+      btn.addEventListener('click', () => btn.parentElement.remove());
+    });
+
+    // ================================
+    // 2. PAYMENT METHOD SELECTION
+    // ================================
+    const paymentMethods = document.querySelectorAll('.payment-method');
+    const paymentMethodInput = document.getElementById('paymentMethod');
+    const forms = {
+      card: document.getElementById('cardForm'),
+      bank: document.getElementById('bankForm'),
+      paypal: document.getElementById('paypalForm'),
+      mpesa: document.getElementById('mpesaForm')
+    };
+    const submitBtn = document.getElementById('paymentSubmitBtn');
+
+    function selectPaymentMethod(method) {
+      // Reset
+      paymentMethods.forEach(m => m.classList.remove('selected'));
+      Object.values(forms).forEach(f => f.style.display = 'none');
+      submitBtn.className = 'btn btn-primary btn-block';
+
+      // Select
+      const selected = document.querySelector(`.payment-method[data-method="${method}"]`);
+      if (selected) selected.classList.add('selected');
+      paymentMethodInput.value = method;
+
+      // Show form
+      if (method === 'credit-card' || method === 'debit-card') {
+        forms.card.style.display = 'block';
+      } else if (method === 'bank-transfer') {
+        forms.bank.style.display = 'block';
+      } else if (method === 'paypal') {
+        forms.paypal.style.display = 'block';
+      } else if (method === 'mpesa') {
+        forms.mpesa.style.display = 'block';
+        submitBtn.className = 'btn btn-mpesa btn-block';
+        initializeMpesaOptions(); // Re-init every time
+      }
+    }
+
+    paymentMethods.forEach(method => {
+      method.addEventListener('click', () => {
+        const type = method.getAttribute('data-method');
+        selectPaymentMethod(type);
+      });
+    });
+
+    // Default: Credit Card
+    selectPaymentMethod('credit-card');
+
+    // ================================
+    // 3. M-PESA SUB-OPTIONS (Paybill / Till / Send Money)
+    // ================================
+    function initializeMpesaOptions() {
+      const options = document.querySelectorAll('.mpesa-option');
+      const input = document.getElementById('mpesaOption');
+      const instructions = {
+        paybill: document.getElementById('paybillInstructions'),
+        till: document.getElementById('tillInstructions'),
+        'send-money': document.getElementById('sendMoneyInstructions')
+      };
+
+      function selectMpesaOption(type) {
+        options.forEach(o => o.classList.remove('selected'));
+        const selected = document.querySelector(`.mpesa-option[data-mpesa-option="${type}"]`);
+        if (selected) selected.classList.add('selected');
+        input.value = type;
+
+        Object.values(instructions).forEach(i => i.style.display = 'none');
+        if (instructions[type]) instructions[type].style.display = 'block';
+      }
+
+      // Remove old listeners (safe way)
+      options.forEach(option => {
+        const newOption = option.cloneNode(true);
+        option.parentNode.replaceChild(newOption, option);
+      });
+
+      // Re-attach
+      document.querySelectorAll('.mpesa-option').forEach(option => {
+        option.addEventListener('click', () => {
+          const type = option.getAttribute('data-mpesa-option');
+          selectMpesaOption(type);
+        });
+      });
+
+      // Default
+      selectMpesaOption('paybill');
+    }
+
+    // ================================
+    // 4. FORM VALIDATION
+    // ================================
+    function validateForm() {
+      clearErrors();
+      let valid = true;
+      const method = paymentMethodInput.value;
+
+      if (['credit-card', 'debit-card'].includes(method)) {
+        if (!validateCardNumber()) valid = false;
+        if (!validateExpiryDate()) valid = false;
+        if (!validateCVV()) valid = false;
+        if (!document.getElementById('cardName').value.trim()) {
+          showError('cardNameError', 'Name required');
+          valid = false;
+        }
+      } else if (method === 'mpesa') {
+        if (!validateMpesaNumber()) valid = false;
+        if (!document.getElementById('mpesaOption').value) {
+          showError('mpesaOptionError', 'Select an option');
+          valid = false;
+        }
+      }
+
+      return valid;
+    }
+
+    function validateCardNumber() {
+      const val = document.getElementById('cardNumber').value.replace(/\s/g, '');
+      if (!/^\d{16}$/.test(val)) {
+        showError('cardNumberError', 'Invalid card number');
+        return false;
+      }
+      return true;
+    }
+
+    function validateExpiryDate() {
+      const val = document.getElementById('expiryDate').value;
+      if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(val)) {
+        showError('expiryDateError', 'Invalid format (MM/YY)');
+        return false;
+      }
+      const [m, y] = val.split('/').map(Number);
+      const now = new Date();
+      const year = now.getFullYear() % 100;
+      const month = now.getMonth() + 1;
+      if (y < year || (y === year && m < month)) {
+        showError('expiryDateError', 'Card expired');
+        return false;
+      }
+      return true;
+    }
+
+    function validateCVV() {
+      const val = document.getElementById('cvv').value;
+      if (!/^\d{3,4}$/.test(val)) {
+        showError('cvvError', 'Invalid CVV');
+        return false;
+      }
+      return true;
+    }
+
+    function validateMpesaNumber() {
+      const val = document.getElementById('mpesaNumber').value.replace(/\D/g, '');
+      if (!/^7\d{8}$/.test(val)) {
+        showError('mpesaNumberError', 'Enter valid 9-digit number (e.g. 712345678)');
+        return false;
+      }
+      return true;
+    }
+
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = msg;
+      const input = el?.previousElementSibling;
+      if (input) input.classList.add('error');
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.error-message').forEach(e => e.textContent = '');
+      document.querySelectorAll('.form-control').forEach(i => i.classList.remove('error'));
+    }
+
+    // ================================
+    // 5. INPUT FORMATTERS
+    // ================================
+    document.getElementById('cardNumber')?.addEventListener('input', e => {
+      let v = e.target.value.replace(/\s/g, '').match(/.{1,4}/g);
+      e.target.value = v ? v.join(' ') : '';
+    });
+
+    document.getElementById('expiryDate')?.addEventListener('input', e => {
+      let v = e.target.value.replace(/\D/g, '');
+      if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2, 4);
+      e.target.value = v;
+    });
+
+    document.getElementById('cvv')?.addEventListener('input', e => {
+      e.target.value = e.target.value.replace(/\D/g, '');
+    });
+
+    document.getElementById('mpesaNumber')?.addEventListener('input', e => {
+      let v = e.target.value.replace(/\D/g, '');
+      if (v.startsWith('0')) v = v.slice(1);
+      if (v.length > 9) v = v.slice(0, 9);
+      e.target.value = v;
+    });
+
+    // ================================
+    // 6. PAYMENT FLOW
+    // ================================
+    const form = document.getElementById('paymentForm');
+    const modal = document.getElementById('paymentModal');
+    const mpesaModal = document.getElementById('mpesaStatusModal');
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      if (!validateForm()) return;
+      showPaymentModal();
+    });
+
+    document.getElementById('confirmPaymentBtn').addEventListener('click', () => {
+      closeModal(modal);
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span> Processing...';
+
+      if (paymentMethodInput.value === 'mpesa') {
+        processMpesa();
+      } else {
+        setTimeout(simulateSuccess, 2000);
+      }
+    });
+
+    function showPaymentModal() {
+      const method = paymentMethodInput.value;
+      const amount = document.querySelector('input[name="amount"]').value;
+      const property = {{ (property.address_line1 if property else 'N/A') | tojson }};
+
+      const methodNames = {
+        'credit-card': 'Credit Card',
+        'debit-card': 'Debit Card',
+        'bank-transfer': 'Bank Transfer',
+        'paypal': 'PayPal',
+        'mpesa': 'M-Pesa'
+      };
+
+      document.getElementById('confirmMethod').textContent = methodNames[method] || method;
+      document.getElementById('confirmAmount').textContent = 'KSh ' + amount;
+      document.getElementById('confirmProperty').textContent = property;
+      document.getElementById('confirmTotal').textContent = 'KSh ' + amount;
+
+      const msg = method === 'mpesa'
+        ? 'An M-Pesa STK push will be sent to your phone. Complete payment with your PIN.'
+        : 'Your payment will be processed securely.';
+      document.getElementById('confirmMessage').textContent = msg;
+
+      modal.classList.add('show');
+    }
+
+    function closeModal(m) { m.classList.remove('show'); }
+
+    // Close modals
+    document.querySelectorAll('.modal-close, .btn-outline').forEach(btn => {
+      btn.addEventListener('click', () => btn.closest('.modal').classList.remove('show'));
+    });
+
+    // ================================
+    // 7. M-PESA PAYMENT
+    // ================================
+    function processMpesa() {
+      const phone = document.getElementById('mpesaNumber').value.replace(/\D/g, '');
+      const amount = document.querySelector('input[name="amount"]').value;
+      const propertyId = document.querySelector('input[name="property_id"]').value;
+      const option = document.getElementById('mpesaOption').value;
+
+      const formatted = phone.startsWith('0') ? '254' + phone.slice(1) : '254' + phone;
+
+      const data = new FormData();
+      data.append('phone', formatted);
+      data.append('amount', amount);
+      data.append('property_id', propertyId);
+      data.append('mpesa_option', option);
+
+      fetch('{{ url_for("tenant.pay_rent_mpesa") }}', {
+        method: 'POST',
+        body: data
+      })
+      .then(r => r.json())
+      .then(res => {
+        resetButton();
+        if (res.error) {
+          showAlert(res.error, 'danger');
+        } else {
+          mpesaModal.classList.add('show');
+          setTimeout(checkMpesaStatus, 5000);
+        }
+      })
+      .catch(() => {
+        resetButton();
+        showAlert('Network error. Try again.', 'danger');
+      });
+    }
+
+    function checkMpesaStatus() {
+      const msg = document.getElementById('mpesaStatusMessage');
+      msg.innerHTML = '<p>Checking status...</p>';
+
+      setTimeout(() => {
+        if (Math.random() > 0.3) {
+          const id = 'MP' + Date.now();
+          msg.innerHTML = `<p style="color:green">Success! ID: ${id}</p>`;
+          setTimeout(() => {
+            closeModal(mpesaModal);
+            showAlert('M-Pesa payment successful!', 'success');
+            addToHistory(id, 'M-Pesa');
+            form.reset();
+            selectPaymentMethod('credit-card');
+          }, 2000);
+        } else {
+          msg.innerHTML = '<p style="color:red">Payment failed.</p>';
+        }
+      }, 2000);
+    }
+
+    // ================================
+    // 8. OTHER PAYMENTS (SIMULATED)
+    // ================================
+    function simulateSuccess() {
+      const id = 'TXN' + Date.now();
+      showAlert(`Payment successful! ID: ${id}`, 'success');
+      addToHistory(id, 'Card');
+      form.reset();
+      selectPaymentMethod('credit-card');
+      resetButton();
+    }
+
+    function resetButton() {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i class="fas fa-lock"></i> Pay KSh {{ total_amount_due }}`;
+    }
+
+    function showAlert(text, type) {
+      const alert = document.createElement('div');
+      alert.className = `alert alert-${type === 'success' ? 'success' : 'danger'}`;
+      alert.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check' : 'exclamation'}-circle"></i>
+        <span>${text}</span>
+        <button class="alert-close"><i class="fas fa-times"></i></button>
+      `;
+      document.querySelector('.main-content').insertBefore(alert, document.querySelector('.page-header').nextSibling);
+      alert.querySelector('.alert-close').onclick = () => alert.remove();
+      setTimeout(() => alert.remove(), 8000);
+    }
+
+    function addToHistory(id, method) {
+      const tbody = document.querySelector('tbody');
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td>${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+        <td>KSh {{ total_amount_due }}</td>
+        <td>${method}</td>
+        <td><span class="status-badge status-paid">Paid</span></td>
+        <td><a href="#" onclick="viewReceipt('${id}')">View Receipt</a></td>
+      `;
+      tbody.insertBefore(row, tbody.firstChild);
+      const empty = tbody.querySelector('td[colspan]');
+      if (empty) empty.parentElement.remove();
+    }
+
+    // ================================
+    // 9. AUTO-PAY TOGGLE
+    // ================================
+    const autopayToggle = document.getElementById('autopayToggle');
+    const autopaySettings = document.getElementById('autopaySettings');
+    if (autopayToggle) {
+      autopayToggle.addEventListener('change', () => {
+        autopaySettings.style.display = autopayToggle.checked ? 'block' : 'none';
+      });
+    }
+
+    document.getElementById('saveAutopay')?.addEventListener('click', function () {
+      this.disabled = true;
+      this.innerHTML = 'Saving...';
+      setTimeout(() => {
+        showAlert('Auto-pay settings saved!', 'success');
+        this.disabled = false;
+        this.innerHTML = 'Save Settings';
+      }, 1000);
+    });
+
+    // ================================
+    // 10. RECEIPT MODAL
+    // ================================
+    window.viewReceipt = function (id) {
+      const modal = document.createElement('div');
+      modal.className = 'modal show';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Payment Receipt</h3>
+            <button class="modal-close" onclick="this.closest('.modal').remove()">X</button>
+          </div>
+          <div class="modal-body">
+            <p><strong>ID:</strong> ${id}</p>
+            <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+            <p><strong>Amount:</strong> KSh {{ total_amount_due }}</p>
+            <p><strong>Status:</strong> <span class="status-badge status-paid">Paid</span></p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" onclick="window.print()">Print</button>
+            <button class="btn btn-outline" onclick="this.closest('.modal').remove()">Close</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    };
+
+    // Hide debug after 3s
+    setTimeout(() => {
+      const d = document.getElementById('debugInfo');
+      if (d) d.style.display = 'none';
+    }, 3000);
+  });
+</script>
+{% endblock %}

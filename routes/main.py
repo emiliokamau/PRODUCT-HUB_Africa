@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from models.models import House
 
+
 main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/')
@@ -108,3 +109,19 @@ def subscribe_post():
     else:
         flash('No email provided', 'danger')
     return redirect(url_for('main.index'))
+
+@main_bp.route('/properties')
+def properties_list():
+    houses = House.query.all()
+    return render_template('properties.html', houses=houses)
+
+@main_bp.route('/property/<int:house_id>')
+def view_property(house_id):
+    property = House.query.get_or_404(house_id)
+    # Use image_urls instead of images
+    image_list = [img.strip().split('/')[-1] for img in property.image_urls.split(',')] if property.image_urls else []
+    print(f"Raw image_urls from DB: {property.image_urls}")  # Debug
+    print(f"Processed image_list: {image_list}")  # Debug
+    return render_template('view_property.html', property=property, image_list=image_list)
+
+

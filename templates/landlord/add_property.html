@@ -1,986 +1,1706 @@
-{% extends 'base.html' %} {% block title %}HomeHub | Add Property{% endblock %}
+{% extends 'base.html' %}
+{% block title %}HomeHub | Add Property{% endblock %}
 {% block content %}
-<div class="container dashboard-container">
-  <!-- Flashed Messages -->
-  {% with messages = get_flashed_messages(with_categories=true) %} {% if
-  messages %} {% for category, message in messages %}
-  <div
-    class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show"
-    role="alert"
-  >
-    {{ message }}
-    <button
-      type="button"
-      class="btn-close"
-      data-bs-dismiss="alert"
-      aria-label="Close"
-    ></button>
+<style>
+  :root {
+    --primary: #4361ee;
+    --primary-dark: #3a0ca3;
+    --secondary: #7209b7;
+    --accent: #f72585;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --success: #06ffa5;
+    --info: #00b4d8;
+    --warning: #ffbe0b;
+    --danger: #e63946;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    --border-radius: 15px;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #f8f9fa;
+    color: var(--dark);
+    line-height: 1.6;
+  }
+
+  .dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .page-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    border-radius: 20px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,133.3C960,128,1056,96,1152,90.7C1248,85,1344,107,1392,117.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
+    background-size: cover;
+  }
+
+  .header-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .form-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .form-section {
+    margin-bottom: 2rem;
+  }
+
+  .form-section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .form-section-title i {
+    font-size: 1.2rem;
+  }
+
+  .form-control, .form-select {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: var(--transition);
+    background-color: white;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+    outline: none;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+  }
+
+  .btn-outline-secondary {
+    background: transparent;
+    color: var(--dark);
+    border: 2px solid #e9ecef;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: #f8f9fa;
+  }
+
+  /* Payment Methods Styles */
+  .payment-methods-container {
+    margin-top: 1rem;
+  }
+
+  .payment-method-tabs {
+    display: flex;
+    border-bottom: 2px solid #e9ecef;
+    margin-bottom: 1.5rem;
+  }
+
+  .payment-method-tab {
+    padding: 0.75rem 1rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    font-weight: 600;
+    color: #6c757d;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-right: 1rem;
+  }
+
+  .payment-method-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+
+  .payment-method-tab:hover {
+    color: var(--primary);
+  }
+
+  .payment-method-content {
+    display: none;
+  }
+
+  .payment-method-content.active {
+    display: block;
+  }
+
+  .payment-method-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+    margin-right: 1rem;
+  }
+
+  .mpesa-icon {
+    background: linear-gradient(135deg, #7C3AED, #5B21B6);
+  }
+
+  .paybill-icon {
+    background: linear-gradient(135deg, #0EA5E9, #0284C7);
+  }
+
+  .bank-icon {
+    background: linear-gradient(135deg, #10B981, #059669);
+  }
+
+  .payment-method-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .payment-method-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  .payment-method-desc {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+  }
+
+  .payment-info-box {
+    background: rgba(67, 97, 238, 0.05);
+    border-left: 4px solid var(--primary);
+    padding: 1rem;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 1rem;
+  }
+
+  .payment-info-title {
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .payment-info-text {
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+
+  .form-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -15px;
+    margin-left: -15px;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+
+  .col-md-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+  .col-md-12 {
+    flex: 0 0 100%;
+    max-width: 100%;
+  }
+
+  .form-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+  }
+
+  .form-check {
+    margin-bottom: 0.5rem;
+  }
+
+  .form-check-input:checked {
+    background-color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  /* Image Upload Styles */
+  .image-upload-container {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    background-color: #f8f9fa;
+    transition: var(--transition);
+    cursor: pointer;
+  }
+
+  .image-upload-container:hover {
+    border-color: var(--primary);
+    background-color: rgba(67, 97, 238, 0.05);
+  }
+
+  .image-upload-container.dragover {
+    border-color: var(--primary);
+    background-color: rgba(67, 97, 238, 0.1);
+  }
+
+  .image-upload-icon {
+    font-size: 3rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+  }
+
+  .image-upload-text {
+    color: #6c757d;
+    margin-bottom: 1rem;
+  }
+
+  .image-preview-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 15px;
+    margin-top: 20px;
+  }
+
+  .image-preview-item {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    transition: var(--transition);
+  }
+
+  .image-preview-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  }
+
+  .image-preview {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .image-preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: var(--transition);
+  }
+
+  .image-preview-item:hover .image-preview-overlay {
+    opacity: 1;
+  }
+
+  .image-preview-actions {
+    display: flex;
+    gap: 10px;
+  }
+
+  .image-preview-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .image-preview-delete {
+    background-color: var(--danger);
+    color: white;
+  }
+
+  .image-preview-delete:hover {
+    background-color: #d63447;
+    transform: scale(1.1);
+  }
+
+  .image-preview-view {
+    background-color: white;
+    color: var(--dark);
+  }
+
+  .image-preview-view:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.1);
+  }
+
+  .image-upload-progress {
+    margin-top: 15px;
+    display: none;
+  }
+
+  .progress {
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-color: #e9ecef;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  .image-upload-status {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: #6c757d;
+  }
+
+  .preview-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    position: sticky;
+    top: 20px;
+  }
+
+  .preview-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .preview-item {
+    margin-bottom: 0.75rem;
+    display: flex;
+  }
+
+  .preview-label {
+    font-weight: 600;
+    color: #6c757d;
+    min-width: 120px;
+  }
+
+  .preview-value {
+    color: var(--dark);
+  }
+
+  .alert {
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .alert-success {
+    background: rgba(6, 255, 165, 0.1);
+    color: var(--success);
+    border-left: 4px solid var(--success);
+  }
+
+  .alert-danger {
+    background: rgba(247, 37, 133, 0.1);
+    color: var(--danger);
+    border-left: 4px solid var(--danger);
+  }
+
+  .alert-info {
+    background: rgba(0, 180, 216, 0.1);
+    color: var(--info);
+    border-left: 4px solid var(--info);
+  }
+
+  .char-counter {
+    font-size: 0.85rem;
+    color: #6c757d;
+    text-align: right;
+    margin-top: 0.25rem;
+  }
+
+  .tip-card {
+    background: rgba(67, 97, 238, 0.05);
+    border-left: 4px solid var(--primary);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  .tip-title {
+    font-weight: 600;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tip-content {
+    color: #6c757d;
+    font-size: 0.9rem;
+  }
+
+  /* Modal for image preview */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+  }
+
+  .modal-content {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 700px;
+    max-height: 80%;
+    margin-top: 50px;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 15px;
+    right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .modal-close:hover {
+    color: #bbb;
+  }
+
+  @media (max-width: 992px) {
+    .preview-card {
+      position: relative;
+      margin-top: 2rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .image-preview-container {
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+    
+    .payment-method-tabs {
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    
+    .col-md-6 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+  }
+</style>
+
+<div class="dashboard-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <h1 class="fw-bold mb-2">List Your Property on HomeHub</h1>
+      <p class="mb-0">Fill out the details below to attract tenants quickly in Kenya's competitive rental market.</p>
+    </div>
+  </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %} {% if messages %} {% for category, message in messages %}
+  <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }}">
+    <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}"></i>
+    <span>{{ message }}</span>
   </div>
   {% endfor %} {% endif %} {% endwith %}
-
-  <!-- Page Header with Contextual Guidance -->
-  <header class="mb-4" aria-label="Page header">
-    <h1 class="fw-bold" style="color: #4caf50; font-size: 2rem">
-      List Your Property on HomeHub
-    </h1>
-    <p class="text-muted">
-      Fill out the details below to attract tenants quickly.
-    </p>
-  </header>
 
   <div class="row">
     <!-- Main Form Section -->
     <div class="col-lg-8">
-      <section class="mb-5" aria-label="Add new property">
-        <h2 class="fw-bold mb-4" style="color: #4caf50; font-size: 1.8rem">
-          Add a New Property
-        </h2>
-        <!-- Progress Indicator -->
-        <div
-          class="progress mb-4"
-          role="progressbar"
-          aria-label="Form progress"
-          aria-valuenow="33"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <div class="progress-bar" style="width: 33%" id="progressBar">
-            Step 1: Details
-          </div>
-        </div>
-        <div class="card p-4 bg-dark text-light" style="border-radius: 10px">
-          <form
-            id="addPropertyForm"
-            enctype="multipart/form-data"
-            method="POST"
-            action="{{ url_for('landlord.add_property') }}"
-            aria-label="Add new property"
-          >
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-            <!-- Property Details -->
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Property Name</h5>
-              <input
-                type="text"
-                class="form-control bg-secondary text-light"
-                id="propertyName"
-                name="title"
-                required
-                placeholder="e.g., Cozy Apartment"
-                aria-required="true"
-              />
-              <div class="invalid-feedback">Please enter a property name.</div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Address</h5>
-              <input
-                type="text"
-                class="form-control bg-secondary text-light"
-                id="addressLine1"
-                name="address_line1"
-                required
-                placeholder="e.g., 123 Main St"
-                aria-required="true"
-              />
-              <div class="invalid-feedback">
-                Please enter a valid street address.
-              </div>
-            </div>
-            <div class="mb-3">
-              <input
-                type="text"
-                class="form-control bg-secondary text-light"
-                id="addressLine2"
-                name="address_line2"
-                placeholder="e.g., Apt 4B"
-              />
-            </div>
-            <div class="mb-3">
-              <input
-                type="text"
-                class="form-control bg-secondary text-light"
-                id="city"
-                name="city"
-                required
-                placeholder="e.g., New York"
-                aria-required="true"
-              />
-              <div class="invalid-feedback">Please enter a city.</div>
-            </div>
-            <div class="mb-3">
-              <input
-                type="text"
-                class="form-control bg-secondary text-light"
-                id="stateProvince"
-                name="state_province"
-                required
-                placeholder="e.g., NY"
-                aria-required="true"
-              />
-              <div class="invalid-feedback">
-                Please enter a state or province.
-              </div>
-            </div>
-            <div class="mb-3">
-              <input
-                type="text"
-                class="form-control bg-secondary text-light"
-                id="postalCode"
-                name="postal_code"
-                required
-                placeholder="e.g., 10001"
-                aria-required="true"
-              />
-              <div class="invalid-feedback">
-                Please enter a valid postal/ZIP code.
-              </div>
-            </div>
-            <div class="mb-3">
-              <select
-                class="form-control bg-secondary text-light"
-                id="country"
-                name="country"
-                required
-                aria-required="true"
-              >
-                <option value="" disabled selected>Select country</option>
-                <option value="United States">United States</option>
-                <option value="Canada">Canada</option>
-                <option value="Kenya">Kenya</option>
-              </select>
-              <div class="invalid-feedback">Please select a country.</div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Rent Amount (KSH/month)</h5>
-              <input
-                type="number"
-                class="form-control bg-secondary text-light"
-                id="rentAmount"
-                name="rent_amount"
-                required
-                min="0"
-                step="0.01"
-                placeholder="e.g., 50000"
-                aria-required="true"
-              />
-              <div class="invalid-feedback">
-                Please enter a valid rent amount.
-              </div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Property Type</h5>
-              <select
-                class="form-control bg-secondary text-light"
-                id="propertyType"
-                name="property_type"
-                required
-                aria-required="true"
-              >
-                <option value="" disabled selected>Select property type</option>
-                <option value="Apartment">Apartment</option>
-                <option value="House">House</option>
-                <option value="Condo">Condo</option>
-                <option value="Townhouse">Townhouse</option>
-              </select>
-              <div class="invalid-feedback">Please select a property type.</div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Description</h5>
-              <textarea
-                class="form-control bg-secondary text-light"
-                id="propertyDescription"
-                name="description"
-                rows="4"
-                required
-                placeholder="e.g., Modern 2-bedroom apartment with balcony"
-                maxlength="500"
-                aria-required="true"
-              ></textarea>
-              <small class="text-muted" id="charCount">0/500 characters</small>
-              <div class="invalid-feedback">Please provide a description.</div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Upload Images (max 5, JPG/PNG)</h5>
-              <input
-                type="file"
-                class="form-control bg-secondary text-light"
-                id="propertyImages"
-                name="images"
-                accept="image/jpeg,image/png"
-                multiple
-                aria-describedby="imageHelp"
-              />
-              <small id="imageHelp" class="text-muted"
-                >Upload up to 5 images (JPG or PNG, max 5MB each).</small
-              >
-              <div class="invalid-feedback">
-                Please upload valid images (JPG/PNG, max 5).
-              </div>
-              <div id="imagePreview" class="mt-2 d-flex flex-wrap gap-2"></div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Bedrooms</h5>
-              <input
-                type="number"
-                class="form-control bg-secondary text-light"
-                id="bedrooms"
-                name="bedrooms"
-                required
-                min="0"
-                placeholder="e.g., 2"
-                aria-required="true"
-              />
-              <div class="invalid-feedback">
-                Please enter the number of bedrooms.
-              </div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Bathrooms</h5>
-              <input
-                type="number"
-                class="form-control bg-secondary text-light"
-                id="bathrooms"
-                name="bathrooms"
-                required
-                min="0"
-                step="0.5"
-                placeholder="e.g., 1.5"
-                aria-required="true"
-              />
-              <div class="invalid-feedback">
-                Please enter the number of bathrooms.
-              </div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Square Footage</h5>
-              <input
-                type="number"
-                class="form-control bg-secondary text-light"
-                id="squareFootage"
-                name="square_footage"
-                min="0"
-                placeholder="e.g., 1000"
-              />
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Lease Term</h5>
-              <select
-                class="form-control bg-secondary text-light"
-                id="leaseTerm"
-                name="lease_term"
-                required
-                aria-required="true"
-              >
-                <option value="" disabled selected>Select lease term</option>
-                <option value="6 months">6 months</option>
-                <option value="12 months">12 months</option>
-                <option value="24 months">24 months</option>
-              </select>
-              <div class="invalid-feedback">Please select a lease term.</div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Availability Date</h5>
-              <input
-                type="date"
-                class="form-control bg-secondary text-light"
-                id="availabilityDate"
-                name="availability_date"
-                required
-                placeholder="e.g., 2025-09-01"
-                aria-required="true"
-              />
-              <div class="invalid-feedback">
-                Please select an availability date.
-              </div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Utilities Included</h5>
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="utilityWater"
-                  name="utilities"
-                  value="Water"
-                />
-                <label class="form-check-label text-light" for="utilityWater"
-                  >Water</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="utilityElectricity"
-                  name="utilities"
-                  value="Electricity"
-                />
-                <label
-                  class="form-check-label text-light"
-                  for="utilityElectricity"
-                  >Electricity</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="utilityGas"
-                  name="utilities"
-                  value="Gas"
-                />
-                <label class="form-check-label text-light" for="utilityGas"
-                  >Gas</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="utilityInternet"
-                  name="utilities"
-                  value="Internet"
-                />
-                <label class="form-check-label text-light" for="utilityInternet"
-                  >Internet</label
-                >
-              </div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Pets Allowed</h5>
-              <div class="form-check">
-                <input
-                  type="radio"
-                  class="form-check-input"
-                  id="petsYes"
-                  name="pets_allowed"
-                  value="Yes"
-                />
-                <label class="form-check-label text-light" for="petsYes"
-                  >Yes</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  type="radio"
-                  class="form-check-input"
-                  id="petsNo"
-                  name="pets_allowed"
-                  value="No"
-                  checked
-                />
-                <label class="form-check-label text-light" for="petsNo"
-                  >No</label
-                >
-              </div>
-              <input
-                type="text"
-                class="form-control bg-secondary text-light mt-2"
-                id="petRestrictions"
-                name="pet_restrictions"
-                placeholder="e.g., Small dogs only"
-              />
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Parking Availability</h5>
-              <select
-                class="form-control bg-secondary text-light"
-                id="parkingAvailability"
-                name="parking_availability"
-              >
-                <option value="None" selected>None</option>
-                <option value="Street Parking">Street Parking</option>
-                <option value="Garage">Garage</option>
-                <option value="Driveway">Driveway</option>
-              </select>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Furnished Status</h5>
-              <div class="form-check">
-                <input
-                  type="radio"
-                  class="form-check-input"
-                  id="furnishedFully"
-                  name="furnished_status"
-                  value="Fully Furnished"
-                />
-                <label class="form-check-label text-light" for="furnishedFully"
-                  >Fully Furnished</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  type="radio"
-                  class="form-check-input"
-                  id="furnishedPartially"
-                  name="furnished_status"
-                  value="Partially Furnished"
-                />
-                <label
-                  class="form-check-label text-light"
-                  for="furnishedPartially"
-                  >Partially Furnished</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  type="radio"
-                  class="form-check-input"
-                  id="furnishedUnfurnished"
-                  name="furnished_status"
-                  value="Unfurnished"
-                  checked
-                />
-                <label
-                  class="form-check-label text-light"
-                  for="furnishedUnfurnished"
-                  >Unfurnished</label
-                >
-              </div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Amenities</h5>
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="amenityAC"
-                  name="amenities"
-                  value="Air Conditioning"
-                />
-                <label class="form-check-label text-light" for="amenityAC"
-                  >Air Conditioning</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="amenityWasherDryer"
-                  name="amenities"
-                  value="Washer/Dryer"
-                />
-                <label
-                  class="form-check-label text-light"
-                  for="amenityWasherDryer"
-                  >Washer/Dryer</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="amenityBalcony"
-                  name="amenities"
-                  value="Balcony"
-                />
-                <label class="form-check-label text-light" for="amenityBalcony"
-                  >Balcony</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="amenityGym"
-                  name="amenities"
-                  value="Gym"
-                />
-                <label class="form-check-label text-light" for="amenityGym"
-                  >Gym</label
-                >
-              </div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Security Deposit</h5>
-              <input
-                type="number"
-                class="form-control bg-secondary text-light"
-                id="securityDeposit"
-                name="security_deposit"
-                min="0"
-                step="0.01"
-                placeholder="e.g., 1500.00"
-              />
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Smoking Policy</h5>
-              <div class="form-check">
-                <input
-                  type="radio"
-                  class="form-check-input"
-                  id="smokingAllowed"
-                  name="smoking_policy"
-                  value="Smoking Allowed"
-                />
-                <label class="form-check-label text-light" for="smokingAllowed"
-                  >Smoking Allowed</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  type="radio"
-                  class="form-check-input"
-                  id="smokingNon"
-                  name="smoking_policy"
-                  value="Non-Smoking"
-                  checked
-                />
-                <label class="form-check-label text-light" for="smokingNon"
-                  >Non-Smoking</label
-                >
-              </div>
-            </div>
-            <div class="mb-3">
-              <h5 class="text-info mb-2">Accessibility Features</h5>
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="accessWheelchair"
-                  name="accessibility_features"
-                  value="Wheelchair Access"
-                />
-                <label
-                  class="form-check-label text-light"
-                  for="accessWheelchair"
-                  >Wheelchair Access</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="accessElevator"
-                  name="accessibility_features"
-                  value="Elevator"
-                />
-                <label class="form-check-label text-light" for="accessElevator"
-                  >Elevator</label
-                >
-              </div>
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="accessGrabBars"
-                  name="accessibility_features"
-                  value="Grab Bars"
-                />
-                <label class="form-check-label text-light" for="accessGrabBars"
-                  >Grab Bars</label
-                >
-              </div>
-            </div>
-            <!-- Form Buttons -->
-            <div class="d-flex gap-2">
-              <button
-                type="submit"
-                class="btn btn-success flex-grow-1"
-                id="submitProperty"
-                aria-label="List property"
-              >
-                List Property
-              </button>
-              <button
-                type="button"
-                class="btn btn-secondary"
-                id="saveDraft"
-                aria-label="Save as draft"
-              >
-                Save as Draft
-              </button>
-              <a
-                href="{{ url_for('landlord.dashboard') }}"
-                class="btn btn-outline-light"
-                aria-label="Cancel and return to dashboard"
-                >Cancel</a
-              >
-            </div>
-          </form>
-          <div
-            id="addPropertyFeedback"
-            class="alert mt-3"
-            style="display: none"
-          ></div>
-        </div>
-      </section>
-      <!-- Notifications Section -->
-      <section class="mb-5" aria-label="Recent activity">
-        <h5 class="text-info mb-3">Recent Activity</h5>
-        <div id="recentActivity" class="text-muted">
-          <p>No recent activity.</p>
-        </div>
-      </section>
-    </div>
+      <div class="form-card">
+        <form id="addPropertyForm" enctype="multipart/form-data" method="POST" action="{{ url_for('landlord.add_property') }}">
+         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-    <!-- Sidebar with Tips and Preview -->
+          
+          <!-- Basic Information -->
+          <div class="form-section">
+            <h3 class="form-section-title">
+              <i class="fas fa-home"></i>
+              Basic Information
+            </h3>
+            
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="propertyName" class="form-label">Property Name</label>
+                <input type="text" class="form-control" id="propertyName" name="title" required 
+                       placeholder="e.g., Spacious 2BR Apartment in Kilimani">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="propertyType" class="form-label">Property Type</label>
+                <select class="form-select" id="propertyType" name="property_type" required>
+                  <option value="" disabled selected>Select property type</option>
+                  <option value="Apartment">Apartment</option>
+                  <option value="House">House</option>
+                  <option value="Townhouse">Townhouse</option>
+                  <option value="Studio">Studio</option>
+                  <option value="Bedsitter">Bedsitter</option>
+                  <option value="Single Room">Single Room</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="propertyDescription" class="form-label">Description</label>
+              <textarea class="form-control" id="propertyDescription" name="description" rows="4" required 
+                        placeholder="Describe your property, highlighting key features that would attract tenants in Kenya..."></textarea>
+              <div class="char-counter">
+                <span id="charCount">0</span>/500 characters
+              </div>
+            </div>
+          </div>
+          
+          <!-- Location Information -->
+          <div class="form-section">
+            <h3 class="form-section-title">
+              <i class="fas fa-map-marker-alt"></i>
+              Location Information
+            </h3>
+            
+            <div class="tip-card">
+              <div class="tip-title">
+                <i class="fas fa-lightbulb"></i>
+                Location Tip
+              </div>
+              <div class="tip-content">
+                Be specific about the location to help tenants find your property easily. Include nearby landmarks, estates, or popular areas.
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="county" class="form-label">County</label>
+                <select class="form-select" id="county" name="county" required>
+                  <option value="" disabled selected>Select county</option>
+                  <!-- Nairobi Region -->
+                  <optgroup label="Nairobi Region">
+                    <option value="Nairobi">Nairobi</option>
+                  </optgroup>
+                  
+                  <!-- Central Region -->
+                  <optgroup label="Central Region">
+                    <option value="Kiambu">Kiambu</option>
+                    <option value="Murang'a">Murang'a</option>
+                    <option value="Nyeri">Nyeri</option>
+                    <option value="Kirinyaga">Kirinyaga</option>
+                    <option value="Nyandarua">Nyandarua</option>
+                  </optgroup>
+                  
+                  <!-- Coast Region -->
+                  <optgroup label="Coast Region">
+                    <option value="Mombasa">Mombasa</option>
+                    <option value="Kwale">Kwale</option>
+                    <option value="Kilifi">Kilifi</option>
+                    <option value="Tana River">Tana River</option>
+                    <option value="Lamu">Lamu</option>
+                    <option value="Taita Taveta">Taita Taveta</option>
+                  </optgroup>
+                  
+                  <!-- Eastern Region -->
+                  <optgroup label="Eastern Region">
+                    <option value="Machakos">Machakos</option>
+                    <option value="Makueni">Makueni</option>
+                    <option value="Kitui">Kitui</option>
+                    <option value="Embu">Embu</option>
+                    <option value="Tharaka Nithi">Tharaka Nithi</option>
+                    <option value="Meru">Meru</option>
+                    <option value="Isiolo">Isiolo</option>
+                  </optgroup>
+                  
+                  <!-- North Eastern Region -->
+                  <optgroup label="North Eastern Region">
+                    <option value="Garissa">Garissa</option>
+                    <option value="Wajir">Wajir</option>
+                    <option value="Mandera">Mandera</option>
+                  </optgroup>
+                  
+                  <!-- Nyanza Region -->
+                  <optgroup label="Nyanza Region">
+                    <option value="Kisumu">Kisumu</option>
+                    <option value="Siaya">Siaya</option>
+                    <option value="Migori">Migori</option>
+                    <option value="Homa Bay">Homa Bay</option>
+                    <option value="Kisii">Kisii</option>
+                    <option value="Nyamira">Nyamira</option>
+                  </optgroup>
+                  
+                  <!-- Rift Valley Region -->
+                  <optgroup label="Rift Valley Region">
+                    <option value="Nakuru">Nakuru</option>
+                    <option value="Baringo">Baringo</option>
+                    <option value="Laikipia">Laikipia</option>
+                    <option value="Narok">Narok</option>
+                    <option value="Kajiado">Kajiado</option>
+                    <option value="Kericho">Kericho</option>
+                    <option value="Bomet">Bomet</option>
+                    <option value="Kakamega">Kakamega</option>
+                    <option value="Vihiga">Vihiga</option>
+                    <option value="Bungoma">Bungoma</option>
+                    <option value="Busia">Busia</option>
+                    <option value="Trans Nzoia">Trans Nzoia</option>
+                    <option value="Uasin Gishu">Uasin Gishu</option>
+                    <option value="Elgeyo Marakwet">Elgeyo Marakwet</option>
+                    <option value="Nandi">Nandi</option>
+                    <option value="West Pokot">West Pokot</option>
+                    <option value="Samburu">Samburu</option>
+                    <option value="Turkana">Turkana</option>
+                  </optgroup>
+                  
+                  <!-- Western Region -->
+                  <optgroup label="Western Region">
+                    <option value="Kakamega">Kakamega</option>
+                    <option value="Vihiga">Vihiga</option>
+                    <option value="Bungoma">Bungoma</option>
+                    <option value="Busia">Busia</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="form-group col-md-6">
+                <label for="estateArea" class="form-label">Estate/Area</label>
+                <input type="text" class="form-control" id="estateArea" name="estate_area" required 
+                       placeholder="e.g., Kilimani, Kileleshwa, Westlands">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="address" class="form-label">Street Address</label>
+              <input type="text" class="form-control" id="address" name="address" required 
+                     placeholder="e.g., Ring Road, Ole Dume Road">
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="buildingName" class="form-label">Building/Complex Name</label>
+                <input type="text" class="form-control" id="buildingName" name="building_name" 
+                       placeholder="e.g., Kileleshwa Heights, Riara Suites">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="houseNumber" class="form-label">House/Apartment Number</label>
+                <input type="text" class="form-control" id="houseNumber" name="house_number" 
+                       placeholder="e.g., B3, A12">
+              </div>
+            </div>
+          </div>
+          
+          <!-- Property Details -->
+          <div class="form-section">
+            <h3 class="form-section-title">
+              <i class="fas fa-info-circle"></i>
+              Property Details
+            </h3>
+            
+            <div class="form-row">
+              <div class="form-group col-md-3">
+                <label for="bedrooms" class="form-label">Bedrooms</label>
+                <select class="form-select" id="bedrooms" name="bedrooms" required>
+                  <option value="" disabled selected>Select</option>
+                  <option value="Studio">Studio</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5+">5+</option>
+                </select>
+              </div>
+              <div class="form-group col-md-3">
+                <label for="bathrooms" class="form-label">Bathrooms</label>
+                <select class="form-select" id="bathrooms" name="bathrooms" required>
+                  <option value="" disabled selected>Select</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4+">4+</option>
+                </select>
+              </div>
+              <div class="form-group col-md-3">
+                <label for="size" class="form-label">Size (sq ft)</label>
+                <input type="number" class="form-control" id="size" name="size" min="0" 
+                       placeholder="e.g., 800">
+              </div>
+              <div class="form-group col-md-3">
+                <label for="furnishing" class="form-label">Furnishing</label>
+                <select class="form-select" id="furnishing" name="furnishing" required>
+                  <option value="" disabled selected>Select</option>
+                  <option value="Fully Furnished">Fully Furnished</option>
+                  <option value="Partially Furnished">Partially Furnished</option>
+                  <option value="Unfurnished">Unfurnished</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="rentAmount" class="form-label">Rent Amount (KES/month)</label>
+                <input type="number" class="form-control" id="rentAmount" name="rent_amount" required 
+                       min="0" placeholder="e.g., 45000">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="paymentFrequency" class="form-label">Payment Frequency</label>
+                <select class="form-select" id="paymentFrequency" name="payment_frequency" required>
+                  <option value="Monthly" selected>Monthly</option>
+                  <option value="Quarterly">Quarterly</option>
+                  <option value="Annually">Annually</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="securityDeposit" class="form-label">Security Deposit (KES)</label>
+                <input type="number" class="form-control" id="securityDeposit" name="security_deposit" 
+                       min="0" placeholder="e.g., 45000">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="availabilityDate" class="form-label">Available From</label>
+                <input type="date" class="form-control" id="availabilityDate" name="availability_date" required>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Payment Methods -->
+          <div class="form-section">
+            <h3 class="form-section-title">
+              <i class="fas fa-credit-card"></i>
+              Payment Methods
+            </h3>
+            
+            <div class="tip-card">
+              <div class="tip-title">
+                <i class="fas fa-lightbulb"></i>
+                Payment Methods Tip
+              </div>
+              <div class="tip-content">
+                Specify how you want to receive rent payments from tenants. You can provide multiple payment options to make it convenient for tenants.
+              </div>
+            </div>
+            
+            <div class="payment-methods-container">
+              <div class="payment-method-tabs">
+                <button type="button" class="payment-method-tab active" data-method="mpesa">
+                  <i class="fab fa-mpesa"></i> M-Pesa
+                </button>
+                <button type="button" class="payment-method-tab" data-method="paybill">
+                  <i class="fas fa-receipt"></i> Paybill
+                </button>
+                <button type="button" class="payment-method-tab" data-method="bank">
+                  <i class="fas fa-university"></i> Bank Transfer
+                </button>
+                <button type="button" class="payment-method-tab" data-method="sendmoney">
+                  <i class="fas fa-paper-plane"></i> Send Money
+                </button>
+              </div>
+              
+              <!-- M-Pesa Till Number -->
+              <div class="payment-method-content active" id="mpesa-content">
+                <div class="payment-method-header">
+                  <div class="payment-method-icon mpesa-icon">
+                    <i class="fab fa-mpesa"></i>
+                  </div>
+                  <div>
+                    <div class="payment-method-title">M-Pesa Till Number</div>
+                    <div class="payment-method-desc">Receive payments directly to your M-Pesa Till Number</div>
+                  </div>
+                </div>
+                
+                <div class="payment-info-box">
+                  <div class="payment-info-title">What is a Till Number?</div>
+                  <div class="payment-info-text">
+                    A Till Number is a business number that allows customers to pay for goods and services directly to your M-Pesa account.
+                  </div>
+                </div>
+                
+                <div class="form-row">
+                  <div class="form-group col-md-6">
+                    <label for="mpesaTillNumber" class="form-label">Till Number</label>
+                    <input type="text" class="form-control" id="mpesaTillNumber" name="mpesa_till_number" 
+                           placeholder="e.g., 123456" maxlength="6">
+                    <small class="form-text">Enter your 6-digit M-Pesa Till Number</small>
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="mpesaBusinessName" class="form-label">Business Name</label>
+                    <input type="text" class="form-control" id="mpesaBusinessName" name="mpesa_business_name" 
+                           placeholder="e.g., HomeHub Properties">
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="mpesaEnabled" name="mpesa_enabled" value="1">
+                    <label class="form-check-label" for="mpesaEnabled">
+                      Enable M-Pesa Till Number as a payment option
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Paybill Number -->
+              <div class="payment-method-content" id="paybill-content">
+                <div class="payment-method-header">
+                  <div class="payment-method-icon paybill-icon">
+                    <i class="fas fa-receipt"></i>
+                  </div>
+                  <div>
+                    <div class="payment-method-title">Paybill Number</div>
+                    <div class="payment-method-desc">Receive payments through Safaricom Paybill service</div>
+                  </div>
+                </div>
+                
+                <div class="payment-info-box">
+                  <div class="payment-info-title">What is a Paybill Number?</div>
+                  <div class="payment-info-text">
+                    A Paybill Number is a business number that allows customers to make payments to your business account. It requires an Account Number to identify the specific payment.
+                  </div>
+                </div>
+                
+                <div class="form-row">
+                  <div class="form-group col-md-6">
+                    <label for="paybillNumber" class="form-label">Paybill Number</label>
+                    <input type="text" class="form-control" id="paybillNumber" name="paybill_number" 
+                           placeholder="e.g., 123456" maxlength="6">
+                    <small class="form-text">Enter your 5 or 6-digit Paybill Number</small>
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="paybillAccountNumber" class="form-label">Account Number</label>
+                    <input type="text" class="form-control" id="paybillAccountNumber" name="paybill_account_number" 
+                           placeholder="e.g., Property ID or Tenant Name">
+                    <small class="form-text">This helps identify which property the payment is for</small>
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="paybillEnabled" name="paybill_enabled" value="1">
+                    <label class="form-check-label" for="paybillEnabled">
+                      Enable Paybill Number as a payment option
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Bank Transfer -->
+              <div class="payment-method-content" id="bank-content">
+                <div class="payment-method-header">
+                  <div class="payment-method-icon bank-icon">
+                    <i class="fas fa-university"></i>
+                  </div>
+                  <div>
+                    <div class="payment-method-title">Bank Transfer</div>
+                    <div class="payment-method-desc">Receive payments directly to your bank account</div>
+                  </div>
+                </div>
+                
+                <div class="form-row">
+                  <div class="form-group col-md-6">
+                    <label for="bankName" class="form-label">Bank Name</label>
+                    <select class="form-select" id="bankName" name="bank_name">
+                      <option value="">Select your bank</option>
+                      <option value="kcb">KCB Bank</option>
+                      <option value="equity">Equity Bank</option>
+                      <option value="cooperative">Cooperative Bank</option>
+                      <option value="standard">Standard Chartered</option>
+                      <option value="absa">Absa Bank</option>
+                      <option value="family">Family Bank</option>
+                      <option value="ncba">NCBA Bank</option>
+                      <option value="diamond">Diamond Trust Bank</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="bankBranch" class="form-label">Branch</label>
+                    <input type="text" class="form-control" id="bankBranch" name="bank_branch" 
+                           placeholder="e.g., Kilimani Branch">
+                  </div>
+                </div>
+                
+                <div class="form-row">
+                  <div class="form-group col-md-6">
+                    <label for="accountName" class="form-label">Account Name</label>
+                    <input type="text" class="form-control" id="accountName" name="account_name" 
+                           placeholder="e.g., John Doe">
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="accountNumber" class="form-label">Account Number</label>
+                    <input type="text" class="form-control" id="accountNumber" name="account_number" 
+                           placeholder="e.g., 1234567890">
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="bankEnabled" name="bank_enabled" value="1">
+                    <label class="form-check-label" for="bankEnabled">
+                      Enable Bank Transfer as a payment option
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Send Money -->
+              <div class="payment-method-content" id="sendmoney-content">
+                <div class="payment-method-header">
+                  <div class="payment-method-icon mpesa-icon">
+                    <i class="fas fa-paper-plane"></i>
+                  </div>
+                  <div>
+                    <div class="payment-method-title">M-Pesa Send Money</div>
+                    <div class="payment-method-desc">Receive payments directly to your M-Pesa phone number</div>
+                  </div>
+                </div>
+                
+                <div class="payment-info-box">
+                  <div class="payment-info-title">How Send Money Works</div>
+                  <div class="payment-info-text">
+                    Tenants can send money directly to your M-Pesa number using the "Send Money" option in their M-Pesa menu.
+                  </div>
+                </div>
+                
+                <div class="form-row">
+                  <div class="form-group col-md-6">
+                    <label for="sendMoneyPhone" class="form-label">M-Pesa Phone Number</label>
+                    <input type="tel" class="form-control" id="sendMoneyPhone" name="send_money_phone" 
+                           placeholder="e.g., 0712345678" pattern="07[0-9]{8}">
+                    <small class="form-text">Enter your M-Pesa registered phone number</small>
+                  </div>
+                  <div class="form-group col-md-6">
+                    <label for="sendMoneyName" class="form-label">Full Name</label>
+                    <input type="text" class="form-control" id="sendMoneyName" name="send_money_name" 
+                           placeholder="e.g., John Doe">
+                  </div>
+                </div>
+                
+                <div class="form-group">
+                  <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="sendMoneyEnabled" name="send_money_enabled" value="1">
+                    <label class="form-check-label" for="sendMoneyEnabled">
+                      Enable M-Pesa Send Money as a payment option
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Amenities -->
+          <div class="form-section">
+            <h3 class="form-section-title">
+              <i class="fas fa-star"></i>
+              Amenities
+            </h3>
+            
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="amenityParking" name="amenities" value="Parking">
+                  <label class="form-check-label" for="amenityParking">Parking</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="amenityBalcony" name="amenities" value="Balcony">
+                  <label class="form-check-label" for="amenityBalcony">Balcony</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="amenityGym" name="amenities" value="Gym">
+                  <label class="form-check-label" for="amenityGym">Gym</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="amenityPool" name="amenities" value="Swimming Pool">
+                  <label class="form-check-label" for="amenityPool">Swimming Pool</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="amenityGated" name="amenities" value="Gated Community">
+                  <label class="form-check-label" for="amenityGated">Gated Community</label>
+                </div>
+              </div>
+              <div class="form-group col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="amenityBackup" name="amenities" value="Backup Power">
+                  <label class="form-check-label" for="amenityBackup">Backup Power</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="amenityWater" name="amenities" value="24/7 Water">
+                  <label class="form-check-label" for="amenityWater">24/7 Water</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="amenitySecurity" name="amenities" value="24/7 Security">
+                  <label class="form-check-label" for="amenitySecurity">24/7 Security</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="amenityElevator" name="amenities" value="Elevator">
+                  <label class="form-check-label" for="amenityElevator">Elevator</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="amenityGarden" name="amenities" value="Garden">
+                  <label class="form-check-label" for="amenityGarden">Garden</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Utilities -->
+          <div class="form-section">
+            <h3 class="form-section-title">
+              <i class="fas fa-bolt"></i>
+              Utilities
+            </h3>
+            
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label class="form-label">Included in Rent</label>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="utilWater" name="utilities" value="Water">
+                  <label class="form-check-label" for="utilWater">Water</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="utilElectricity" name="utilities" value="Electricity">
+                  <label class="form-check-label" for="utilElectricity">Electricity</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="utilGas" name="utilities" value="Gas">
+                  <label class="form-check-label" for="utilGas">Gas</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="utilInternet" name="utilities" value="Internet">
+                  <label class="form-check-label" for="utilInternet">Internet</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="utilDSTV" name="utilities" value="DSTV">
+                  <label class="form-check-label" for="utilDSTV">DSTV</label>
+                </div>
+              </div>
+              <div class="form-group col-md-6">
+                <label class="form-label">Payment Method</label>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" id="payPrepaid" name="payment_method" value="Prepaid" checked>
+                  <label class="form-check-label" for="payPrepaid">Prepaid (Tokens)</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" id="payPostpaid" name="payment_method" value="Postpaid">
+                  <label class="form-check-label" for="payPostpaid">Postpaid (Monthly Bills)</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- House Rules -->
+          <div class="form-section">
+            <h3 class="form-section-title">
+              <i class="fas fa-clipboard-list"></i>
+              House Rules
+            </h3>
+            
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label class="form-label">Pets Policy</label>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" id="petsAllowed" name="pets_policy" value="Allowed">
+                  <label class="form-check-label" for="petsAllowed">Pets Allowed</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" id="petsNotAllowed" name="pets_policy" value="Not Allowed" checked>
+                  <label class="form-check-label" for="petsNotAllowed">Pets Not Allowed</label>
+                </div>
+              </div>
+              <div class="form-group col-md-6">
+                <label class="form-label">Smoking Policy</label>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" id="smokingAllowed" name="smoking_policy" value="Allowed">
+                  <label class="form-check-label" for="smokingAllowed">Smoking Allowed</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" id="smokingNotAllowed" name="smoking_policy" value="Not Allowed" checked>
+                  <label class="form-check-label" for="smokingNotAllowed">Smoking Not Allowed</label>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Property Images -->
+          <div class="form-section">
+            <h3 class="form-section-title">
+              <i class="fas fa-camera"></i>
+              Property Images
+            </h3>
+            
+            <div class="tip-card">
+              <div class="tip-title">
+                <i class="fas fa-lightbulb"></i>
+                Photo Tips
+              </div>
+              <div class="tip-content">
+                Upload clear, well-lit photos of your property. Include images of all rooms, kitchen, bathroom, and any special features. Maximum 5 images.
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <div class="image-upload-container" id="imageUploadContainer">
+                <input type="file" id="propertyImages" name="images" accept="image/jpeg,image/png" multiple style="display: none;">
+                <div class="image-upload-icon">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="image-upload-text">
+                  <p>Click to upload or drag and drop</p>
+                  <p>JPG or PNG (MAX. 5MB each, max 5 images)</p>
+                </div>
+              </div>
+              
+              <div class="image-upload-progress" id="imageUploadProgress">
+                <div class="progress">
+                  <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="image-upload-status" id="uploadStatus">Uploading images...</div>
+              </div>
+              
+              <div class="image-preview-container" id="imagePreview"></div>
+            </div>
+          </div>
+          
+          <!-- Contact Information -->
+          <div class="form-section">
+            <h3 class="form-section-title">
+              <i class="fas fa-phone"></i>
+              Contact Information
+            </h3>
+            
+            <div class="form-row">
+              <div class="form-group col-md-6">
+                <label for="contactName" class="form-label">Contact Person Name</label>
+                <input type="text" class="form-control" id="contactName" name="contact_name" required 
+                       value="{{ current_user.name }}">
+              </div>
+              <div class="form-group col-md-6">
+                <label for="contactPhone" class="form-label">Phone Number</label>
+                <input type="tel" class="form-control" id="contactPhone" name="contact_phone" required 
+                       placeholder="e.g., 0712345678" value="{{ current_user.phone_number or '' }}">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="contactEmail" class="form-label">Email Address</label>
+              <input type="email" class="form-control" id="contactEmail" name="contact_email" required 
+                     value="{{ current_user.email }}">
+            </div>
+            
+            <div class="form-group">
+              <label for="preferredContact" class="form-label">Preferred Contact Method</label>
+              <select class="form-select" id="preferredContact" name="preferred_contact" required>
+                <option value="Phone" selected>Phone Call</option>
+                <option value="WhatsApp">WhatsApp</option>
+                <option value="SMS">SMS</option>
+                <option value="Email">Email</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Form Actions -->
+          <div class="d-flex gap-2 justify-content-end">
+            <a href="{{ url_for('landlord.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">List Property</button>
+          </div>
+        </form>
+        
+        <div id="formFeedback" class="alert" style="display: none;"></div>
+      </div>
+    </div>
+    
+    <!-- Preview Section -->
     <div class="col-lg-4">
-      <!-- Tips Sidebar -->
-      <aside class="mb-5" aria-label="Listing tips">
-        <h5 class="fw-bold mb-3" style="color: #4caf50">
-          Tips for a Great Listing
-        </h5>
-        <div class="card p-3 bg-dark text-light">
-          <ul class="list-unstyled">
-            <li class="mb-2">
-              📸 Use high-quality images to showcase your property.
-            </li>
-            <li class="mb-2">
-              ✍️ Write clear, detailed descriptions to attract tenants.
-            </li>
-            <li class="mb-2">
-              💰 Set competitive rent prices based on market rates.
-            </li>
-          </ul>
-          <button
-            class="btn btn-link text-info p-0"
-            id="toggleTips"
-            aria-expanded="true"
-          >
-            Hide Tips
-          </button>
+      <div class="preview-card">
+        <h3 class="preview-title">
+          <i class="fas fa-eye"></i>
+          Listing Preview
+        </h3>
+        
+        <div class="preview-item">
+          <div class="preview-label">Property:</div>
+          <div class="preview-value" id="previewTitle">-</div>
         </div>
-      </aside>
-      <!-- Preview Section -->
-      <section aria-label="Property preview">
-        <h5 class="fw-bold mb-3" style="color: #4caf50">Listing Preview</h5>
-        <div class="card p-3 bg-dark text-light" id="listingPreview">
-          <h6 id="previewTitle">Property Name</h6>
-          <p id="previewAddressLine1">Address Line 1</p>
-          <p id="previewAddressLine2">Address Line 2</p>
-          <p id="previewCity">City</p>
-          <p id="previewStateProvince">State/Province</p>
-          <p id="previewPostalCode">Postal/ZIP Code</p>
-          <p id="previewCountry">Country</p>
-          <p id="previewRent">Rent Amount</p>
-          <p id="previewType">Property Type</p>
-          <p id="previewDescription">Description</p>
-          <p id="previewBedrooms">Bedrooms</p>
-          <p id="previewBathrooms">Bathrooms</p>
-          <p id="previewSquareFootage">Square Footage</p>
-          <p id="previewLeaseTerm">Lease Term</p>
-          <p id="previewAvailabilityDate">Availability Date</p>
-          <p id="previewUtilities">Utilities Included</p>
-          <p id="previewPets">Pets Allowed</p>
-          <p id="previewParking">Parking Availability</p>
-          <p id="previewFurnished">Furnished Status</p>
-          <p id="previewAmenities">Amenities</p>
-          <p id="previewSecurityDeposit">Security Deposit</p>
-          <p id="previewSmokingPolicy">Smoking Policy</p>
-          <p id="previewAccessibility">Accessibility Features</p>
-          <div id="previewImages" class="d-flex flex-wrap gap-2"></div>
+        
+        <div class="preview-item">
+          <div class="preview-label">Type:</div>
+          <div class="preview-value" id="previewType">-</div>
         </div>
-      </section>
-      <!-- Help Link -->
-      <div class="mt-3">
-        <a
-          href="/support"
-          class="btn btn-link text-info"
-          aria-label="Get support"
-          >Need Help?</a
-        >
+        
+        <div class="preview-item">
+          <div class="preview-label">Location:</div>
+          <div class="preview-value" id="previewLocation">-</div>
+        </div>
+        
+        <div class="preview-item">
+          <div class="preview-label">Bedrooms:</div>
+          <div class="preview-value" id="previewBedrooms">-</div>
+        </div>
+        
+        <div class="preview-item">
+          <div class="preview-label">Bathrooms:</div>
+          <div class="preview-value" id="previewBathrooms">-</div>
+        </div>
+        
+        <div class="preview-item">
+          <div class="preview-label">Rent:</div>
+          <div class="preview-value" id="previewRent">-</div>
+        </div>
+        
+        <div class="preview-item">
+          <div class="preview-label">Available:</div>
+          <div class="preview-value" id="previewAvailability">-</div>
+        </div>
+        
+        <div class="preview-item">
+          <div class="preview-label">Contact:</div>
+          <div class="preview-value" id="previewContact">-</div>
+        </div>
+        
+        <div class="preview-item">
+          <div class="preview-label">Payment:</div>
+          <div class="preview-value" id="previewPayment">-</div>
+        </div>
+        
+        <div id="previewImages" class="mt-3"></div>
       </div>
     </div>
   </div>
-
-  <!-- Landlord Access Badge -->
-  <div
-    class="position-fixed bottom-0 end-0 m-3"
-    aria-label="Landlord access indicator"
-  >
-    <span class="badge bg-success">Landlord Access Only</span>
-  </div>
 </div>
 
-<!-- Bootstrap JS -->
-<script
-  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-  integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdlZxGxvJ3/4sk7Lg"
-  crossorigin="anonymous"
-></script>
-<!-- Custom JavaScript -->
-<script src="{{ url_for('static', filename='scripts.js') }}"></script>
+<!-- Image Preview Modal -->
+<div id="imageModal" class="modal">
+  <span class="modal-close">&times;</span>
+  <img class="modal-content" id="modalImage">
+</div>
+
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const form = document.getElementById('addPropertyForm');
-      const feedback = document.getElementById('addPropertyFeedback');
-      const submitButton = document.getElementById('submitProperty');
-      const saveDraftButton = document.getElementById('saveDraft');
-      const toggleTipsButton = document.getElementById('toggleTips');
-      const tipsCard = toggleTipsButton.parentElement;
-      const progressBar = document.getElementById('progressBar');
-      const preview = {
-        title: document.getElementById('previewTitle'),
-        addressLine1: document.getElementById('previewAddressLine1'),
-        addressLine2: document.getElementById('previewAddressLine2'),
-        city: document.getElementById('previewCity'),
-        stateProvince: document.getElementById('previewStateProvince'),
-        postalCode: document.getElementById('previewPostalCode'),
-        country: document.getElementById('previewCountry'),
-        rent: document.getElementById('previewRent'),
-        type: document.getElementById('previewType'),
-        description: document.getElementById('previewDescription'),
-        bedrooms: document.getElementById('previewBedrooms'),
-        bathrooms: document.getElementById('previewBathrooms'),
-        squareFootage: document.getElementById('previewSquareFootage'),
-        leaseTerm: document.getElementById('previewLeaseTerm'),
-        availabilityDate: document.getElementById('previewAvailabilityDate'),
-        utilities: document.getElementById('previewUtilities'),
-        pets: document.getElementById('previewPets'),
-        parking: document.getElementById('previewParking'),
-        furnished: document.getElementById('previewFurnished'),
-        amenities: document.getElementById('previewAmenities'),
-        securityDeposit: document.getElementById('previewSecurityDeposit'),
-        smokingPolicy: document.getElementById('previewSmokingPolicy'),
-        accessibility: document.getElementById('previewAccessibility'),
-        images: document.getElementById('previewImages')
-      };
-      const inputs = {
-        name: document.getElementById('propertyName'),
-        addressLine1: document.getElementById('addressLine1'),
-        addressLine2: document.getElementById('addressLine2'),
-        city: document.getElementById('city'),
-        stateProvince: document.getElementById('stateProvince'),
-        postalCode: document.getElementById('postalCode'),
-        country: document.getElementById('country'),
-        rent: document.getElementById('rentAmount'),
-        type: document.getElementById('propertyType'),
-        description: document.getElementById('propertyDescription'),
-        images: document.getElementById('propertyImages'),
-        bedrooms: document.getElementById('bedrooms'),
-        bathrooms: document.getElementById('bathrooms'),
-        squareFootage: document.getElementById('squareFootage'),
-        leaseTerm: document.getElementById('leaseTerm'),
-        availabilityDate: document.getElementById('availabilityDate'),
-        utilities: document.querySelectorAll('input[name="utilities"]'),
-        pets: document.querySelectorAll('input[name="pets_allowed"]'),
-        petRestrictions: document.getElementById('petRestrictions'),
-        parking: document.getElementById('parkingAvailability'),
-        furnished: document.querySelectorAll('input[name="furnished_status"]'),
-        amenities: document.querySelectorAll('input[name="amenities"]'),
-        securityDeposit: document.getElementById('securityDeposit'),
-        smokingPolicy: document.querySelectorAll('input[name="smoking_policy"]'),
-        accessibility: document.querySelectorAll('input[name="accessibility_features"]')
-      };
-      const charCount = document.getElementById('charCount');
-      const imagePreview = document.getElementById('imagePreview');
-
-      // Real-time preview updates
-      function updatePreview() {
-        preview.title.textContent = inputs.name.value || 'Property Name';
-        preview.addressLine1.textContent = inputs.addressLine1.value || 'Address Line 1';
-        preview.addressLine2.textContent = inputs.addressLine2.value || 'Address Line 2';
-        preview.city.textContent = inputs.city.value || 'City';
-        preview.stateProvince.textContent = inputs.stateProvince.value || 'State/Province';
-        preview.postalCode.textContent = inputs.postalCode.value || 'Postal/ZIP Code';
-        preview.country.textContent = inputs.country.value || 'Country';
-        preview.rent.textContent = inputs.rent.value ? `KSH ${inputs.rent.value}/month` : 'Rent Amount';
-        preview.type.textContent = inputs.type.value || 'Property Type';
-        preview.description.textContent = inputs.description.value || 'Description';
-        preview.bedrooms.textContent = inputs.bedrooms.value ? `${inputs.bedrooms.value} Bedrooms` : 'Bedrooms';
-        preview.bathrooms.textContent = inputs.bathrooms.value ? `${inputs.bathrooms.value} Bathrooms` : 'Bathrooms';
-        preview.squareFootage.textContent = inputs.squareFootage.value ? `${inputs.squareFootage.value} Sq Ft` : 'Square Footage';
-        preview.leaseTerm.textContent = inputs.leaseTerm.value || 'Lease Term';
-        preview.availabilityDate.textContent = inputs.availabilityDate.value || 'Availability Date';
-        preview.utilities.textContent = Array.from(inputs.utilities).filter(u => u.checked).map(u => u.value).join(', ') || 'Utilities Included';
-        preview.pets.textContent = Array.from(inputs.pets).find(p => p.checked)?.value + (inputs.petRestrictions.value ? `: ${inputs.petRestrictions.value}` : '') || 'Pets Allowed';
-        preview.parking.textContent = inputs.parking.value || 'Parking Availability';
-        preview.furnished.textContent = Array.from(inputs.furnished).find(f => f.checked)?.value || 'Furnished Status';
-        preview.amenities.textContent = Array.from(inputs.amenities).filter(a => a.checked).map(a => a.value).join(', ') || 'Amenities';
-        preview.securityDeposit.textContent = inputs.securityDeposit.value ? `KSH ${inputs.securityDeposit.value}` : 'Security Deposit';
-        preview.smokingPolicy.textContent = Array.from(inputs.smokingPolicy).find(s => s.checked)?.value || 'Smoking Policy';
-        preview.accessibility.textContent = Array.from(inputs.accessibility).filter(a => a.checked).map(a => a.value).join(', ') || 'Accessibility Features';
+document.addEventListener('DOMContentLoaded', function() {
+  const form = document.getElementById('addPropertyForm');
+  const feedback = document.getElementById('formFeedback');
+  const propertyDescription = document.getElementById('propertyDescription');
+  const charCount = document.getElementById('charCount');
+  const propertyImages = document.getElementById('propertyImages');
+  const imageUploadContainer = document.getElementById('imageUploadContainer');
+  const imagePreview = document.getElementById('imagePreview');
+  const imageModal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+  const modalClose = document.querySelector('.modal-close');
+  
+  // Array to store uploaded images
+  let uploadedImages = [];
+  
+  // Payment method tabs functionality
+  const paymentTabs = document.querySelectorAll('.payment-method-tab');
+  const paymentContents = document.querySelectorAll('.payment-method-content');
+  
+  paymentTabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      // Remove active class from all tabs and contents
+      paymentTabs.forEach(t => t.classList.remove('active'));
+      paymentContents.forEach(c => c.classList.remove('active'));
+      
+      // Add active class to clicked tab
+      this.classList.add('active');
+      
+      // Show corresponding content
+      const method = this.getAttribute('data-method');
+      document.getElementById(`${method}-content`).classList.add('active');
+    });
+  });
+  
+  // Character counter for description
+  propertyDescription.addEventListener('input', function() {
+    const count = this.value.length;
+    charCount.textContent = count;
+    
+    if (count > 500) {
+      this.value = this.value.substring(0, 500);
+      charCount.textContent = 500;
+    }
+    
+    updatePreview();
+  });
+  
+  // Image upload functionality
+  imageUploadContainer.addEventListener('click', function() {
+    propertyImages.click();
+  });
+  
+  // Drag and drop functionality
+  imageUploadContainer.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    this.classList.add('dragover');
+  });
+  
+  imageUploadContainer.addEventListener('dragleave', function() {
+    this.classList.remove('dragover');
+  });
+  
+  imageUploadContainer.addEventListener('drop', function(e) {
+    e.preventDefault();
+    this.classList.remove('dragover');
+    
+    const files = e.dataTransfer.files;
+    handleImageUpload(files);
+  });
+  
+  // File input change
+  propertyImages.addEventListener('change', function() {
+    handleImageUpload(this.files);
+  });
+  
+  // Handle image upload
+  function handleImageUpload(files) {
+    // Check if adding these files would exceed the limit of 5
+    if (uploadedImages.length + files.length > 5) {
+      showFeedback('Maximum 5 images allowed.', 'danger');
+      return;
+    }
+    
+    // Process each file
+    Array.from(files).forEach(file => {
+      // Validate file type
+      if (!file.type.match('image.*')) {
+        showFeedback('Only image files are allowed.', 'danger');
+        return;
       }
-
-      // Image preview
-      inputs.images.addEventListener('change', () => {
-        imagePreview.innerHTML = '';
-        preview.images.innerHTML = '';
-        const files = inputs.images.files;
-        if (files.length > 5) {
-          inputs.images.classList.add('is-invalid');
-          imagePreview.innerHTML = '<div class="text-danger">Maximum 5 images allowed.</div>';
-          return;
-        }
-        for (const file of files) {
-          if (!['image/jpeg', 'image/png'].includes(file.type) || file.size > 5 * 1024 * 1024) {
-            inputs.images.classList.add('is-invalid');
-            imagePreview.innerHTML = '<div class="text-danger">Only JPG/PNG files under 5MB allowed.</div>';
-            return;
-          }
-          const img = document.createElement('img');
-          img.src = URL.createObjectURL(file);
-          img.style.maxWidth = '100px';
-          img.style.borderRadius = '5px';
-          imagePreview.appendChild(img);
-          preview.images.appendChild(img.cloneNode());
-        }
-        inputs.images.classList.remove('is-invalid');
-      });
-
-      // Character count for description
-      inputs.description.addEventListener('input', () => {
-        const count = inputs.description.value.length;
-        charCount.textContent = `${count}/500 characters`;
-        if (count > 500) {
-          inputs.description.classList.add('is-invalid');
-        } else {
-          inputs.description.classList.remove('is-invalid');
-        }
-        updatePreview();
-      });
-
-      // Real-time validation and preview
-      Object.values(inputs).forEach(input => {
-        if (input instanceof NodeList) {
-          input.forEach(i => {
-            i.addEventListener('change', updatePreview);
-          });
-        } else if (input !== inputs.images) {
-          input.addEventListener('input', () => {
-            input.classList.toggle('is-invalid', !input.checkValidity());
-            updatePreview();
-          });
-        }
-      });
-
-      // Toggle tips sidebar
-      toggleTipsButton.addEventListener('click', () => {
-        const isHidden = tipsCard.classList.toggle('d-none');
-        toggleTipsButton.textContent = isHidden ? 'Show Tips' : 'Hide Tips';
-        toggleTipsButton.setAttribute('aria-expanded', !isHidden);
-      });
-
-      // Progress indicator simulation
-      form.addEventListener('input', () => {
-        const filled = Object.values(inputs).filter(input => {
-          if (input instanceof NodeList) {
-            return Array.from(input).some(i => i.checked || i.value);
-          }
-          return input.value && input.checkValidity();
-        }).length;
-        const progress = (filled / 17) * 100; // 17 fields (excluding images, utilities, etc.)
-        progressBar.style.width = `${progress}%`;
-        progressBar.setAttribute('aria-valuenow', progress);
-        progressBar.textContent = progress < 50 ? 'Step 1: Details' : progress < 100 ? 'Step 2: Images' : 'Step 3: Submit';
-      });
-
-      // Form submission
-      form.addEventListener('submit', async (event) => {
-    event.preventDefault();
+      
+      // Validate file size
+      if (file.size > 5 * 1024 * 1024) {
+        showFeedback('Image size should be less than 5MB.', 'danger');
+        return;
+      }
+      
+      // Create a unique ID for this image
+      const imageId = Date.now() + Math.random().toString(36).substring(2, 9);
+      
+      // Read the file and create a preview
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        // Add to our array of uploaded images
+        uploadedImages.push({
+          id: imageId,
+          file: file,
+          url: e.target.result
+        });
+        
+        // Create preview element
+        createImagePreview(imageId, e.target.result);
+        
+        // Update the file input to contain all images
+        updateFileInput();
+        
+        // Update preview
+        updateImagePreview();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  
+  // Create image preview element
+  function createImagePreview(imageId, imageUrl) {
+    const previewItem = document.createElement('div');
+    previewItem.className = 'image-preview-item';
+    previewItem.dataset.imageId = imageId;
+    
+    const img = document.createElement('img');
+    img.src = imageUrl;
+    img.className = 'image-preview';
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'image-preview-overlay';
+    
+    const actions = document.createElement('div');
+    actions.className = 'image-preview-actions';
+    
+    // View button
+    const viewBtn = document.createElement('button');
+    viewBtn.className = 'image-preview-btn image-preview-view';
+    viewBtn.innerHTML = '<i class="fas fa-eye"></i>';
+    viewBtn.addEventListener('click', function() {
+      modalImage.src = imageUrl;
+      imageModal.style.display = 'block';
+    });
+    
+    // Delete button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'image-preview-btn image-preview-delete';
+    deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+    deleteBtn.addEventListener('click', function() {
+      deleteImage(imageId);
+    });
+    
+    actions.appendChild(viewBtn);
+    actions.appendChild(deleteBtn);
+    overlay.appendChild(actions);
+    
+    previewItem.appendChild(img);
+    previewItem.appendChild(overlay);
+    
+    imagePreview.appendChild(previewItem);
+  }
+  
+  // Delete an image
+  function deleteImage(imageId) {
+    // Find and remove from our array
+    uploadedImages = uploadedImages.filter(img => img.id !== imageId);
+    
+    // Find and remove from DOM
+    const previewItem = document.querySelector(`.image-preview-item[data-image-id="${imageId}"]`);
+    if (previewItem) {
+      previewItem.style.opacity = '0';
+      previewItem.style.transform = 'scale(0.8)';
+      
+      setTimeout(() => {
+        previewItem.remove();
+      }, 300);
+    }
+    
+    // Update the file input
+    updateFileInput();
+    
+    // Update preview
+    updateImagePreview();
+  }
+  
+  // Update the file input with all images
+  function updateFileInput() {
+    const dataTransfer = new DataTransfer();
+    uploadedImages.forEach(img => {
+      dataTransfer.items.add(img.file);
+    });
+    propertyImages.files = dataTransfer.files;
+  }
+  
+  // Update the preview section with images
+  function updateImagePreview() {
+    const previewImages = document.getElementById('previewImages');
+    previewImages.innerHTML = '';
+    
+    uploadedImages.forEach(img => {
+      const imgElement = document.createElement('img');
+      imgElement.src = img.url;
+      imgElement.style.width = '80px';
+      imgElement.style.height = '80px';
+      imgElement.style.objectFit = 'cover';
+      imgElement.style.borderRadius = '8px';
+      imgElement.style.marginRight = '5px';
+      imgElement.style.marginBottom = '5px';
+      previewImages.appendChild(imgElement);
+    });
+  }
+  
+  // Modal close functionality
+  modalClose.addEventListener('click', function() {
+    imageModal.style.display = 'none';
+  });
+  
+  window.addEventListener('click', function(event) {
+    if (event.target === imageModal) {
+      imageModal.style.display = 'none';
+    }
+  });
+  
+  // Real-time preview update
+  const formInputs = form.querySelectorAll('input, select, textarea');
+  formInputs.forEach(input => {
+    input.addEventListener('input', updatePreview);
+    input.addEventListener('change', updatePreview);
+  });
+  
+  function updatePreview() {
+    document.getElementById('previewTitle').textContent = 
+      document.getElementById('propertyName').value || '-';
+    
+    document.getElementById('previewType').textContent = 
+      document.getElementById('propertyType').value || '-';
+    
+    const county = document.getElementById('county').value;
+    const estate = document.getElementById('estateArea').value;
+    document.getElementById('previewLocation').textContent = 
+      (county && estate) ? `${estate}, ${county}` : '-';
+    
+    document.getElementById('previewBedrooms').textContent = 
+      document.getElementById('bedrooms').value || '-';
+    
+    document.getElementById('previewBathrooms').textContent = 
+      document.getElementById('bathrooms').value || '-';
+    
+    const rent = document.getElementById('rentAmount').value;
+    document.getElementById('previewRent').textContent = 
+      rent ? `KES ${parseInt(rent).toLocaleString()}/month` : '-';
+    
+    const availability = document.getElementById('availabilityDate').value;
+    document.getElementById('previewAvailability').textContent = 
+      availability ? new Date(availability).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      }) : '-';
+    
+    const contactName = document.getElementById('contactName').value;
+    const contactPhone = document.getElementById('contactPhone').value;
+    document.getElementById('previewContact').textContent = 
+      (contactName && contactPhone) ? `${contactName}, ${contactPhone}` : '-';
+    
+    // Update payment methods in preview
+    const paymentMethods = [];
+    
+    if (document.getElementById('mpesaEnabled').checked) {
+      paymentMethods.push('M-Pesa Till');
+    }
+    
+    if (document.getElementById('paybillEnabled').checked) {
+      paymentMethods.push('Paybill');
+    }
+    
+    if (document.getElementById('bankEnabled').checked) {
+      paymentMethods.push('Bank Transfer');
+    }
+    
+    if (document.getElementById('sendMoneyEnabled').checked) {
+      paymentMethods.push('M-Pesa Send Money');
+    }
+    
+    document.getElementById('previewPayment').textContent = 
+      paymentMethods.length > 0 ? paymentMethods.join(', ') : 'Not specified';
+  }
+  
+  // Form submission
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
 
     if (!form.checkValidity()) {
       form.classList.add('was-validated');
       return;
     }
 
+    const submitButton = form.querySelector('button[type="submit"]');
     submitButton.disabled = true;
-    feedback.style.display = 'none';
-    feedback.className = 'alert alert-info mt-3';
-    feedback.textContent = 'Adding property...';
-    feedback.style.display = 'block';
+    submitButton.textContent = 'Submitting...';
 
     const formData = new FormData(form);
-    formData.append('user_id', {{ current_user.id }});
 
-    // ✅ Grab CSRF token from hidden input
-    const csrfToken = form.querySelector('input[name="csrf_token"]').value;
-
-    try {
-      const response = await fetch('{{ url_for("landlord.add_property") }}', {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': csrfToken,  // 👈 Flask-WTF checks this
-        },
-        body: formData,
-        credentials: 'include',      // ensures session cookie is sent
-      });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        feedback.className = 'alert alert-success mt-3';
-        feedback.textContent = result.message || 'Property added successfully!';
-        form.reset();
-      } else {
-        feedback.className = 'alert alert-danger mt-3';
-        feedback.textContent = result.message || 'Error adding property.';
+    fetch('{{ url_for("landlord.add_property") }}', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
       }
-    } catch (error) {
-      feedback.className = 'alert alert-danger mt-3';
-      feedback.textContent = 'Something went wrong. Try again.';
-    } finally {
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (data.success) {
+        showFeedback(data.message || 'Property listed successfully!', 'success');
+        form.reset();
+        imagePreview.innerHTML = '';
+        document.getElementById('previewImages').innerHTML = '';
+        uploadedImages = [];
+        updatePreview();
+        setTimeout(() => {
+          window.location.href = data.redirect || '{{ url_for("landlord.properties") }}';
+        }, 2000);
+      } else {
+        showFeedback(data.message || 'Error listing property. Please try again.', 'danger');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showFeedback('An error occurred. Please try again.', 'danger');
+    })
+    .finally(() => {
       submitButton.disabled = false;
-    }
-  });
-
-
-      // Save draft (optional, requires backend route)
-      saveDraftButton.addEventListener('click', async () => {
-        feedback.style.display = 'none';
-        feedback.className = 'alert alert-info mt-3';
-        feedback.textContent = 'Saving draft...';
-        feedback.style.display = 'block';
-
-        const formData = new FormData(form);
-        formData.append('user_id', {{ current_user.id }});
-
-        try {
-          const response = await fetch('/landlord/save_draft', {
-            method: 'POST',
-            body: formData,
-          });
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const result = await response.json();
-          feedback.className = 'alert alert-success mt-3';
-          feedback.textContent = result.message || 'Draft saved successfully!';
-          feedback.style.display = 'block';
-        } catch (error) {
-          feedback.className = 'alert alert-danger mt-3';
-          feedback.textContent = `Error: ${error.message}`;
-          feedback.style.display = 'block';
-        }
-      });
-
-      // Example API call to /landlord/api/add_property (optional, uncomment if needed)
-      /*
-      document.getElementById('someButton').addEventListener('click', async () => {
-        const formData = new FormData(form);
-        const data = {};
-        formData.forEach((value, key) => {
-          if (key === 'utilities' || key === 'amenities' || key === 'accessibility_features') {
-            data[key] = formData.getAll(key);
-          } else {
-            data[key] = value;
-          }
-        });
-        data.user_id = {{ current_user.id }};
-        try {
-          const response = await fetch('{{ url_for("landlord.api_add_property") }}', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-Token': document.querySelector('input[name="csrf_token"]').value
-            },
-            body: JSON.stringify(data)
-          });
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          const result = await response.json();
-          feedback.className = 'alert alert-success mt-3';
-          feedback.textContent = result.message || 'Property added via API successfully!';
-          feedback.style.display = 'block';
-        } catch (error) {
-          feedback.className = 'alert alert-danger mt-3';
-          feedback.textContent = `Error: ${error.message}`;
-          feedback.style.display = 'block';
-        }
-      });
-      */
+      submitButton.textContent = 'List Property';
     });
+  });
+  
+  function showFeedback(message, type) {
+    feedback.textContent = message;
+    feedback.className = `alert alert-${type}`;
+    feedback.style.display = 'flex';
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      feedback.style.display = 'none';
+    }, 5000);
+  }
+  
+  // Initialize preview
+  updatePreview();
+});
 </script>
 {% endblock %}

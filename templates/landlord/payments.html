@@ -1,0 +1,1643 @@
+{% extends 'base.html' %} 
+{% block title %}Payment Management - HomeHub{% endblock %} 
+{% block content %}
+
+<style>
+  :root {
+    --primary: #4361ee;
+    --primary-dark: #3a0ca3;
+    --secondary: #7209b7;
+    --accent: #f72585;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --success: #06ffa5;
+    --info: #00b4d8;
+    --warning: #ffbe0b;
+    --danger: #e63946;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    --border-radius: 15px;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
+    background-color: #f8f9fa;
+    color: var(--dark);
+    line-height: 1.6;
+  }
+
+  .payments-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  /* Header Section */
+  .payments-header {
+    background: linear-gradient(
+      135deg,
+      var(--primary) 0%,
+      var(--primary-dark) 100%
+    );
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .payments-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,133.3C960,128,1056,96,1152,90.7C1248,85,1344,107,1392,117.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>')
+      no-repeat bottom;
+    background-size: cover;
+  }
+
+  .header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .header-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+
+  .header-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+  }
+
+  /* Stats Cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+  }
+
+  .stat-card.revenue::before { background: var(--success); }
+  .stat-card.pending::before { background: var(--warning); }
+  .stat-card.collected::before { background: var(--info); }
+  .stat-card.overdue::before { background: var(--danger); }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+  }
+
+  .stat-card.revenue .stat-icon { background: linear-gradient(135deg, var(--success), #00b4d8); }
+  .stat-card.pending .stat-icon { background: linear-gradient(135deg, var(--warning), #ff9f1c); }
+  .stat-card.collected .stat-icon { background: linear-gradient(135deg, var(--info), #0077b6); }
+  .stat-card.overdue .stat-icon { background: linear-gradient(135deg, var(--danger), #d63447); }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dark);
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-change {
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .stat-change.positive {
+    color: var(--success);
+  }
+
+  .stat-change.negative {
+    color: var(--danger);
+  }
+
+  /* Filters Section */
+  .filters-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+  }
+
+  .filters-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    align-items: end;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .filter-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--dark);
+  }
+
+  .form-control {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: var(--transition);
+  }
+
+  .form-control:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+  }
+
+  /* Main Content Grid */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+  }
+
+  /* Payment List */
+  .payments-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title i {
+    color: var(--primary);
+  }
+
+  .payments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .payment-card {
+    border: 1px solid #e9ecef;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    transition: var(--transition);
+  }
+
+  .payment-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .payment-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .payment-tenant {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .tenant-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .tenant-info {
+    flex: 1;
+  }
+
+  .tenant-name {
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 0.25rem;
+  }
+
+  .tenant-property {
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+
+  .payment-amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+  }
+
+  .payment-status {
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .status-paid {
+    background: rgba(6, 255, 165, 0.1);
+    color: var(--success);
+  }
+
+  .status-pending {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--warning);
+  }
+
+  .status-partial {
+    background: rgba(0, 180, 216, 0.1);
+    color: var(--info);
+  }
+
+  .status-overdue {
+    background: rgba(247, 37, 133, 0.1);
+    color: var(--danger);
+  }
+
+  .payment-details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+
+  .payment-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* Quick Actions */
+  .quick-actions {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .quick-actions-header {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .quick-actions-header i {
+    color: var(--primary);
+  }
+
+  .quick-action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .quick-action {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 10px;
+    background: #f8f9fa;
+    transition: var(--transition);
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--dark);
+  }
+
+  .quick-action:hover {
+    background: rgba(67, 97, 238, 0.1);
+    transform: translateX(5px);
+  }
+
+  .quick-action i {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: white;
+  }
+
+  /* Revenue Chart */
+  .revenue-chart {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .chart-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .chart-title i {
+    color: var(--primary);
+  }
+
+  .chart-controls {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .chart-control {
+    padding: 0.5rem 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    background: white;
+    color: var(--dark);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .chart-control:hover,
+  .chart-control.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  .chart-container {
+    position: relative;
+    height: 300px;
+  }
+
+  /* Transaction History */
+  .transaction-history {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .transaction-header {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .transaction-header i {
+    color: var(--primary);
+  }
+
+  .transaction-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .transaction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .transaction-item:last-child {
+    border-bottom: none;
+  }
+
+  .transaction-info {
+    flex: 1;
+  }
+
+  .transaction-amount {
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  .transaction-date {
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, var(--success), #00b4d8);
+    color: white;
+  }
+
+  .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(6, 255, 165, 0.3);
+  }
+
+  .btn-warning {
+    background: linear-gradient(135deg, var(--warning), #ff9f1c);
+    color: white;
+  }
+
+  .btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(255, 190, 11, 0.3);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, var(--danger), #d63447);
+    color: white;
+  }
+
+  .btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(230, 57, 70, 0.3);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+  }
+
+  .btn-outline:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  .btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .modal.show {
+    display: flex;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-dialog {
+    background: white;
+    border-radius: var(--border-radius);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: var(--transition);
+  }
+
+  .modal-close:hover {
+    opacity: 1;
+  }
+
+  .modal-body {
+    padding: 2rem;
+  }
+
+  .modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+  }
+
+  /* Form Styles */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  /* Toast Notification */
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 300px;
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideInRight 0.3s ease;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .toast-success {
+    background: linear-gradient(
+      135deg,
+      rgba(6, 255, 165, 0.9),
+      rgba(0, 180, 216, 0.9)
+    );
+    color: white;
+  }
+
+  .toast-danger {
+    background: linear-gradient(
+      135deg,
+      rgba(247, 37, 133, 0.9),
+      rgba(230, 57, 70, 0.9)
+    );
+    color: white;
+  }
+
+  /* Responsive */
+  @media (max-width: 992px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+      order: 2;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .payments-container {
+      padding: 1rem;
+    }
+
+    .header-title {
+      font-size: 2rem;
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .filters-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="payments-container">
+  <!-- Payments Header -->
+  <div class="payments-header">
+    <div class="header-content">
+      <div>
+        <h1 class="header-title">Payment Management</h1>
+        <p class="header-subtitle">
+          Track rent payments, manage transactions, and generate financial reports
+        </p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-light" onclick="showPaymentModal()">
+          <i class="fas fa-plus"></i> Record Payment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card revenue">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-dollar-sign"></i>
+        </div>
+      </div>
+      <div class="stat-value">$24,580</div>
+      <div class="stat-label">Total Revenue</div>
+      <div class="stat-change positive">
+        <i class="fas fa-arrow-up"></i>
+        <span>12.5% from last month</span>
+      </div>
+    </div>
+
+    <div class="stat-card pending">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+      </div>
+      <div class="stat-value">$3,200</div>
+      <div class="stat-label">Pending</div>
+      <div class="stat-change negative">
+        <i class="fas fa-arrow-down"></i>
+        <span>2 from last month</span>
+      </div>
+    </div>
+
+    <div class="stat-card collected">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-check-circle"></i>
+        </div>
+      </div>
+      <div class="stat-value">$21,380</div>
+      <div class="stat-label">Collected</div>
+      <div class="stat-change positive">
+        <i class="fas fa-arrow-up"></i>
+        <span>8.3% from last month</span>
+      </div>
+    </div>
+
+    <div class="stat-card overdue">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+      </div>
+      <div class="stat-value">$1,200</div>
+      <div class="stat-label">Overdue</div>
+      <div class="stat-change negative">
+        <i class="fas fa-arrow-up"></i>
+        <span>1 new this week</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="filter-group">
+        <label class="filter-label">Month</label>
+        <select class="form-control" id="monthFilter">
+          <option value="12">December 2024</option>
+          <option value="11">November 2024</option>
+          <option value="10">October 2024</option>
+          <option value="9">September 2024</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">Property</label>
+        <select class="form-control" id="propertyFilter">
+          <option value="all">All Properties</option>
+          <option value="1">Property A - Apartment 101</option>
+          <option value="2">Property B - House 202</option>
+          <option value="3">Property C - Studio 305</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">Status</label>
+        <select class="form-control" id="statusFilter">
+          <option value="all">All Status</option>
+          <option value="paid">Paid</option>
+          <option value="pending">Pending</option>
+          <option value="partial">Partial</option>
+          <option value="overdue">Overdue</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <button class="btn btn-primary" onclick="applyFilters()">
+          <i class="fas fa-filter"></i> Apply Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="content-grid">
+    <!-- Payment List -->
+    <div class="payments-section">
+      <div class="section-header">
+        <h3 class="section-title">
+          <i class="fas fa-money-bill-wave"></i>
+          Recent Payments
+        </h3>
+        <div class="table-actions">
+          <button class="btn btn-sm btn-success" onclick="sendReminders()">
+            <i class="fas fa-bell"></i> Send Reminders
+          </button>
+          <button class="btn btn-sm btn-outline" onclick="exportPayments()">
+            <i class="fas fa-download"></i> Export
+          </button>
+        </div>
+      </div>
+      
+      <div class="payments-list" id="paymentsList">
+        <!-- Payments will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Revenue Chart -->
+      <div class="revenue-chart">
+        <div class="chart-header">
+          <h3 class="chart-title">
+            <i class="fas fa-chart-line"></i>
+            Revenue Overview
+          </h3>
+          <div class="chart-controls">
+            <button class="chart-control active" onclick="updateRevenueChart('monthly')">Monthly</button>
+            <button class="chart-control" onclick="updateRevenueChart('quarterly')">Quarterly</button>
+            <button class="chart-control" onclick="updateRevenueChart('yearly')">Yearly</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="revenueChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <div class="payment-actions-header">
+          <i class="fas fa-bolt"></i>
+          Quick Actions
+        </div>
+        <div class="quick-action-list">
+          <a href="#" class="payment-action" onclick="showPaymentModal()">
+            <i class="fas fa-plus"></i>
+            <span>Record Payment</span>
+          </a>
+          <a href="#" class="payment-action" onclick="generateInvoices()">
+            <i class="fas fa-file-invoice"></i>
+            <span>Generate Invoices</span>
+          </a>
+          <a href="#" class="payment-action" onclick="autoPaySetup()">
+            <i class="fas fa-robot"></i>
+            <span>Auto-Pay Setup</span>
+          </a>
+          <a href="#" class="payment-action" onclick="exportPayments()">
+            <i class="fas fa-download"></i>
+            <span>Export Report</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Transaction History -->
+      <div class="transaction-history">
+        <div class="transaction-header">
+          <h3 class="transaction-header">
+            <i class="fas fa-history"></i>
+            Recent Transactions
+          </h3>
+        </div>
+        <div class="transaction-list">
+          <div class="transaction-item">
+            <div class="transaction-info">
+              <div class="transaction-amount">$1,200</div>
+              <div class="transaction-date">Dec 15, 2024</div>
+            </div>
+            <div class="transaction-status">
+              <span class="status-paid">Paid</span>
+            </div>
+          </div>
+        </div>
+        <div class="transaction-item">
+          <div class="transaction-info">
+            <div class="transaction-amount">$2,000</div>
+              <div class="transaction-date">Dec 1, 2024</div>
+            </div>
+            <div class="transaction-status">
+              <span class="status-paid">Paid</span>
+            </div>
+          </div>
+        </div>
+        <div class="transaction-item">
+          <div class="transaction-info">
+            <div class="transaction-amount">$800</div>
+              <div class="transaction-date">Dec 1, 2024</div>
+            </div>
+            <div class="transaction-status">
+              <span class="status-partial">Partial</span>
+            </div>
+          </div>
+        </div>
+        <div class="transaction-item">
+          <div class="transaction-info">
+            <div class="transaction-amount">$1,200</div>
+              <div class="transaction-date">Nov 25, 2024</div>
+            </div>
+            <div class="transaction-status">
+              <span class="status-overdue">Overdue</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h5 class="modal-title">Record Payment</h5>
+      <button class="modal-close" onclick="hidePaymentModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="paymentForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tenant</label>
+            <select class="form-control" name="tenantId" required>
+              <option value="">Select Tenant</option>
+              <option value="1">John Doe - Apartment 101</option>
+              <option value="2">Jane Smith - House 202</option>
+              <option value="3">Mike Johnson - Studio 305</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Amount</label>
+            <input type="number" class="form-control" name="amount" placeholder="0.00" step="0.01" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Payment Date</label>
+            <input type="date" class="form-control" name="paymentDate" required>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Payment Method</label>
+            <select class="form-control" name="paymentMethod" required>
+              <option value="cash">Cash</option>
+              <option value="check">Check</option>
+              <option value="bank">Bank Transfer</option>
+              <option value="online">Online Payment</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+            <textarea class="form-control" name="notes" rows="3" placeholder="Add any notes about this payment..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Receipt</label>
+            <input type="file" class="form-control" name="receipt" accept="image/*">
+          <small class="form-text">Upload payment receipt (optional)</small>
+        </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" onclick="hidePaymentModal()">Cancel</button>
+      <button type="submit" class="btn btn-primary" onclick="submitPayment()">
+        <i class="fas fa-save"></i> Save Payment
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice Modal -->
+<div id="invoiceModal" class="modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h5 class="modal-title">Generate Invoice</h5>
+      <button class="modal-close" onclick="hideInvoiceModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="invoiceForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Tenant</label>
+            <select class="form-control" name="tenantId" required>
+              <option value="">Select Tenant</option>
+              <option value="1">John Doe - Apartment 101</option>
+              <option value="2">Jane Smith - House 202</option>
+              <option value="3">Mike Johnson - Studio 305</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label">Invoice Period</label>
+            <select class="form-control" name="period">
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Due Date</label>
+          <input type="date" class="form-control" name="dueDate" required>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Late Fee</label>
+          <input type="number" class="form-control" name="lateFee" placeholder="0.00" step="0.01">
+        </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Notes</label>
+          <textarea class="form-control" name="notes" rows="3" placeholder="Add any notes for the invoice..."></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" onclick="hideInvoiceModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="generateInvoice()">
+        <i class="fas fa-file-invoice"></i> Generate Invoice
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Auto-Pay Setup Modal -->
+<div id="autoPayModal" class="modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h5 class="modal-title">Setup Auto-Pay</h5>
+      <button class="modal-close" onclick="hideAutoPayModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="autoPayForm">
+        <div class="form-group">
+          <label class="form-label">Bank Name</label>
+          <input type="text" class="form-control" name="bankName" placeholder="Enter bank name">
+        </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Account Number</label>
+          <input type="text" class="form-control" name="accountNumber" placeholder="Enter account number">
+        </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Routing Number</label>
+          <input type="text" class="form-control" name="routingNumber" placeholder="Enter routing number">
+        </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Account Type</label>
+          <select class="form-control" name="accountType">
+            <option value="checking">Checking</option>
+            <option value="savings">Savings</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Authorization</label>
+          <input type="text" class="form-control" name="authorization" placeholder="Enter authorization code">
+        </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" onclick="hideAutoPayModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="saveAutoPaySetup()">
+        <i class="fas fa-save"></i> Save Setup
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %} 
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Sample payment data
+  let payments = [
+    {
+      id: 1,
+      tenantId: 1,
+      tenant: 'John Doe',
+      property: 'Property A - Apartment 101',
+      propertyId: 1,
+      amount: 1200,
+      dueDate: '2024-12-15',
+      paidDate: '2024-12-14',
+      status: 'paid',
+      method: 'bank',
+      notes: 'Paid on time',
+      receipt: 'receipt_1.pdf'
+    },
+    {
+      id: 2,
+      tenantId: 2,
+      tenant: 'Jane Smith',
+      property: 'Property B - House 202',
+      propertyId: 2,
+      amount: 2000,
+      dueDate: '2024-12-01',
+      paidDate: '2024-12-01',
+      status: 'paid',
+      method: 'check',
+      notes: 'Paid via check',
+      receipt: 'receipt_2.pdf'
+    },
+    {
+      id: 3,
+      tenantId: 3,
+      tenant: 'Mike Johnson',
+      property: 'Property C - Studio 305',
+      propertyId: 3,
+      amount: 800,
+      dueDate: '2024-12-01',
+      status: 'partial',
+      method: 'online',
+      notes: 'Partial payment of $400 received',
+      receipt: null
+    },
+    {
+      id: 4,
+      tenantId: 1,
+      tenant: 'John Doe',
+      property: 'Property A - Apartment 101',
+      propertyId: 1,
+      amount: 1200,
+      dueDate: '2024-11-25',
+      status: 'overdue',
+      method: null,
+      notes: 'Payment not received',
+      receipt: null
+    }
+  ];
+
+  let currentFilter = {
+    month: '12',
+    property: 'all',
+    status: 'all'
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadPayments();
+    initializeCharts();
+    setupEventListeners();
+  });
+
+  function loadPayments() {
+    const paymentsList = document.getElementById('paymentsList');
+    paymentsList.innerHTML = '';
+
+    const filteredPayments = filterPayments();
+    
+    filteredPayments.forEach(payment => {
+      const paymentCard = document.createElement('div');
+      paymentCard.className = 'payment-card';
+      
+      paymentCard.innerHTML = `
+        <div class="payment-header">
+          <div class="payment-tenant">
+            <img src="https://picsum.photos/seed/user${payment.tenantId}/50/50" alt="${payment.tenant}" class="tenant-avatar">
+            <div class="tenant-info">
+              <div class="tenant-name">${payment.tenant}</div>
+              <div class="tenant-property">${payment.property}</div>
+            </div>
+          </div>
+          <div class="payment-amount">
+            <div class="payment-amount">$${payment.amount.toLocaleString()}</div>
+            <div class="payment-date">${payment.paidDate || payment.dueDate}</div>
+          </div>
+          <div class="payment-status">
+            <span class="status-${payment.status}">${payment.status}</span>
+          </div>
+        </div>
+        
+        <div class="payment-details">
+          <div class="row">
+            <div class="col">
+              <strong>Payment Method:</strong> ${payment.method || 'Not specified'}
+            </div>
+            <div class="col">
+              <strong>Due Date:</strong> ${payment.dueDate}
+            </div>
+          </div>
+        </div>
+        
+        <div class="payment-actions">
+          ${payment.status === 'overdue' ? `
+            <button class="btn btn-sm btn-warning" onclick="sendPaymentReminder(${payment.id})">
+              <i class="fas fa-bell"></i> Send Reminder
+            </button>
+          ` : ''}
+          
+          <button class="btn btn-sm btn-outline" onclick="viewReceipt('${payment.receipt}')">
+            <i class="viewReceipt fas fa-eye"></i> Receipt
+          </button>
+        </div>
+      `;
+      
+      paymentsList.appendChild(paymentCard);
+    });
+  }
+
+  function filterPayments() {
+    const monthFilter = document.getElementById('monthFilter').value;
+    const propertyFilter = document.getElementById('propertyFilter').value;
+    const statusFilter = document.statusFilter ? document.getElementById('statusFilter').value : 'all';
+    
+    return payments.filter(payment => {
+      if (monthFilter !== 'all' && payment.dueDate && !payment.dueDate.includes(monthFilter)) return false;
+      if (propertyFilter !== 'all' && payment.propertyId != propertyFilter) return false;
+      if (statusFilter !== 'all' && payment.status !== statusFilter) return false;
+      return true;
+    });
+  }
+
+  function applyFilters() {
+    currentFilter = {
+      month: document.getElementById('monthFilter').value,
+      property: document.getElementById('propertyFilter').value,
+      status: document.getElementById('statusFilter').value
+    };
+    
+    loadPayments();
+    showToast('Filters applied successfully', 'success');
+  }
+
+  function initializeCharts() {
+    const revenueCtx = document.getElementById('revenueChart');
+    if (revenueCtx) {
+      const revenueChart = new Chart(revenueCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'setSep', 'Oct', 'Nov', 'Dec'],
+          datasets: [{
+            label: 'Revenue',
+            data: [18000, 19500, 21000, 19800, 22000, 23500, 24580, 23000, 24000, 22000, 24580, 26000],
+            backgroundColor: 'rgba(67, 97, 238, 0.8)',
+            borderColor: 'rgba(67, 97, 238, 1)',
+            borderWidth: 2,
+            borderRadius: 5,
+            barPercentage: 0.5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  return '$' + context.parsed.y.toLocaleString();
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function(value) {
+                  return '$' + value.toLocaleString();
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // Store chart instance for updates
+      window.revenueChart = revenueChart;
+    }
+  }
+
+  function updateRevenueChart(period) {
+    // Update active button
+    document.querySelectorAll('.chart-control').forEach(btn => {
+      btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+
+    // Update chart data based on period
+    let labels, data;
+    
+    switch(period) {
+      case 'monthly':
+        labels = ['Jan', 'Feb', 'Mar', 'currentMonth', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        data = [18000, 19500, 21000, 19800, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        break;
+      case 'quarterly':
+        labels = ['Q1', 'Q2', 'Q3', 'Q4'];
+        data = [58500, 65380, 71680, 72580];
+        break;
+      case 'yearly':
+        labels = ['2021', '2022', '2023', '2024'];
+        data = [198000, 235000, 268140, 290000];
+        break;
+    }
+    
+    window.revenueChart.data.labels = labels;
+    window.revenueChart.data.datasets[0].data = data;
+    window.revenueChart.update();
+  }
+
+  function showPaymentModal() {
+    document.getElementById('paymentModal').classList.add('show');
+  }
+
+  function hidePaymentModal() {
+    document.getElementById('paymentModal').classList.remove('show');
+    document.getElementById('paymentForm').reset();
+  }
+
+  function submitPayment() {
+    const form = document.getElementById('paymentForm');
+    
+    if (!form.checkValidity()) {
+      showToast('Please fill in all required fields', 'danger');
+      return;
+    }
+    
+    const formData = new FormData(form);
+    
+    // Create new payment object
+    const newPayment = {
+      id: Date.now(),
+      tenantId: parseInt(formData.get('tenantId'),
+      amount: parseFloat(formData.get('amount')),
+      dueDate: formData.get('paymentDate'),
+      status: 'pending',
+      method: formData.get('paymentMethod'),
+      notes: formData.get('notes'),
+      receipt: null,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Add to payments array
+    payments.unshift(newPayment);
+    
+    // Reload payments
+    loadPayments();
+    
+    // Hide modal
+    hidePaymentModal();
+    
+    // Show success message
+    showToast('Payment recorded successfully', 'success');
+    
+    // In production, send data to server
+    console.log('New payment:', newPayment);
+  }
+
+  function sendPaymentReminder(paymentId) {
+    const payment = payments.find(p => p.id === paymentId);
+    if (!payment) return;
+    
+    // Show loading state
+    showLoadingState();
+    
+    // Simulate sending reminder
+    setTimeout(() => {
+      hideLoadingState();
+      showToast(`Payment reminder sent to ${payment.tenant}`, 'success');
+    }, 1000);
+    
+    // In production, send actual reminder
+    console.log('Sending payment reminder for payment:', paymentId);
+  }
+
+  function viewReceipt(receiptUrl) {
+    if (receiptUrl) {
+      window.open(receiptUrl, '_blank');
+    } else {
+      showToast('No receipt available', 'info');
+    }
+  }
+
+  function showInvoiceModal() {
+    document.getElementById('invoiceModal').classList.add('show');
+  }
+
+  function hideInvoiceModal() {
+    document.getElementById('invoiceModal').classList.remove('show');
+  }
+
+  function generateInvoice() {
+    const form = document.getElementById('invoiceForm');
+    
+    if (!form.checkValidity()) {
+      showToast('Please fill in all required fields', 'danger');
+      return;
+    }
+    
+    // Generate invoice logic here
+    showToast('Invoice generated successfully', 'success');
+    hideInvoiceModal();
+  }
+
+  function showAutoPayModal() {
+    document.getElementById('autoPayModal').classList.add('show');
+  }
+
+  function hideAutoPayModal() {
+    document.getElementById('autoPayModal').classList.remove('saveAutoPaySetup();
+  }
+
+  function saveAutoPaySetup() {
+    const form = document.getElementById('autoPayForm');
+    
+    if (!form.checkValidity()) {
+      showToast('Please fill in all required fields', 'danger');
+      return;
+    }
+    
+    // Save auto-pay setup
+    showToast('Auto-pay setup saved successfully', 'success');
+    hideAutoPayModal();
+    
+    // In production, save to database
+    console.log('Saving auto-pay setup');
+  }
+
+  function showLoadingState() {
+    const loading = document.createElement('div');
+    loading.id = 'loadingOverlay';
+    loading.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    `;
+    loading.innerHTML = `
+      <div style="background: white; padding: 2rem; border-radius: 15px; text-align: center;">
+        <div class="spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 40px; height: 40px; margin: 0 auto 1rem; animation: spin 1s linear infinite;"></div>
+        <p style="margin: 0; color: var(--dark);">Loading...</p>
+      </div>
+    `;
+    
+    document.body.appendChild(loading);
+  }
+
+  function hideLoadingState() {
+    const loading = document.getElementById('loadingOverlay');
+    if (loading) {
+      loading.remove();
+    }
+  }
+
+  function showToast(message, type = 'success') {
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+      existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      min-width: 300px;
+      padding: 1rem 1.5rem;
+      border-radius: 15px;
+      box-shadow: var(--shadow);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: slideInRight 0.3s ease;
+    `;
+    
+    const icon = type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+    toast.innerHTML = `
+      <i class="fas ${icon}"></i>
+      <span>${message}</span>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.animation = 'slideInRight 0.3s ease reverse';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+
+  // Filter listeners
+  document.getElementById('monthFilter').addEventListener('change', loadPayments);
+  document.getElementById('propertyFilter').addEventListener('change', loadPayments);
+  document.getElementById('statusFilter').addEventListener('change', loadPayments);
+</script>
+{% endblock %}

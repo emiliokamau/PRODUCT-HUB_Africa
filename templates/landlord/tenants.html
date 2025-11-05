@@ -1,0 +1,1815 @@
+{% extends "base.html" %}
+{% block title %}Tenants - HomeHub{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --primary: #4361ee;
+    --primary-dark: #3a0ca3;
+    --secondary: #7209b7;
+    --accent: #f72585;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --success: #06ffa5;
+    --info: #00b4d8;
+    --warning: #ffbe0b;
+    --danger: #e63946;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    --border-radius: 15px;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: var(--light);
+    color: var(--dark);
+    line-height: 1.6;
+  }
+
+  .tenants-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  /* Header Section */
+  .tenants-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tenants-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,133.3C960,128,1056,96,1152,90.7C1248,85,1344,133.3C960,128,1056,96,1152,90.7C1248,85,1344,133.3C960,128,1056,96,1152,90.7C1248,85,1344,133.3C960,128,1056,96,1152,90.7L1392,320L0,320L1392,320L0,320Z"></path></svg>')
+      no-repeat bottom;
+    background-size: cover;
+  }
+
+  .header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .header-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+
+  .header-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+  }
+
+  /* Stats Cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary);
+  }
+
+  .stat-card.total::before { background: var(--primary); }
+  .stat-card.occupied::before { background: var(--success); }
+  .stat-card.vacant::before { background: var(--warning); }
+  .stat-card.pending::before { background: var(--info); }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+  }
+
+  .stat-card.total .stat-icon { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+  .stat-card.occupied .stat-icon { background: linear-gradient(135deg, var(--success), #00b4d8); }
+  .stat-card.vacant .stat-icon { background: linear-gradient(135deg, var(--warning), #ff9f1c); }
+  .stat-card.pending .stat-icon { background: linear-gradient(135deg, var(--info), #0077b6); }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dark);
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .stat-change {
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .stat-change.positive { color: var(--success); }
+  .stat-change.negative { color: var(--danger); }
+
+  /* Filters Section */
+  .filters-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+  }
+
+  .filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .filter-group {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .filter-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+
+  /* Main Content Grid */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  /* Tenant Cards */
+  .tenant-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    cursor: pointer;
+    margin-bottom: 1.5rem;
+  }
+
+  .tenant-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .tenant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .tenant-info {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .tenant-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid white;
+  }
+
+  .tenant-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  .tenant-property {
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+
+  .tenant-status {
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .status-pending { 
+    background: rgba(0, 180, 216, 0.1); 
+    color: var(--info);
+  }
+  .status-approved { 
+    background: rgba(6, 255, 165, 0.1); 
+    color: var(--success);
+  }
+  .status-rejected { 
+    background: rgba(247, 37, 133, 0.1); 
+    color: var(--danger);
+  }
+  .status-occupied { 
+    background: rgba(6, 255, 165, 0.1); 
+    color: var(--success);
+  }
+  .status-vacant { 
+    background: rgba(255, 190, 11, 0.1); 
+    color: var(--warning);
+  }
+
+  /* Action Buttons */
+  .action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    font-size: 0.9rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, var(--success), #00b4d8);
+    color: white;
+  }
+
+  .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(6, 255, 165, 0.3);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, var(--danger), #d63447);
+    color: white;
+  }
+
+  .btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(247, 37, 133, 0.3);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+  }
+
+  .btn-outline:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal.show {
+    display: flex;
+  }
+
+  .modal-dialog {
+    background: white;
+    border-radius: var(--border-radius);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius) var(--border-radius) var(--border-radius) 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: white;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.8;
+  }
+
+  .modal-close:hover {
+    opacity: 1;
+  }
+
+  .modal-body {
+    padding: 2rem;
+  }
+
+  .modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+  }
+
+  /* Form Styles */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 0.9rem;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+  }
+
+  .form-text {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .form-row .form-group {
+    flex: 1;
+  }
+
+  .invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--danger);
+  }
+
+  .is-invalid ~ .invalid-feedback {
+    display: block;
+  }
+
+  .is-invalid {
+    border-color: var(--danger);
+  }
+
+  /* Toast notification */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  .toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .toast-success {
+    background-color: var(--success);
+    color: white;
+  }
+
+  .toast-error {
+    background-color: var(--danger);
+    color: white;
+  }
+
+  .toast-info {
+    background-color: var(--info);
+    color: white;
+  }
+
+  /* Quick Actions */
+  .quick-actions {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    margin-top: 2rem;
+  }
+
+  .quick-actions-header {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--dark);
+  }
+
+  .quick-action-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .quick-action {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--light);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--dark);
+    transition: var(--transition);
+  }
+
+  .quick-action:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+/* 2. Make the modal backdrop clickable and scrollable */
+.modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,.5);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;               /* allow scrolling inside modal */
+}
+.modal.show { display: flex; }
+
+  /* Table Styles */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  .table-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .table-container {
+    background: white;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .tenants-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .tenants-table th {
+    background: var(--light);
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  .tenants-table td {
+    padding: 1rem;
+    border-top: 1px solid #e9ecef;
+  }
+
+  .tenants-table tr:hover {
+    background: rgba(67, 97, 238, 0.05);
+  }
+
+  /* Alert Styles */
+  .alert {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .alert-success {
+    background-color: rgba(6, 255, 165, 0.1);
+    color: var(--success);
+  }
+
+  .alert-danger {
+    background-color: rgba(230, 57, 70, 0.1);
+    color: var(--danger);
+  }
+
+  .alert-info {
+    background-color: rgba(0, 180, 216, 0.1);
+    color: var(--info);
+  }
+
+  .alert-close {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* Export Options */
+  .export-options {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .export-option {
+    flex: 1;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .export-option:hover {
+    border-color: var(--primary);
+    background: rgba(67, 97, 238, 0.05);
+  }
+
+  .export-option.selected {
+    border-color: var(--primary);
+    background: rgba(67, 97, 238, 0.1);
+  }
+
+  .export-option-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+
+  .export-option-desc {
+    font-size: 0.8rem;
+    color: #6c757d;
+  }
+
+  /* Back Button */
+  .back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: white;
+    color: var(--primary);
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    transition: var(--transition);
+  }
+
+  .back-button:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  /* Detail Row */
+  .detail-row {
+    display: flex;
+    margin-bottom: 1rem;
+  }
+
+  .detail-label {
+    font-weight: 600;
+    width: 150px;
+    color: #6c757d;
+  }
+
+  .detail-value {
+    flex: 1;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 576px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="tenants-container">
+  <!-- Back Button -->
+  <a href="{{ url_for('tenant.properties') }}" class="back-button">
+    <i class="fas fa-arrow-left"></i> Back to Properties
+  </a>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+          <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}"></i>
+          <span>{{ message }}</span>
+          <button class="alert-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Header Section -->
+  <div class="tenants-header">
+    <div class="header-content">
+      <div>
+        <h1 class="header-title">Tenants</h1>
+        <p class="header-subtitle">Manage your tenants and track lease agreements</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="showAddTenantModal()">
+          <i class="fas fa-plus"></i> Add Tenant
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card total">
+      <div class="stat-header">
+        <div class="stat-icon"><i class="fas fa-users"></i></div>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.total_tenants }}</h3>
+        <div class="stat-label">Total Tenants</div>
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          <span>{{ stats.tenants_change }}% from last month</span>
+        </div>
+      </div>
+    </div>
+    <div class="stat-card pending">
+      <div class="stat-header">
+        <div class="stat-icon"><i class="fas fa-clock"></i></div>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.pending_requests }}</h3>
+        <div class="stat-label">Pending Requests</div>
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          <span>{{ stats.requests_change }}%</span>
+        </div>
+      </div>
+    </div>
+    <div class="stat-card approved">
+      <div class="stat-header">
+        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.approved_requests }}</h3>
+        <div class="stat-label">Approved Requests</div>
+        <div class="stat-change positive">
+          <i class="fas fa-arrow-up"></i>
+          <span>{{ stats.approved_change }}%</span>
+        </div>
+      </div>
+    </div>
+    <div class="stat-card rejected">
+      <div class="stat-header">
+        <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
+      </div>
+      <div class="stat-content">
+        <h3 class="stat-value">{{ stats.rejected_requests }}</h3>
+        <div class="stat-label">Rejected Requests</div>
+        <div class="stat-change {{ 'positive' if stats.rejected_change >= 0 else 'negative' }}">
+          <i class="fas fa-{{ 'arrow-down' }}"></i>
+          <span>{{ stats.rejected_change }}%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="filter-group">
+        <label class="filter-label">Search</label>
+        <input type="text" class="form-control" id="searchTenants" placeholder="Search tenants..." value="{{ request.args.get('search', '') }}">
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Status</label>
+        <select class="form-control" id="statusFilter">
+          <option value="all" {{ 'selected' if request.args.get('status') == 'all' else '' }}>All Status</option>
+          <option value="pending" {{ 'selected' if request.args.get('status') == 'pending' else '' }}>Pending</option>
+          <option value="approved" {{ 'selected' if request.args.get('status') == 'approved' else '' }}>Approved</option>
+          <option value="rejected" {{ 'selected' if request.args.get('status') == 'rejected' else '' }}>Rejected</option>
+          <option value="occupied" {{ 'selected' if request.args.get('status') == 'occupied' else '' }}>Occupied</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Property</label>
+        <select class="form-control" id="propertyFilter">
+          <option value="all" {{ 'selected' if request.args.get('property') == 'all' else '' }}>All Properties</option>
+          {% for property in properties %}
+            <option value="{{ property.id }}" {{ 'selected' if request.args.get('property') == property.id|string else '' }}>{{ property.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="filter-group">
+        <button class="btn btn-primary" onclick="applyFilters()">
+          <i class="fas fa-filter"></i> Apply Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="content-grid">
+    <!-- Tenants Section -->
+    <div class="tenants-section">
+      <div class="section-header">
+        <h3 class="section-title"><i class="fas fa-users"></i> Booking Requests</h3>
+        <div class="table-actions">
+          <button class="btn btn-outline" onclick="showExportModal()">
+            <i class="fas fa-download"></i> Export Data
+          </button>
+        </div>
+      </div>
+      
+      <div class="table-container">
+        <table class="tenants-table">
+          <thead>
+            <tr>
+              <th>Tenant</th>
+              <th>Property</th>
+              <th>Move-in Date</th>
+              <th>Rent</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tenantsTableBody">
+            {% for booking in bookings %}
+            <tr>
+              <td>
+                <div class="tenant-info">
+                  <img src="{{ url_for('static', filename=booking.tenant.profile_picture or 'images/default-avatar.png') }}" alt="{{ booking.tenant_name }}" class="tenant-avatar">
+                  <div class="tenant-details">
+                    <div class="tenant-name">{{ booking.tenant_name }}</div>
+                    <div class="tenant-property">{{ booking.house.title }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>{{ booking.move_in_date or 'Not specified' }}</td>
+              <td>KES {{ "{:,}".format(booking.house.rent_amount|int) }}/month</td>
+              <td>
+                <span class="tenant-status status-{{ booking.status.lower() }}">{{ booking.status }}</span>
+              </td>
+              <td class="action-buttons">
+                <button class="btn btn-outline" onclick="viewBookingDetails({{ booking.id }})">
+                  <i class="fas fa-eye"></i> View
+                </button>
+                {% if booking.status == 'Pending' %}
+                  <button class="btn btn-success" onclick="approveBooking({{ booking.id }})">
+                    <i class="fas fa-check"></i> Approve
+                  </button>
+                  <button class="btn btn-danger" onclick="rejectBooking({{ booking.id }})">
+                    <i class="fas fa-times"></i> Reject
+                  </button>
+                {% else %}
+                  <button class="btn btn-outline disabled">
+                    <i class="fas fa-ban"></i> Not Available
+                  </button>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions Section -->
+  <div class="quick-actions">
+    <div class="quick-actions-header"><i class="fas fa-bolt"></i> Quick Actions</div>
+    <div class="quick-action-list">
+      <a href="javascript:void(0)" class="quick-action" onclick="showSendMessageModal(event)">
+        <i class="fas fa-paper-plane"></i><span>Send Message</span>
+      </a>
+      <a href="javascript:void(0)" class="quick-action" onclick="showSendMessageModal(event)">
+
+        <i class="fas fa-money-bill-wave"></i><span>Collect Rent</span>
+      </a>
+      <a href="javascript:void(0)" class="quick-action" onclick="showSendMessageModal(event)">
+
+        <i class="fas fa-tools"></i><span>Maintenance</span>
+      </a>
+      <a href="javascript:void(0)" class="quick-action" onclick="showSendMessageModal(event)">
+        <i class="fas fa-download"></i><span> Export Data</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Booking Details Modal -->
+  <div class="modal" id="bookingModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h5 class="modal-title">Booking Details</h5>
+        <span class="modal-close" id="bookingModalClose">&times;</span>
+      </div>
+      <div class="modal-body" id="bookingDetailsContent">
+        <!-- Booking details will be loaded here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="bookingModalCloseBtn">Close</button>
+        <button type="button" class="btn btn-primary" id="processPaymentBtn">
+          <i class="fas fa-spinner fa-spin" style="display: none;"></i>
+          <span>Process Payment</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal" id="paymentModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h5 class="modal-title">Collect Rent Payment</h5>
+        <span class="modal-close" id="paymentModalClose">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="paymentForm">
+          <div class="form-group">
+            <label for="tenantSelect">Select Tenant</label>
+            <select class="form-control" id="tenantSelect" required>
+              <option value="">Choose a tenant...</option>
+              {% for booking in bookings %}
+                {% if booking.status == 'Approved' or booking.status == 'Occupied' %}
+                  <option value="{{ booking.id }}" data-rent="{{ booking.house.rent_amount }}">{{ booking.tenant_name }} - {{ booking.house.title }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+            <div class="invalid-feedback">Please select a tenant</div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="paymentAmount">Amount (KES)</label>
+              <input type="number" class="form-control" id="paymentAmount" required>
+              <div class="invalid-feedback">Please enter a valid amount</div>
+            </div>
+            <div class="form-group">
+              <label for="paymentDate">Payment Date</label>
+              <input type="date" class="form-control" id="paymentDate" required>
+              <div class="invalid-feedback">Please select a payment date</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="paymentMethod">Payment Method</label>
+            <select class="form-control" id="paymentMethod" required>
+              <option value="">Select payment method...</option>
+              <option value="cash">Cash</option>
+              <option value="mpesa">M-Pesa</option>
+              <option value="bank">Bank Transfer</option>
+              <option value="cheque">Cheque</option>
+            </select>
+            <div class="invalid-feedback">Please select a payment method</div>
+          </div>
+          <div class="form-group">
+            <label for="paymentNotes">Notes</label>
+            <textarea class="form-control" id="paymentNotes" rows="3"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="paymentModalCloseBtn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="submitPaymentBtn">
+          <i class="fas fa-spinner fa-spin" style="display: none;"></i>
+          <span>Submit Payment</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Modal -->
+  <div class="modal" id="messageModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h5 class="modal-title">Send Message</h5>
+        <span class="modal-close" id="messageModalClose">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="messageForm">
+          <div class="form-group">
+            <label for="messageRecipients">Recipients</label>
+            <select class="form-control" id="messageRecipients" multiple required>
+              {% for booking in bookings %}
+                <option value="{{ booking.id }}">{{ booking.tenant_name }} - {{ booking.house.title }}</option>
+              {% endfor %}
+            </select>
+            <small class="form-text">Hold Ctrl/Cmd to select multiple tenants</small>
+            <div class="invalid-feedback">Please select at least one recipient</div>
+          </div>
+          <div class="form-group">
+            <label for="messageSubject">Subject</label>
+            <input type="text" class="form-control" id="messageSubject" required>
+            <div class="invalid-feedback">Please enter a subject</div>
+          </div>
+          <div class="form-group">
+            <label for="messageContent">Message</label>
+            <textarea class="form-control" id="messageContent" rows="5" required></textarea>
+            <div class="invalid-feedback">Please enter a message</div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="messageModalCloseBtn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="sendMessageBtn">
+          <i class="fas fa-spinner fa-spin" style="display: none;"></i>
+          <span>Send Message</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Maintenance Modal -->
+  <div class="modal" id="maintenanceModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h5 class="modal-title">Maintenance Request</h5>
+        <span class="modal-close" id="maintenanceModalClose">&times;</span>
+      </div>
+      <div class="modal-body">
+        <form id="maintenanceForm">
+          <div class="form-group">
+            <label for="maintenanceProperty">Property</label>
+            <select class="form-control" id="maintenanceProperty" required>
+              <option value="">Select a property...</option>
+              {% for property in properties %}
+                <option value="{{ property.id }}">{{ property.title }}</option>
+              {% endfor %}
+            </select>
+            <div class="invalid-feedback">Please select a property</div>
+          </div>
+          <div class="form-group">
+            <label for="maintenanceTenant">Tenant (if applicable)</label>
+            <select class="form-control" id="maintenanceTenant">
+              <option value="">Not applicable</option>
+              {% for booking in bookings %}
+                {% if booking.status == 'Approved' or booking.status == 'Occupied' %}
+                  <option value="{{ booking.id }}">{{ booking.tenant_name }}</option>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="maintenanceTitle">Title</label>
+            <input type="text" class="form-control" id="maintenanceTitle" required>
+            <div class="invalid-feedback">Please enter a title</div>
+          </div>
+          <div class="form-group">
+            <label for="maintenanceDescription">Description</label>
+            <textarea class="form-control" id="maintenanceDescription" rows="4" required></textarea>
+            <div class="invalid-feedback">Please enter a description</div>
+          </div>
+          <div class="form-group">
+            <label for="maintenancePriority">Priority</label>
+            <select class="form-control" id="maintenancePriority" required>
+              <option value="">Select priority...</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+            <div class="invalid-feedback">Please select a priority</div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="maintenanceModalCloseBtn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="submitMaintenanceBtn">
+          <i class="fas fa-spinner fa-spin" style="display: none;"></i>
+          <span>Submit Request</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div class="modal" id="exportModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h5 class="modal-title">Export Data</h5>
+        <span class="modal-close" id="exportModalClose">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="export-options">
+          <div class="export-option" data-format="csv">
+            <div class="export-option-title">CSV</div>
+            <div class="export-option-desc">Comma-separated values for spreadsheet applications</div>
+          </div>
+          <div class="export-option" data-format="excel">
+            <div class="export-option-title">Excel</div>
+            <div class="export-option-desc">Microsoft Excel format with formatting</div>
+          </div>
+          <div class="export-option" data-format="pdf">
+            <div class="export-option-title">PDF</div>
+            <div class="export-option-desc">Portable Document Format for sharing</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="exportData">Data to Export</label>
+          <select class="form-control" id="exportData" required>
+            <option value="all">All Tenants</option>
+            <option value="active">Active Tenants Only</option>
+            <option value="pending">Pending Requests Only</option>
+            <option value="payments">Payment History</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="exportDateRange">Date Range</label>
+          <div class="form-row">
+            <input type="date" class="form-control" id="exportStartDate">
+            <input type="date" class="form-control" id="exportEndDate">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" id="exportModalCloseBtn">Cancel</button>
+        <button type="button" class="btn btn-primary" id="exportDataBtn">
+          <i class="fas fa-spinner fa-spin" style="display: none;"></i>
+          <span>Export Data</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize modals
+  initializeModals();
+  
+  // Load tenants on page load
+  loadTenants();
+  
+  // Get URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  // Apply filters on page load if URL parameters exist
+  if (urlParams.has('search') || urlParams.has('status') || urlParams.has('property')) {
+    document.getElementById('searchTenants').value = urlParams.get('search') || '';
+    document.getElementById('statusFilter').value = urlParams.get('status') || 'all';
+    document.getElementById('propertyFilter').value = urlParams.get('property') || 'all';
+    
+    applyFilters();
+  }
+  
+  // Set today's date as default for payment date
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('paymentDate').value = today;
+  
+  // Set default date range for export
+  document.getElementById('exportStartDate').value = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0];
+  document.getElementById('exportEndDate').value = today;
+});
+
+// Initialize modals
+function initializeModals() {
+  // Booking modal
+  const bookingModal = document.getElementById('bookingModal');
+  const bookingModalClose = document.getElementById('bookingModalClose');
+  const bookingModalCloseBtn = document.getElementById('bookingModalCloseBtn');
+  
+  bookingModalClose.addEventListener('click', () => {
+    bookingModal.classList.remove('show');
+  });
+  
+  bookingModalCloseBtn.addEventListener('click', () => {
+    bookingModal.classList.remove('show');
+  });
+  
+  // Payment modal
+  const paymentModal = document.getElementById('paymentModal');
+  const paymentModalClose = document.getElementById('paymentModalClose');
+  const paymentModalCloseBtn = document.getElementById('paymentModalCloseBtn');
+  
+  paymentModalClose.addEventListener('click', () => {
+    paymentModal.classList.remove('show');
+  });
+  
+  paymentModalCloseBtn.addEventListener('click', () => {
+    paymentModal.classList.remove('show');
+  });
+  
+  // Message modal
+  const messageModal = document.getElementById('messageModal');
+  const messageModalClose = document.getElementById('messageModalClose');
+  const messageModalCloseBtn = document.getElementById('messageModalCloseBtn');
+  
+  messageModalClose.addEventListener('click', () => {
+    messageModal.classList.remove('show');
+  });
+  
+  messageModalCloseBtn.addEventListener('click', () => {
+    messageModal.classList.remove('show');
+  });
+  
+  // Maintenance modal
+  const maintenanceModal = document.getElementById('maintenanceModal');
+  const maintenanceModalClose = document.getElementById('maintenanceModalClose');
+  const maintenanceModalCloseBtn = document.getElementById('maintenanceModalCloseBtn');
+  
+  maintenanceModalClose.addEventListener('click', () => {
+    maintenanceModal.classList.remove('show');
+  });
+  
+  maintenanceModalCloseBtn.addEventListener('click', () => {
+    maintenanceModal.classList.remove('show');
+  });
+  
+  // Export modal
+  const exportModal = document.getElementById('exportModal');
+  const exportModalClose = document.getElementById('exportModalClose');
+  const exportModalCloseBtn = document.getElementById('exportModalCloseBtn');
+  
+  exportModalClose.addEventListener('click', () => {
+    exportModal.classList.remove('show');
+  });
+  
+  exportModalCloseBtn.addEventListener('click', () => {
+    exportModal.classList.remove('show');
+  });
+  
+  // Export options
+  const exportOptions = document.querySelectorAll('.export-option');
+  exportOptions.forEach(option => {
+    option.addEventListener('click', () => {
+      exportOptions.forEach(opt => opt.classList.remove('selected'));
+      option.classList.add('selected');
+    });
+  });
+  
+  // Set default export option
+  document.querySelector('.export-option[data-format="csv"]').classList.add('selected');
+  
+  // Process payment button
+  const processPaymentBtn = document.getElementById('processPaymentBtn');
+  processPaymentBtn.addEventListener('click', () => {
+    const spinner = processPaymentBtn.querySelector('.fa-spinner');
+    spinner.style.display = 'inline-flex';
+    
+    // Simulate payment processing
+    setTimeout(() => {
+      spinner.style.display = 'none';
+      showToast('Payment processed successfully!', 'success');
+      bookingModal.classList.remove('show');
+    }, 2000);
+  });
+  
+  // Submit payment button
+  const submitPaymentBtn = document.getElementById('submitPaymentBtn');
+  submitPaymentBtn.addEventListener('click', () => {
+    if (validatePaymentForm()) {
+      const spinner = submitPaymentBtn.querySelector('.fa-spinner');
+      spinner.style.display = 'inline-flex';
+      
+      // Collect form data
+      const paymentData = {
+        tenantId: document.getElementById('tenantSelect').value,
+        amount: document.getElementById('paymentAmount').value,
+        date: document.getElementById('paymentDate').value,
+        method: document.getElementById('paymentMethod').value,
+        notes: document.getElementById('paymentNotes').value
+      };
+      
+      // Send payment data to server
+      fetch('/api/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(paymentData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        spinner.style.display = 'none';
+        if (data.success) {
+          showToast('Payment submitted successfully!', 'success');
+          paymentModal.classList.remove('show');
+          document.getElementById('paymentForm').reset();
+        } else {
+          showToast(`Failed to submit payment: ${data.message}`, 'error');
+        }
+      })
+      .catch(error => {
+        spinner.style.display = 'none';
+        console.error('Error submitting payment:', error);
+        showToast('Failed to submit payment. Please try again.', 'error');
+      });
+    }
+  });
+  
+  // Send message button
+  const sendMessageBtn = document.getElementById('sendMessageBtn');
+  sendMessageBtn.addEventListener('click', () => {
+    if (validateMessageForm()) {
+      const spinner = sendMessageBtn.querySelector('.fa-spinner');
+      spinner.style.display = 'inline-flex';
+      
+      // Collect form data
+      const messageData = {
+        recipients: Array.from(document.getElementById('messageRecipients').selectedOptions).map(option => option.value),
+        subject: document.getElementById('messageSubject').value,
+        content: document.getElementById('messageContent').value
+      };
+      
+      // Send message data to server
+      fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(messageData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        spinner.style.display = 'none';
+        if (data.success) {
+          showToast('Message sent successfully!', 'success');
+          messageModal.classList.remove('show');
+          document.getElementById('messageForm').reset();
+        } else {
+          showToast(`Failed to send message: ${data.message}`, 'error');
+        }
+      })
+      .catch(error => {
+        spinner.style.display = 'none';
+        console.error('Error sending message:', error);
+        showToast('Failed to send message. Please try again.', 'error');
+      });
+    }
+  });
+  
+  // Submit maintenance button
+  const submitMaintenanceBtn = document.getElementById('submitMaintenanceBtn');
+  submitMaintenanceBtn.addEventListener('click', () => {
+    if (validateMaintenanceForm()) {
+      const spinner = submitMaintenanceBtn.querySelector('.fa-spinner');
+      spinner.style.display = 'inline-flex';
+      
+      // Collect form data
+      const maintenanceData = {
+        propertyId: document.getElementById('maintenanceProperty').value,
+        tenantId: document.getElementById('maintenanceTenant').value,
+        title: document.getElementById('maintenanceTitle').value,
+        description: document.getElementById('maintenanceDescription').value,
+        priority: document.getElementById('maintenancePriority').value
+      };
+      
+      // Send maintenance data to server
+      fetch('/api/maintenance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(maintenanceData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        spinner.style.display = 'none';
+        if (data.success) {
+          showToast('Maintenance request submitted successfully!', 'success');
+          maintenanceModal.classList.remove('show');
+          document.getElementById('maintenanceForm').reset();
+        } else {
+          showToast(`Failed to submit maintenance request: ${data.message}`, 'error');
+        }
+      })
+      .catch(error => {
+        spinner.style.display = 'none';
+        console.error('Error submitting maintenance request:', error);
+        showToast('Failed to submit maintenance request. Please try again.', 'error');
+      });
+    }
+  });
+  
+  // Export data button
+  const exportDataBtn = document.getElementById('exportDataBtn');
+  exportDataBtn.addEventListener('click', () => {
+    const selectedFormat = document.querySelector('.export-option.selected').dataset.format;
+    const exportType = document.getElementById('exportData').value;
+    const startDate = document.getElementById('exportStartDate').value;
+    const endDate = document.getElementById('exportEndDate').value;
+    
+    const spinner = exportDataBtn.querySelector('.fa-spinner');
+    spinner.style.display = 'inline-flex';
+    
+    // Build export parameters
+    const params = new URLSearchParams();
+    params.set('format', selectedFormat);
+    params.set('type', exportType);
+    if (startDate) params.set('start_date', startDate);
+    if (endDate) params.set('end_date', endDate);
+    
+    // Export data
+    fetch(`/api/export?${params.toString()}`)
+      .then(response => {
+        if (response.ok) {
+          return response.blob();
+        } else {
+          throw new Error('Failed to export data');
+        }
+      })
+      .then(blob => {
+        spinner.style.display = 'none';
+        
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tenants_export_${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        
+        showToast('Export completed successfully!', 'success');
+        exportModal.classList.remove('show');
+      })
+      .catch(error => {
+        spinner.style.display = 'none';
+        console.error('Error exporting data:', error);
+        showToast('Failed to export data. Please try again.', 'error');
+      });
+  });
+  
+  // Tenant select change event
+  const tenantSelect = document.getElementById('tenantSelect');
+  tenantSelect.addEventListener('change', () => {
+    const selectedOption = tenantSelect.options[tenantSelect.selectedIndex];
+    const rentAmount = selectedOption.getAttribute('data-rent');
+    if (rentAmount) {
+      document.getElementById('paymentAmount').value = rentAmount;
+    }
+  });
+}
+
+// Load tenants from API
+function loadTenants() {
+  // This would typically fetch data from an API
+  // For now, we'll just animate the stats cards
+  animateStats();
+}
+
+// Animate stats on page load
+function animateStats() {
+  const statCards = document.querySelectorAll('.stat-card');
+  statCards.forEach((card, index) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    
+    setTimeout(() => {
+      card.style.transition = 'all 0.5s ease';
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, index * 100);
+  });
+}
+
+// Apply filters
+function applyFilters() {
+  const search = document.getElementById('searchTenants').value;
+  const status = document.getElementById('statusFilter').value;
+  const property = document.getElementById('propertyFilter').value;
+  
+  // Build query parameters
+  const params = new URLSearchParams();
+  if (search) params.set('search', search);
+  if (status !== 'all') params.set('status', status);
+  if (property !== 'all') params.set('property', property);
+  
+  // Update URL
+  const url = `${window.location.pathname}?${params.toString()}`;
+  window.location.href = url;
+}
+
+// View booking details
+function viewBookingDetails(bookingId) {
+  // Show loading state
+  const bookingDetailsContent = document.getElementById('bookingDetailsContent');
+  bookingDetailsContent.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading booking details...</div>';
+  
+  // Show modal
+  document.getElementById('bookingModal').classList.add('show');
+  
+  // Fetch booking details
+  fetch(`/api/bookings/${bookingId}`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Populate modal with booking details
+        const booking = data.booking;
+        bookingDetailsContent.innerHTML = `
+          <div class="booking-details">
+            <div class="detail-row">
+              <span class="detail-label">Tenant Name:</span>
+              <span class="detail-value">${booking.tenant_name}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Property:</span>
+              <span class="detail-value">${booking.house.title}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Move-in Date:</span>
+              <span class="detail-value">${booking.move_in_date ? new Date(booking.move_in_date).toLocaleDateString() : 'Not specified'}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Rent Amount:</span>
+              <span class="detail-value">KES ${booking.house.rent_amount.toLocaleString()}/month</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Status:</span>
+              <span class="detail-value">
+                <span class="tenant-status status-${booking.status.toLowerCase()}">${booking.status}</span>
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Contact Email:</span>
+              <span class="detail-value">${booking.tenant_email || 'Not provided'}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Contact Phone:</span>
+              <span class="detail-value">${booking.tenant_phone || 'Not provided'}</span>
+            </div>
+          </div>
+        `;
+      } else {
+        bookingDetailsContent.innerHTML = `<div class="alert alert-danger">Failed to load booking details: ${data.message}</div>`;
+      }
+    })
+    .catch(error => {
+      console.error('Error loading booking details:', error);
+      bookingDetailsContent.innerHTML = '<div class="alert alert-danger">Failed to load booking details. Please try again.</div>';
+    });
+}
+
+// Approve booking
+function approveBooking(bookingId) {
+  if (confirm('Are you sure you want to approve this booking?')) {
+    // Show loading state
+    showToast('Processing approval...', 'info');
+    
+    // Approve booking
+    fetch(`/api/bookings/${bookingId}/approve`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showToast('Booking approved successfully!', 'success');
+        // Reload the page to show updated data
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        showToast(`Failed to approve booking: ${data.message}`, 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Error approving booking:', error);
+      showToast('Failed to approve booking. Please try again.', 'error');
+    });
+  }
+}
+
+// Reject booking
+function rejectBooking(bookingId) {
+  if (confirm('Are you sure you want to reject this booking?')) {
+    // Show loading state
+    showToast('Processing rejection...', 'info');
+    
+    // Reject booking
+    fetch(`/api/bookings/${bookingId}/reject`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showToast('Booking rejected successfully!', 'success');
+        // Reload the page to show updated data
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } else {
+        showToast(`Failed to reject booking: ${data.message}`, 'error');
+      }
+    })
+    .catch(error => {
+      console.error('Error rejecting booking:', error);
+      showToast('Failed to reject booking. Please try again.', 'error');
+    });
+  }
+}
+
+// Show payment modal
+function showPaymentModal() {
+  document.getElementById('paymentModal').classList.add('show');
+}
+
+// Show send message modal
+function showSendMessageModal() {
+  document.getElementById('messageModal').classList.add('show');
+}
+
+// Show maintenance modal
+function showMaintenanceModal() {
+  document.getElementById('maintenanceModal').classList.add('show');
+}
+
+// Show export modal
+function showExportModal() {
+  document.getElementById('exportModal').classList.add('show');
+}
+
+// Show add tenant modal
+function showAddTenantModal() {
+  showToast('Add Tenant feature coming soon!', 'info');
+}
+
+// Validate payment form
+function validatePaymentForm() {
+  let isValid = true;
+  
+  // Validate tenant selection
+  const tenantSelect = document.getElementById('tenantSelect');
+  if (!tenantSelect.value) {
+    tenantSelect.classList.add('is-invalid');
+    isValid = false;
+  } else {
+    tenantSelect.classList.remove('is-invalid');
+  }
+  
+  // Validate amount
+  const paymentAmount = document.getElementById('paymentAmount');
+  if (!paymentAmount.value || paymentAmount.value <= 0) {
+    paymentAmount.classList.add('is-invalid');
+    isValid = false;
+  } else {
+    paymentAmount.classList.remove('is-invalid');
+  }
+  
+  // Validate date
+  const paymentDate = document.getElementById('paymentDate');
+  if (!paymentDate.value) {
+    paymentDate.classList.add('is-invalid');
+    isValid = false;
+  } else {
+    paymentDate.classList.remove('is-invalid');
+  }
+  
+  // Validate payment method
+  const paymentMethod = document.getElementById('paymentMethod');
+  if (!paymentMethod.value) {
+    paymentMethod.classList.add('is-invalid');
+    isValid = false;
+  } else {
+    paymentMethod.classList.remove('is-invalid');
+  }
+  
+  return isValid;
+}
+
+// Validate message form
+function validateMessageForm() {
+  let isValid = true;
+  
+  // Validate recipients
+  const messageRecipients = document.getElementById('messageRecipients');
+  if (messageRecipients.selectedOptions.length === 0) {
+    messageRecipients.classList.add('is-invalid');
+    isValid = false;
+  } else {
+    messageRecipients.classList.remove('is-invalid');
+  }
+  
+  // Validate subject
+  const messageSubject = document.getElementById('messageSubject');
+  if (!messageSubject.value.trim()) {
+    messageSubject.classList.add('is-invalid');
+    isValid = false;
+  } else {
+    messageSubject.classList.remove('is-invalid');
+  }
+  
+  // Validate content
+  const messageContent = document.getElementById('messageContent');
+  if (!messageContent.value.trim()) {
+    messageContent.classList.add('is-invalid');
+    isValid = false;
+  } else {
+    messageContent.classList.remove('is-invalid');
+  }
+  
+  return isValid;
+}
+
+// Validate maintenance form
+function validateMaintenanceForm() {
+  let isValid = true;
+  
+  // Validate property
+  const maintenanceProperty = document.getElementById('maintenanceProperty');
+  if (!maintenanceProperty.value) {
+    maintenanceProperty.classList.add('is-invalid');
+    isValid = false;
+  } else {
+    maintenanceProperty.classList.remove('is-invalid');
+  }
+  
+  // Validate title
+  const maintenanceTitle = document.getElementById('maintenanceTitle');
+  if (!maintenanceTitle.value.trim()) {
+    maintenanceTitle.classList.add('is-invalid');
+    isValid = false;
+  } else {
+    maintenanceTitle.classList.remove('is-invalid');
+  }
+  
+  // Validate description
+  const maintenanceDescription = document.getElementById('maintenanceDescription');
+  if (!maintenanceDescription.value.trim()) {
+    maintenanceDescription.classList.add('is-invalid');
+    isValid = false;
+  } else {
+    maintenanceDescription.classList.remove('is-invalid');
+  }
+  
+  // Validate priority
+  const maintenancePriority = document.getElementById('maintenancePriority');
+  if (!maintenancePriority.value) {
+    maintenancePriority.classList.add('is-invalid');
+    isValid = false;
+  } else {
+    maintenancePriority.classList.remove('is-invalid');
+  }
+  
+  return isValid;
+}
+
+// Show toast notification
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  // Animate in
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 100);
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => {
+      document.body.removeChild(toast);
+    }, 300);
+  }, 3000);
+}
+</script>
+{% endblock %}

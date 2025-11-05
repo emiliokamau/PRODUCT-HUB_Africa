@@ -1,0 +1,1197 @@
+{% extends 'base.html' %}
+
+{% block title %}Accessibility - HomeHub{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    :root {
+        --primary-color: #2563eb;
+        --primary-hover: #1d4ed8;
+        --secondary-color: #10b981;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --bg-primary: #ffffff;
+        --bg-secondary: #f9fafb;
+        --bg-tertiary: #f3f4f6;
+        --border-color: #e5e7eb;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        --radius: 0.5rem;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --font-size-base: 16px;
+        --focus-width: 3px;
+    }
+
+    [data-theme="dark"] {
+        --primary-color: #3b82f6;
+        --primary-hover: #2563eb;
+        --secondary-color: #34d399;
+        --text-primary: #f9fafb;
+        --text-secondary: #d1d5db;
+        --bg-primary: #111827;
+        --bg-secondary: #1f2937;
+        --bg-tertiary: #374151;
+        --border-color: #4b5563;
+    }
+
+    [data-theme="high-contrast"] {
+        --primary-color: #0000ff;
+        --primary-hover: #0000cc;
+        --secondary-color: #008000;
+        --text-primary: #000000;
+        --text-secondary: #000000;
+        --bg-primary: #ffffff;
+        --bg-secondary: #ffffff;
+        --bg-tertiary: #ffffff;
+        --border-color: #000000;
+        --focus-width: 4px;
+    }
+
+    [data-theme="dark"][data-theme="high-contrast"] {
+        --primary-color: #ffff00;
+        --primary-hover: #ffcc00;
+        --secondary-color: #00ff00;
+        --text-primary: #ffffff;
+        --text-secondary: #ffffff;
+        --bg-primary: #000000;
+        --bg-secondary: #000000;
+        --bg-tertiary: #000000;
+        --border-color: #ffffff;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+        font-size: var(--font-size-base);
+        line-height: 1.6;
+        color: var(--text-primary);
+        background-color: var(--bg-primary);
+        transition: var(--transition);
+    }
+
+    /* Skip to main content link */
+    .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 0;
+        background: var(--primary-color);
+        color: white;
+        padding: 8px;
+        text-decoration: none;
+        z-index: 100;
+        border-radius: 0 0 var(--radius) 0;
+    }
+
+    .skip-link:focus {
+        top: 0;
+    }
+
+    /* Accessibility Toolbar */
+    .accessibility-toolbar {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        padding: 1rem 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .toolbar-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .toolbar-title {
+        font-size: 1.125rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .toolbar-controls {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .control-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius);
+        backdrop-filter: blur(10px);
+    }
+
+    .control-group label {
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .btn-icon {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
+        padding: 0.5rem;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+    }
+
+    .btn-icon:hover,
+    .btn-icon:focus {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+    }
+
+    .btn-icon:focus {
+        outline: 2px solid white;
+        outline-offset: 2px;
+    }
+
+    .btn-icon.active {
+        background: rgba(255, 255, 255, 0.4);
+        box-shadow: 0 0 0 2px white;
+    }
+
+    /* Main Content */
+    main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    .hero-section {
+        text-align: center;
+        padding: 3rem 0;
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
+        margin-bottom: 3rem;
+    }
+
+    .hero-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .hero-description {
+        font-size: 1.125rem;
+        color: var(--text-secondary);
+        max-width: 600px;
+        margin: 0 auto 2rem;
+    }
+
+    /* Feature Cards */
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .feature-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        padding: 1.5rem;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .feature-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        transform: translateX(-100%);
+        transition: transform 0.3s;
+    }
+
+    .feature-card:hover::before,
+    .feature-card:focus-within::before {
+        transform: translateX(0);
+    }
+
+    .feature-card:hover,
+    .feature-card:focus-within {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .feature-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border-radius: var(--radius);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .feature-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: var(--text-primary);
+    }
+
+    .feature-description {
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+
+    /* Keyboard Shortcuts */
+    .shortcuts-section {
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
+        padding: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .section-title {
+        font-size: 1.875rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .shortcuts-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .shortcut-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        transition: var(--transition);
+    }
+
+    .shortcut-item:hover {
+        background: var(--bg-tertiary);
+        transform: translateX(4px);
+    }
+
+    .key-combo {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .key {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        font-family: monospace;
+        font-weight: 600;
+        font-size: 0.875rem;
+        box-shadow: 0 2px 0 var(--border-color);
+    }
+
+    .shortcut-description {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+    }
+
+    /* Settings Panel */
+    .settings-panel {
+        background: var(--bg-secondary);
+        border-radius: var(--radius);
+        padding: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .setting-item:last-child {
+        border-bottom: none;
+    }
+
+    .setting-info {
+        flex: 1;
+    }
+
+    .setting-label {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: var(--text-primary);
+    }
+
+    .setting-description {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+        position: relative;
+        width: 48px;
+        height: 24px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--border-color);
+        transition: var(--transition);
+        border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: var(--transition);
+        border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+        background-color: var(--primary-color);
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+    }
+
+    /* Font Size Controls */
+    .font-size-controls {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .font-btn {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 0.5rem 0.75rem;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: var(--transition);
+        font-weight: 600;
+    }
+
+    .font-btn:hover,
+    .font-btn:focus {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .font-btn:focus {
+        outline: 2px solid var(--primary-color);
+        outline-offset: 2px;
+    }
+
+    .font-size-display {
+        min-width: 50px;
+        text-align: center;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    /* Feedback Section */
+    .feedback-section {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        border-radius: var(--radius);
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .feedback-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    .feedback-description {
+        margin-bottom: 1.5rem;
+        opacity: 0.95;
+    }
+
+    .feedback-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        background: white;
+        color: var(--primary-color);
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: var(--radius);
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn:hover,
+    .btn:focus {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .btn:focus {
+        outline: 2px solid white;
+        outline-offset: 2px;
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: white;
+        border: 2px solid white;
+    }
+
+    .btn-outline:hover,
+    .btn-outline:focus {
+        background: white;
+        color: var(--primary-color);
+    }
+
+    /* Animations */
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.5;
+        }
+    }
+
+    .pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Focus styles for better accessibility */
+    *:focus {
+        outline: var(--focus-width) solid var(--primary-color);
+        outline-offset: 2px;
+    }
+
+    /* Reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2rem;
+        }
+
+        .toolbar-container {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .toolbar-controls {
+            justify-content: center;
+        }
+
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .shortcuts-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .setting-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+    }
+
+    /* Print Styles */
+    @media print {
+        .accessibility-toolbar,
+        .feedback-section {
+            display: none;
+        }
+
+        body {
+            color: black;
+            background: white;
+        }
+
+        .feature-card {
+            break-inside: avoid;
+            border: 1px solid #ccc;
+        }
+    }
+
+    /* Loading animation */
+    .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Toast notification */
+    .toast {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        padding: 1rem 1.5rem;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border-color);
+        transform: translateX(400px);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .toast.show {
+        transform: translateX(0);
+    }
+
+    .toast-icon {
+        font-size: 1.25rem;
+    }
+
+    .toast.success .toast-icon {
+        color: var(--secondary-color);
+    }
+
+    .toast.info .toast-icon {
+        color: var(--primary-color);
+    }
+</style>
+
+<!-- Skip to main content link -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Accessibility Toolbar -->
+<section class="accessibility-toolbar" role="region" aria-label="Accessibility controls">
+    <div class="toolbar-container">
+        <div class="toolbar-title">
+            <i class="fas fa-universal-access" aria-hidden="true"></i>
+            <span>Quick Accessibility Controls</span>
+        </div>
+        <div class="toolbar-controls">
+            <div class="control-group">
+                <label for="theme-toggle">Theme:</label>
+                <button class="btn-icon" id="theme-toggle" aria-label="Toggle theme" aria-pressed="false">
+                    <i class="fas fa-moon" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="control-group">
+                <label for="contrast-toggle">High Contrast:</label>
+                <button class="btn-icon" id="contrast-toggle" aria-label="Toggle high contrast" aria-pressed="false">
+                    <i class="fas fa-adjust" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="control-group">
+                <label for="reader-toggle">Reader Mode:</label>
+                <button class="btn-icon" id="reader-toggle" aria-label="Toggle reader mode" aria-pressed="false">
+                    <i class="fas fa-book-reader" aria-hidden="true"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Main Content -->
+<main id="main-content" role="main">
+    <!-- Hero Section -->
+    <section class="hero-section" aria-labelledby="hero-title">
+        <h1 id="hero-title" class="hero-title">Accessibility at HomeHub</h1>
+        <p class="hero-description">
+            We're committed to making HomeHub accessible to everyone. Our platform follows WCAG 2.1 AA guidelines 
+            and includes features to support users with diverse abilities and preferences.
+        </p>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="features-grid" aria-labelledby="features-title">
+        <h2 id="features-title" class="sr-only">Accessibility Features</h2>
+        
+        <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+                <i class="fas fa-keyboard"></i>
+            </div>
+            <h3 class="feature-title">Full Keyboard Navigation</h3>
+            <p class="feature-description">
+                Navigate the entire interface using just your keyboard. All interactive elements are reachable 
+                and operable without a mouse.
+            </p>
+        </article>
+
+        <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+                <i class="fas fa-eye"></i>
+            </div>
+            <h3 class="feature-title">Screen Reader Support</h3>
+            <p class="feature-description">
+                Optimized for popular screen readers with proper ARIA labels, semantic HTML, and descriptive 
+                alternative text for images.
+            </p>
+        </article>
+
+        <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+                <i class="fas fa-palette"></i>
+            </div>
+            <h3 class="feature-title">Customizable Themes</h3>
+            <p class="feature-description">
+                Choose from light, dark, and high contrast themes. Adjust colors to reduce eye strain and 
+                improve visibility.
+            </p>
+        </article>
+
+        <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+                <i class="fas fa-text-height"></i>
+            </div>
+            <h3 class="feature-title">Adjustable Text Size</h3>
+            <p class="feature-description">
+                Increase or decrease text size to your preference. The layout adapts to ensure content remains 
+                readable and accessible.
+            </p>
+        </article>
+
+        <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+                <i class="fas fa-volume-up"></i>
+            </div>
+            <h3 class="feature-title">Audio Descriptions</h3>
+            <p class="feature-description">
+                Audio descriptions available for visual content, ensuring information is accessible to users 
+                with visual impairments.
+            </p>
+        </article>
+
+        <article class="feature-card">
+            <div class="feature-icon" aria-hidden="true">
+                <i class="fas fa-hand-paper"></i>
+            </div>
+            <h3 class="feature-title">Reduced Motion Support</h3>
+            <p class="feature-description">
+                Respects prefers-reduced-motion settings to minimize animations for users who experience 
+                vestibular motion disorders.
+            </p>
+        </article>
+    </section>
+
+    <!-- Keyboard Shortcuts -->
+    <section class="shortcuts-section" aria-labelledby="shortcuts-title">
+        <h2 id="shortcuts-title" class="section-title">
+            <i class="fas fa-keyboard" aria-hidden="true"></i>
+            Keyboard Shortcuts
+        </h2>
+        <div class="shortcuts-grid">
+            <div class="shortcut-item">
+                <div class="key-combo">
+                    <kbd class="key">Alt</kbd>
+                    <span>+</span>
+                    <kbd class="key">A</kbd>
+                </div>
+                <span class="shortcut-description">Jump to accessibility settings</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="key-combo">
+                    <kbd class="key">Alt</kbd>
+                    <span>+</span>
+                    <kbd class="key">T</kbd>
+                </div>
+                <span class="shortcut-description">Toggle theme</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="key-combo">
+                    <kbd class="key">Alt</kbd>
+                    <span>+</span>
+                    <kbd class="key">+</kbd>
+                </div>
+                <span class="shortcut-description">Increase font size</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="key-combo">
+                    <kbd class="key">Alt</kbd>
+                    <span>+</span>
+                    <kbd class="key">-</kbd>
+                </div>
+                <span class="shortcut-description">Decrease font size</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="key-combo">
+                    <kbd class="key">Tab</kbd>
+                </div>
+                <span class="shortcut-description">Navigate forward</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="key-combo">
+                    <kbd class="key">Shift</kbd>
+                    <span>+</span>
+                    <kbd class="key">Tab</kbd>
+                </div>
+                <span class="shortcut-description">Navigate backward</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="key-combo">
+                    <kbd class="key">Enter</kbd>
+                </div>
+                <span class="shortcut-description">Activate focused element</span>
+            </div>
+            <div class="shortcut-item">
+                <div class="key-combo">
+                    <kbd class="key">Esc</kbd>
+                </div>
+                <span class="shortcut-description">Close modals/popups</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Settings Panel -->
+    <section class="settings-panel" aria-labelledby="settings-title">
+        <h2 id="settings-title" class="section-title">
+            <i class="fas fa-cog" aria-hidden="true"></i>
+            Accessibility Settings
+        </h2>
+        
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Screen Reader Optimization</div>
+                <div class="setting-description">Enhanced labels and descriptions for screen readers</div>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="screen-reader-toggle" aria-describedby="screen-reader-desc">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Focus Indicators</div>
+                <div class="setting-description">Enhanced visible focus for keyboard navigation</div>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="focus-indicators" checked aria-describedby="focus-desc">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Text Size</div>
+                <div class="setting-description">Adjust the base font size for better readability</div>
+            </div>
+            <div class="font-size-controls">
+                <button class="font-btn" id="font-decrease" aria-label="Decrease font size">A-</button>
+                <span class="font-size-display" id="font-size-display">100%</span>
+                <button class="font-btn" id="font-increase" aria-label="Increase font size">A+</button>
+            </div>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Line Height</div>
+                <div class="setting-description">Increase spacing between lines for easier reading</div>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="line-height-toggle" aria-describedby="line-height-desc">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-item">
+            <div class="setting-info">
+                <div class="setting-label">Underline Links</div>
+                <div class="setting-description">Always underline links for better identification</div>
+            </div>
+            <label class="toggle-switch">
+                <input type="checkbox" id="underline-links" aria-describedby="underline-desc">
+                <span class="toggle-slider"></span>
+            </label>
+        </div>
+    </section>
+
+    <!-- Feedback Section -->
+    <section class="feedback-section" aria-labelledby="feedback-title">
+        <h2 id="feedback-title" class="feedback-title">Help Us Improve</h2>
+        <p class="feedback-description">
+            Your feedback helps us make HomeHub more accessible. Share your experience or report accessibility issues.
+        </p>
+        <div class="feedback-buttons">
+            <button class="btn" id="feedback-button">
+                <i class="fas fa-comment" aria-hidden="true"></i>
+                Send Feedback
+            </button>
+            <button class="btn btn-outline" id="report-issue-button">
+                <i class="fas fa-bug" aria-hidden="true"></i>
+                Report Issue
+            </button>
+        </div>
+    </section>
+</main>
+
+<!-- Toast Notification -->
+<div id="toast" class="toast" role="alert" aria-live="polite">
+    <i class="toast-icon fas fa-check-circle"></i>
+    <span id="toast-message">Setting updated successfully</span>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Theme Management
+    let currentTheme = 'light';
+    let highContrast = false;
+    let readerMode = false;
+    let fontSize = 100;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSettings();
+        setupEventListeners();
+        setupKeyboardShortcuts();
+    });
+
+    // Load saved settings
+    function loadSettings() {
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        const savedContrast = localStorage.getItem('highContrast') === 'true';
+        const savedFontSize = localStorage.getItem('fontSize') || '100';
+        
+        setTheme(savedTheme);
+        setHighContrast(savedContrast);
+        setFontSize(parseInt(savedFontSize));
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+        // Theme toggle
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            const themes = ['light', 'dark'];
+            const currentIndex = themes.indexOf(currentTheme);
+            const nextTheme = themes[(currentIndex + 1) % themes.length];
+            setTheme(nextTheme);
+        });
+
+        // High contrast toggle
+        document.getElementById('contrast-toggle').addEventListener('click', () => {
+            setHighContrast(!highContrast);
+        });
+
+        // Reader mode toggle
+        document.getElementById('reader-toggle').addEventListener('click', () => {
+            setReaderMode(!readerMode);
+        });
+
+        // Font size controls
+        document.getElementById('font-increase').addEventListener('click', () => {
+            if (fontSize < 150) {
+                setFontSize(fontSize + 10);
+            }
+        });
+
+        document.getElementById('font-decrease').addEventListener('click', () => {
+            if (fontSize > 80) {
+                setFontSize(fontSize - 10);
+            }
+        });
+
+        // Settings toggles
+        document.getElementById('screen-reader-toggle').addEventListener('change', (e) => {
+            showToast('Screen reader optimization ' + (e.target.checked ? 'enabled' : 'disabled'), 'info');
+        });
+
+        document.getElementById('focus-indicators').addEventListener('change', (e) => {
+            document.documentElement.style.setProperty('--focus-width', e.target.checked ? '3px' : '0');
+            showToast('Focus indicators ' + (e.target.checked ? 'enabled' : 'disabled'), 'info');
+        });
+
+        document.getElementById('line-height-toggle').addEventListener('change', (e) => {
+            document.body.style.lineHeight = e.target.checked ? '1.8' : '1.6';
+            showToast('Line height adjusted', 'info');
+        });
+
+        document.getElementById('underline-links').addEventListener('change', (e) => {
+            const style = document.createElement('style');
+            style.id = 'link-underline-style';
+            style.textContent = `a { text-decoration: ${e.target.checked ? 'underline' : 'none'} !important; }`;
+            
+            const existing = document.getElementById('link-underline-style');
+            if (existing) existing.remove();
+            if (e.target.checked) document.head.appendChild(style);
+            
+            showToast('Link underline ' + (e.target.checked ? 'enabled' : 'disabled'), 'info');
+        });
+
+        // Feedback buttons
+        document.getElementById('feedback-button').addEventListener('click', openFeedbackForm);
+        document.getElementById('report-issue-button').addEventListener('click', reportIssue);
+    }
+
+    // Theme functions
+    function setTheme(theme) {
+        currentTheme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        
+        const icon = document.querySelector('#theme-toggle i');
+        icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        
+        showToast(`Theme changed to ${theme}`, 'success');
+    }
+
+    function setHighContrast(enabled) {
+        highContrast = enabled;
+        const button = document.getElementById('contrast-toggle');
+        
+        if (enabled) {
+            document.documentElement.setAttribute('data-theme', 'high-contrast');
+            button.classList.add('active');
+            button.setAttribute('aria-pressed', 'true');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            button.classList.remove('active');
+            button.setAttribute('aria-pressed', 'false');
+        }
+        
+        localStorage.setItem('highContrast', enabled);
+        showToast(`High contrast ${enabled ? 'enabled' : 'disabled'}`, 'success');
+    }
+
+    function setReaderMode(enabled) {
+        readerMode = enabled;
+        const button = document.getElementById('reader-toggle');
+        
+        if (enabled) {
+            document.body.classList.add('reader-mode');
+            button.classList.add('active');
+            button.setAttribute('aria-pressed', 'true');
+            
+            // Apply reader mode styles
+            const style = document.createElement('style');
+            style.id = 'reader-mode-style';
+            style.textContent = `
+                .reader-mode .feature-card,
+                .reader-mode .shortcuts-section,
+                .reader-mode .settings-panel {
+                    max-width: 800px;
+                    margin-left: auto;
+                    margin-right: auto;
+                }
+                .reader-mode .accessibility-toolbar,
+                .reader-mode .feedback-section {
+                    display: none;
+                }
+            `;
+            document.head.appendChild(style);
+        } else {
+            document.body.classList.remove('reader-mode');
+            button.classList.remove('active');
+            button.setAttribute('aria-pressed', 'false');
+            
+            const style = document.getElementById('reader-mode-style');
+            if (style) style.remove();
+        }
+        
+        showToast(`Reader mode ${enabled ? 'enabled' : 'disabled'}`, 'success');
+    }
+
+    function setFontSize(size) {
+        fontSize = size;
+        document.documentElement.style.setProperty('--font-size-base', `${size * 0.16}px`);
+        document.getElementById('font-size-display').textContent = `${size}%`;
+        localStorage.setItem('fontSize', size);
+        showToast(`Font size set to ${size}%`, 'info');
+    }
+
+    // Keyboard shortcuts
+    function setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Alt + A: Jump to accessibility
+            if (e.altKey && e.key === 'a') {
+                e.preventDefault();
+                document.querySelector('.accessibility-toolbar').scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            // Alt + T: Toggle theme
+            if (e.altKey && e.key === 't') {
+                e.preventDefault();
+                document.getElementById('theme-toggle').click();
+            }
+            
+            // Alt + Plus: Increase font
+            if (e.altKey && (e.key === '+' || e.key === '=')) {
+                e.preventDefault();
+                document.getElementById('font-increase').click();
+            }
+            
+            // Alt + Minus: Decrease font
+            if (e.altKey && e.key === '-') {
+                e.preventDefault();
+                document.getElementById('font-decrease').click();
+            }
+        });
+    }
+
+    // Toast notification
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+        const toastIcon = toast.querySelector('.toast-icon');
+        
+        toastMessage.textContent = message;
+        toast.className = `toast ${type} show`;
+        
+        if (type === 'success') {
+            toastIcon.className = 'toast-icon fas fa-check-circle';
+        } else if (type === 'info') {
+            toastIcon.className = 'toast-icon fas fa-info-circle';
+        }
+        
+        setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    // Feedback functions
+    function openFeedbackForm() {
+        showToast('Opening feedback form...', 'info');
+        // In a real app, this would open a modal or navigate to a feedback page
+    }
+
+    function reportIssue() {
+        showToast('Opening issue reporter...', 'info');
+        // In a real app, this would open an issue reporting form
+    }
+
+    // Announce to screen readers
+    function announceToScreenReader(message) {
+        const announcement = document.createElement('div');
+        announcement.setAttribute('role', 'status');
+        announcement.setAttribute('aria-live', 'polite');
+        announcement.className = 'sr-only';
+        announcement.textContent = message;
+        document.body.appendChild(announcement);
+        
+        setTimeout(() => {
+            document.body.removeChild(announcement);
+        }, 1000);
+    }
+
+    // Detect user preferences
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        setTheme('dark');
+    }
+
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.body.classList.add('reduced-motion');
+    }
+
+    // Performance monitoring for accessibility
+    const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+            if (entry.duration > 100) {
+                console.warn('Slow interaction detected:', entry.name, entry.duration + 'ms');
+            }
+        }
+    });
+    observer.observe({ entryTypes: ['measure'] });
+
+    // Check for accessibility issues (simplified)
+    function checkAccessibility() {
+        const images = document.querySelectorAll('img:not([alt])');
+        if (images.length > 0) {
+            console.warn('Images without alt text found:', images.length);
+        }
+        
+        const links = document.querySelectorAll('a[href="#"]');
+        if (links.length > 0) {
+            console.warn('Empty links found:', links.length);
+        }
+    }
+
+    // Run accessibility check on load
+    window.addEventListener('load', checkAccessibility);
+</script>
+{% endblock %}

@@ -19,18 +19,20 @@ Solution{% endblock %} {% block content %}
         <i class="fas fa-rocket"></i> Get Started
       </a>
       <a
-        href="#properties"
+        href="{{ url_for('main.properties_list') }}"
         class="btn btn-secondary btn-lg"
         aria-label="Explore Properties"
       >
         <i class="fas fa-search"></i> Explore Properties
       </a>
-      <a href="{{ url_for('main.how_it_works_general') }}"
-   class="btn btn-outline btn-lg"
-   aria-label="Learn More">
-  <i class="fas fa-info-circle"></i> Learn More
-</a>
-
+      <a
+        href="#features"
+        class="btn btn-outline btn-lg"
+        aria-label="Learn More"
+      >
+        <i class="fas fa-info-circle"></i> Learn More
+      </a>
+    </div>
   </div>
   <div class="scroll-indicator">
     <i class="fas fa-chevron-down bounce-animation"></i>
@@ -163,7 +165,7 @@ Solution{% endblock %} {% block content %}
           List your property in Nairobi and manage tenants easily with our
           intuitive dashboard.
         </p>
-        <a href="{{ url_for('main.how_it_works_landlord') }}" class="btn-link"
+        <a href="{{ url_for('auth.signup', role='landlord') }}" class="btn-link"
           >Learn More <i class="fas fa-arrow-right"></i
         ></a>
       </div>
@@ -177,7 +179,7 @@ Solution{% endblock %} {% block content %}
           Find your dream home in Mombasa with secure payments via M-Pesa and
           digital lease signing.
         </p>
-        <a href="{{ url_for('main.how_it_works_tenant') }}" class="btn-link"
+        <a href="{{ url_for('auth.signup', role='tenant') }}" class="btn-link"
           >Learn More <i class="fas fa-arrow-right"></i
         ></a>
       </div>
@@ -191,7 +193,7 @@ Solution{% endblock %} {% block content %}
           Bid on maintenance jobs in Kisumu and grow your business with our
           platform.
         </p>
-        <a href="{{ url_for('main.how_it_works_provider') }}" class="btn-link"
+        <a href="{{ url_for('auth.signup', role='provider') }}" class="btn-link"
           >Learn More <i class="fas fa-arrow-right"></i
         ></a>
       </div>
@@ -205,7 +207,7 @@ Solution{% endblock %} {% block content %}
           Moderate users and resolve disputes efficiently with our comprehensive
           admin tools.
         </p>
-        <a href="{{ url_for('main.how_it_works_admin') }}" class="btn-link"
+        <a href="{{ url_for('auth.signup', role='admin') }}" class="btn-link"
           >Learn More <i class="fas fa-arrow-right"></i
         ></a>
       </div>
@@ -317,12 +319,14 @@ Solution{% endblock %} {% block content %}
         onclick="viewProperty('{{ property.id }}')"
       >
         <div class="property-image-container">
-          {% if property.image_urls %}
-          <img
-            src="{{ url_for('static', filename='images/' ~ property.image_urls) }}"
-            alt="{{ property.title }}"
-            class="property-image"
-          />
+      {% if property.image_urls %}
+        {% set first_image = property.image_urls.split(',')[0] %}
+        <img
+          src="{{ url_for('static', filename=first_image) }}"
+          alt="{{ property.title }}"
+          class="property-image"
+        />
+
           {% if property.featured %}
           <span class="property-badge featured">Featured</span>
           {% endif %}
@@ -835,6 +839,7 @@ Solution{% endblock %} {% block content %}
 <div class="chat-widget" aria-label="Live chat support">
   <button class="chat-toggle" onclick="toggleChat()">
     <i class="fas fa-comments"></i>
+    <span>Chat with Support</span>
     <span class="chat-status" id="agent-status">(Offline)</span>
   </button>
   <div class="chat-window" id="chat-window">
@@ -892,6 +897,7 @@ Solution{% endblock %} {% block content %}
     </div>
   </div>
 </div>
+
 <!-- Social Proof / Partner Logos -->
 <section class="partners-section">
   <div class="container">

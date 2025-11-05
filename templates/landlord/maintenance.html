@@ -1,0 +1,1628 @@
+{% extends 'base.html' %} 
+{% block title %}Maintenance Management - HomeHub{% endblock %} 
+{% block content %}
+
+<style>
+  :root {
+    --primary: #4361ee;
+    --primary-dark: #3a0ca3;
+    --secondary: #7209b7;
+    --accent: #f72585;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --success: #06ffa5;
+    --info: #00b4d8;
+    --warning: #ffbe0b;
+    --danger: #e63946;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    --border-radius: 15px;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      sans-serif;
+    background-color: #f8f9fa;
+    color: var(--dark);
+    line-height: 1.6;
+  }
+
+  .maintenance-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  /* Header Section */
+  .maintenance-header {
+    background: linear-gradient(
+      135deg,
+      var(--primary) 0%,
+      var(--primary-dark) 100%
+    );
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .maintenance-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,133.3C960,128,1056,96,1152,90.7C1248,85,1344,107,1392,117.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>')
+      no-repeat bottom;
+    background-size: cover;
+  }
+
+  .header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .header-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+
+  .header-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+  }
+
+  /* Stats Cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+  }
+
+  .stat-card.pending::before { background: var(--warning); }
+  .stat-card.in-progress::before { background: var(--info); }
+  .stat-card.completed::before { background: var(--success); }
+  .stat-card.overdue::before { background: var(--danger); }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    color: white;
+  }
+
+  .stat-card.pending .stat-icon { background: linear-gradient(135deg, var(--warning), #ff9f1c); }
+  .stat-card.in-progress .stat-icon { background: linear-gradient(135deg, var(--info), #0077b6); }
+  .stat-card.completed .stat-icon { background: linear-gradient(135deg, var(--success), #00b4d8); }
+  .stat-card.overdue .stat-icon { background: linear-gradient(135deg, var(--danger), #d63447); }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dark);
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Filters Section */
+  .filters-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow);
+  }
+
+  .filters-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    align-items: end;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .filter-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--dark);
+  }
+
+  .form-control {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: var(--transition);
+  }
+
+  .form-control:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+  }
+
+  /* Main Content Grid */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 2rem;
+  }
+
+  /* Maintenance Requests */
+  .requests-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e9ecef;
+  }
+
+  .section-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-title i {
+    color: var(--primary);
+  }
+
+  .requests-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .request-card {
+    border: 1px solid #e9ecef;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    transition: var(--transition);
+    cursor: pointer;
+  }
+
+  .request-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  .request-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 1rem;
+  }
+
+  .request-info {
+    flex: 1;
+  }
+
+  .request-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 0.25rem;
+  }
+
+  .request-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+
+  .request-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .request-status {
+    padding: 0.35rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .status-pending {
+    background: rgba(255, 190, 11, 0.1);
+    color: var(--warning);
+  }
+
+  .status-in-progress {
+    background: rgba(0, 180, 216, 0.1);
+    color: var(--info);
+  }
+
+  .status-completed {
+    background: rgba(6, 255, 165, 0.1);
+    color: var(--success);
+  }
+
+  .status-overdue {
+    background: rgba(247, 37, 133, 0.1);
+    color: var(--danger);
+  }
+
+  .request-description {
+    color: #495057;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  .request-images {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .request-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    object-fit: cover;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .request-image:hover {
+    transform: scale(1.05);
+  }
+
+  .request-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* Quick Actions */
+  .quick-actions {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .quick-actions-header {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .quick-actions-header i {
+    color: var(--primary);
+  }
+
+  .quick-action-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .quick-action {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 10px;
+    background: #f8f9fa;
+    transition: var(--transition);
+    cursor: pointer;
+    text-decoration: none;
+    color: var(--dark);
+  }
+
+  .quick-action:hover {
+    background: rgba(67, 97, 238, 0.1);
+    transform: translateX(5px);
+  }
+
+  .quick-action i {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: white;
+  }
+
+  /* Maintenance Calendar */
+  .calendar-widget {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .calendar-header {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .calendar-header i {
+    color: var(--primary);
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .calendar-day-header {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #6c757d;
+    padding: 0.5rem;
+  }
+
+  .calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    background: #f8f9fa;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .calendar-day:hover {
+    background: rgba(67, 97, 238, 0.1);
+  }
+
+  .calendar-day.has-event {
+    background: rgba(247, 37, 133, 0.1);
+    color: var(--danger);
+    font-weight: 600;
+  }
+
+  /* Vendor Directory */
+  .vendors-widget {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+
+  .vendors-header {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .vendors-header i {
+    color: var(--primary);
+  }
+
+  .vendor-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .vendor-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    transition: var(--transition);
+  }
+
+  .vendor-item:hover {
+    background: rgba(67, 97, 238, 0.05);
+  }
+
+  .vendor-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .vendor-info {
+    flex: 1;
+  }
+
+  .vendor-name {
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 0.25rem;
+  }
+
+  .vendor-specialty {
+    font-size: 0.875rem;
+    color: #6c757d;
+  }
+
+  .vendor-rating {
+    color: var(--warning);
+    font-size: 0.875rem;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, var(--success), #00b4d8);
+    color: white;
+  }
+
+  .btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(6, 255, 165, 0.3);
+  }
+
+  .btn-warning {
+    background: linear-gradient(135deg, var(--warning), #ff9f1c);
+    color: white;
+  }
+
+  .btn-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(255, 190, 11, 0.3);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, var(--danger), #d63447);
+    color: white;
+  }
+
+  .btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(230, 57, 70, 0.3);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+  }
+
+  .btn-outline:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  .btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .modal.show {
+    display: flex;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-dialog {
+    background: white;
+    border-radius: var(--border-radius);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: var(--transition);
+  }
+
+  .modal-close:hover {
+    opacity: 1;
+  }
+
+  .modal-body {
+    padding: 2rem;
+  }
+
+  .modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+  }
+
+  /* Form Styles */
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--dark);
+  }
+
+  textarea.form-control {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  /* Toast Notification */
+  .toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 300px;
+    padding: 1rem 1.5rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideInRight 0.3s ease;
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .toast-success {
+    background: linear-gradient(
+      135deg,
+      rgba(6, 255, 165, 0.9),
+      rgba(0, 180, 216, 0.9)
+    );
+    color: white;
+  }
+
+  .toast-danger {
+    background: linear-gradient(
+      135deg,
+      rgba(247, 37, 133, 0.9),
+      rgba(230, 57, 70, 0.9)
+    );
+    color: white;
+  }
+
+  /* Responsive */
+  @media (max-width: 992px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+      order: 2;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .maintenance-container {
+      padding: 1rem;
+    }
+
+    .header-title {
+      font-size: 2rem;
+    }
+
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .filters-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 576px) {
+    .stats-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="maintenance-container">
+  <!-- Maintenance Header -->
+  <div class="maintenance-header">
+    <div class="header-content">
+      <div>
+        <h1 class="header-title">Maintenance Management</h1>
+        <p class="header-subtitle">
+          Track and manage all maintenance requests efficiently
+        </p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-light" onclick="showNewRequestModal()">
+          <i class="fas fa-plus"></i> New Request
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card pending">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+      </div>
+      <div class="stat-value">5</div>
+      <div class="stat-label">Pending</div>
+    </div>
+
+    <div class="stat-card in-progress">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-tools"></i>
+        </div>
+      </div>
+      <div class="stat-value">3</div>
+      <div class="stat-label">In Progress</div>
+    </div>
+
+    <div class="stat-card completed">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-check-circle"></i>
+        </div>
+      </div>
+      <div class="stat-value">12</div>
+      <div class="stat-label">Completed</div>
+    </div>
+
+    <div class="stat-card overdue">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+      </div>
+      <div class="stat-value">2</div>
+      <div class="stat-label">Overdue</div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-row">
+      <div class="filter-group">
+        <label class="filter-label">Status</label>
+        <select class="form-control" id="statusFilter">
+          <option value="all">All Status</option>
+          <option value="pending">Pending</option>
+          <option value="in-progress">In Progress</option>
+          <option value="completed">Completed</option>
+          <option value="overdue">Overdue</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">Priority</label>
+        <select class="form-control" id="priorityFilter">
+          <option value="all">All Priorities</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">Property</label>
+        <select class="form-control" id="propertyFilter">
+          <option value="all">All Properties</option>
+          <option value="1">Property A - Apartment 101</option>
+          <option value="2">Property B - House 202</option>
+          <option value="3">Property C - Studio 305</option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <button class="btn btn-primary" onclick="applyFilters()">
+          <i class="fas fa-filter"></i> Apply Filters
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Grid -->
+  <div class="content-grid">
+    <!-- Maintenance Requests -->
+    <div class="requests-section">
+      <div class="section-header">
+        <h3 class="section-title">
+          <i class="fas fa-tools"></i>
+          Maintenance Requests
+        </h3>
+        <button class="btn btn-sm btn-outline" onclick="exportRequests()">
+          <i class="fas fa-download"></i> Export
+        </button>
+      </div>
+      
+      <div class="requests-list" id="requestsList">
+        <!-- Requests will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <div class="quick-actions-header">
+          <i class="fas fa-bolt"></i>
+          Quick Actions
+        </div>
+        <div class="quick-action-list">
+          <a href="#" class="quick-action" onclick="scheduleInspection()">
+            <i class="fas fa-calendar-check"></i>
+            <span>Schedule Inspection</span>
+          </a>
+          <a href="#" class="quick-action" onclick="orderSupplies()">
+            <i class="fas fa-shopping-cart"></i>
+            <span>Order Supplies</span>
+          </a>
+          <a href="#" class="quick-action" onclick="generateReport()">
+            <i class="fas fa-file-alt"></i>
+            <span>Generate Report</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Maintenance Calendar -->
+      <div class="calendar-widget">
+        <div class="calendar-header">
+          <i class="fas fa-calendar-alt"></i>
+          Maintenance Calendar
+        </div>
+        <div class="calendar-grid">
+          <div class="calendar-day-header">Sun</div>
+          <div class="calendar-day-header">Mon</div>
+          <div class="calendar-day-header">Tue</div>
+          <div class="calendar-day-header">Wed</div>
+          <div class="calendar-day-header">Thu</div>
+          <div class="calendar-day-header">Fri</div>
+          <div class="calendar-day-header">Sat</div>
+          
+          <!-- Calendar Days -->
+          <div class="calendar-day">1</div>
+          <div class="calendar-day">2</div>
+          <div class="calendar-day">3</div>
+          <div class="calendar-day">4</div>
+          <div class="calendar-day">5</div>
+          <div class="calendar-day">6</div>
+          <div class="calendar-day">7</div>
+          <div class="calendar-day">8</div>
+          <div class="calendar-day">9</div>
+          <div class="calendar-day">10</div>
+          <div class="calendar-day">11</div>
+          <div class="calendar-day">12</div>
+          <div class="calendar-day">13</div>
+          <div class="calendar-day">14</div>
+          <div class="calendar-day">15</div>
+          <div class="calendar-day has-event">16</div>
+          <div class="calendar-day">17</div>
+          <div class="calendar-day">18</div>
+          <div class="calendar-day">19</div>
+          <div class="calendar-day">20</div>
+          <div class="calendar-day">21</div>
+          <div class="calendar-day">22</div>
+          <div class="calendar-day">23</div>
+          <div class="calendar-day">24</div>
+          <div class="calendar-day">25</div>
+          <div class="calendar-day">26</div>
+          <div class="calendar-day">27</div>
+          <div class="calendar-day">28</div>
+          <div class="calendar-day">29</div>
+          <div class="calendar-day">30</div>
+          <div class="calendar-day">31</div>
+        </div>
+      </div>
+
+      <!-- Vendor Directory -->
+      <div class="vendors-widget">
+        <div class="vendors-header">
+          <i class="fas fa-users"></i>
+          Preferred Vendors
+        </div>
+        <div class="vendor-list">
+          <div class="vendor-item">
+            <img src="https://picsum.photos/seed/plumber/50/50" alt="Vendor" class="vendor-avatar">
+            <div class="vendor-info">
+              <div class="vendor-name">John's Plumbing</div>
+              <div class="vendor-specialty">Plumbing & Heating</div>
+              <div class="vendor-rating">⭐⭐⭐⭐⭐</div>
+            </div>
+          </div>
+          <div class="vendor-item">
+            <img src="https://picsum.photos/seed/electrician/50/50" alt="Vendor" class="vendor-avatar">
+              <div class="vendor-info">
+                <div class="vendor-name">BrightSpark Electrical</div>
+                <div class="vendor-specialty">Electrical Services</div>
+                <div class="vendor-rating">⭐⭐⭐⭐⭐⭐</div>
+              </div>
+          </div>
+          <div class="vendor-item">
+            <img src="https://picsum.photos/seed/hvac/50/50" alt="Vendor" class="vendor-avatar">
+              <div class="vendor-info">
+                <div class="vendor-name">CoolAir HVAC</div>
+                <div class="vendor-specialty">HVAC & Air Quality</div>
+                <div class="vendor-rating">⭐⭐⭐⭐⭐</div>
+              </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Request Modal -->
+<div id="newRequestModal" class="modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h5 class="modal-title">New Maintenance Request</h5>
+      <button class="modal-close" onclick="hideNewRequestModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <form id="newRequestForm">
+        <div class="form-group">
+          <label class="form-label">Property</label>
+          <select class="form-control" name="property" required>
+            <option value="">Select Property</option>
+            <option value="1">Property A - Apartment 101</option>
+            <option value="2">Property B - House 202</option>
+            <option value="3">Property C - Studio 305</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Issue Type</label>
+          <select class="form-control" name="issueType" required>
+            <option value="">Select Issue Type</option>
+            <option value="plumbing">Plumbing</option>
+            <option value="electrical">Electrical</option>
+            <option value="hvac">HVAC</option>
+            <option value="appliance">Appliance</option>
+            <option value="structural">Structural</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select class="form-control" name="priority" required>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="emergency">Emergency</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-control" name="description" rows="4" placeholder="Describe the issue in detail..." required></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Attach Images</label>
+          <input type="file" class="form-control" name="images" multiple accept="image/*">
+          <small class="form-text">You can upload multiple images to help describe the issue</small>
+        </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" onclick="hideNewRequestModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="submitNewRequest()">
+        <i class="fas fa-paper-plane"></i> Submit Request
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Request Details Modal -->
+<div id="requestDetailsModal" class="modal">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <h5 class="modal-title">Request Details</h5>
+      <button class="modal-close" onclick="hideRequestDetailsModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body" id="requestDetailsContent">
+      <!-- Content will be loaded dynamically -->
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" onclick="hideRequestDetailsModal()">Close</button>
+      <button type="button" class="btn btn-primary" onclick="editRequest()">
+        <i class="fas fa-edit"></i> Edit Request
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %} 
+
+{% block scripts %}
+<script>
+  // Sample maintenance requests data
+  let maintenanceRequests = [
+    {
+      id: 1,
+      property: 'Property A - Apartment 101',
+      propertyId: 1,
+      tenant: 'John Doe',
+      tenantId: 1,
+      issueType: 'plumbing',
+      priority: 'high',
+      status: 'pending',
+      description: 'Kitchen sink is leaking and needs immediate attention. Water is dripping onto the floor.',
+      images: ['https://picsum.photos/seed/leak1/300/200', 'https://picsum.photos/seed/leak2/300/200'],
+      reportedDate: '2024-12-15',
+      dueDate: '2024-12-18',
+      estimatedCost: 150,
+      assignedTo: null,
+      createdAt: '2024-12-15T10:30:00'
+    },
+    {
+      id: 2,
+      property: 'Property B - House 202',
+      propertyId: 2,
+      tenant: 'Jane Smith',
+      tenantId: 2,
+      issueType: 'electrical',
+      priority: 'medium',
+      status: 'in-progress',
+      description: 'Bedroom light fixture is flickering and needs to be replaced.',
+      images: ['https://picsum.photos/seed/light1/300/200'],
+      reportedDate: '2024-12-14',
+      dueDate: '2024-12-20',
+      estimatedCost: 75,
+      assignedTo: 'BrightSpark Electrical',
+      createdAt: '2024-12-14T14:15:00'
+    },
+    {
+      id: 3,
+      property: 'Property C - Studio 305',
+      propertyId: 3,
+      tenant: 'Mike Johnson',
+      tenantId: 3,
+      issueType: 'hvac',
+      priority: 'low',
+      status: 'completed',
+      description: 'AC unit is not cooling properly. Needs to be serviced before summer.',
+      images: ['https://picsum.photos/seed/ac1/300/200'],
+      reportedDate: '2024-12-10',
+      dueDate: '2024-12-20',
+      estimatedCost: 200,
+      assignedTo: 'CoolAir HVAC',
+      completedDate: '2024-12-18',
+      actualCost: 180,
+      createdAt: '2024-12-10T09:20:00'
+    },
+    {
+      id: 4,
+      property: 'Property A - Apartment 101',
+      propertyId: 1,
+      tenant: 'John Doe',
+      tenantId: 1,
+      issueType: 'appliance',
+      priority: 'medium',
+      status: 'completed',
+      description: 'Refrigerator is making strange noises and not cooling properly.',
+      images: ['https://picsum.photos/seed/fridge1/300/200'],
+      reportedDate: '2024-12-05',
+      dueDate: '2024-12-12',
+      estimatedCost: 100,
+      assignedTo: 'John\'s Appliances',
+      completedDate: '2024-12-08',
+      actualCost: 120,
+      createdAt: '2024-12-05T16:45:00'
+    },
+    {
+      id: 5,
+      property: 'Property B - House 202',
+      propertyId: 2,
+      tenant: 'Jane Smith',
+      tenantId: 2,
+      issueType: 'structural',
+      priority: 'high',
+      status: 'overdue',
+      description: 'Crack in the ceiling in the living room. Needs immediate attention.',
+      images: ['https://picsum.photos/seed/crack1/300/200'],
+      reportedDate: '2024-12-01',
+      dueDate: '2024-12-05',
+      estimatedCost: 500,
+      assignedTo: null,
+      createdAt: '2024-12-01T11:30:00'
+    }
+  ];
+
+  let currentRequest = null;
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadRequests();
+    setupEventListeners();
+  });
+
+  function loadRequests() {
+    const requestsList = document.getElementById('requestsList');
+    requestsList.innerHTML = '';
+
+    const filteredRequests = filterRequests();
+    
+    filteredRequests.forEach(request => {
+      const requestCard = document.createElement('div');
+      requestCard.className = 'request-card';
+      requestCard.onclick = () => showRequestDetails(request.id);
+      
+      requestCard.innerHTML = `
+        <div class="request-header">
+          <div class="request-info">
+            <div class="request-title">${request.issueType.charAt(0).toUpperCase() + request.issueType.slice(1)} - ${request.property}</div>
+            <div class="request-meta">
+              <div class="request-meta-item">
+                <i class="fas fa-building"></i>
+                <span>${request.property}</span>
+              </div>
+              <div class="request-meta-item">
+                <i class="fas fa-user"></i>
+                <span>${request.tenant}</span>
+              </div>
+              <div class="request-meta-item">
+                <i class="fas fa-calendar"></i>
+                <span>${request.reportedDate}</span>
+              </div>
+            </div>
+          </div>
+          <span class="request-status status-${request.status}">${request.status.replace('-', ' ')}</span>
+        </div>
+        
+        <div class="request-description">${request.description}</div>
+        
+        ${request.images && request.images.length > 0 ? `
+          <div class="request-images">
+            ${request.images.map(img => `
+              <img src="${img}" alt="Issue" class="request-image" onclick="viewImage('${img}')">
+            </div>
+            `).join('')}
+          </div>
+        ` : ''}
+        
+        <div class="request-actions">
+          ${request.status === 'pending' ? `
+            <button class="btn btn-sm btn-success" onclick="assignRequest(${request.id})">
+              <i class="fas fa-user-plus"></i> Assign
+            </button>
+          ` : ''}
+          
+          ${request.status === 'in-progress' ? `
+            <button class="btn btn-sm btn-warning" onclick="updateRequestStatus(${request.id}, 'completed')">
+              <i class="fas fa-check"></i> Complete
+            </button>
+          ` : ''}
+          
+          <button class="btn btn-sm btn-outline" onclick="showRequestDetails(${request.id})">
+            <i class="fas fa-eye"></i> Details
+          </button>
+        </div>
+      `;
+      
+      requestsList.appendChild(requestCard);
+    });
+  }
+
+  function filterRequests() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const priorityFilter = document.getElementById('priorityFilter').value;
+    const propertyFilter = document.getElementById('propertyFilter').value;
+    
+    return maintenanceRequests.filter(request => {
+      if (statusFilter !== 'all' && request.status !== statusFilter) return false;
+      if (priorityFilter !== 'all' && request.priority !== priorityFilter) return false;
+      if (propertyFilter !== 'all' && request.propertyId != propertyFilter) return false;
+      return true;
+    });
+  }
+
+  function setupEventListeners() {
+    // Filter listeners
+    document.getElementById('statusFilter').addEventListener('change', loadRequests);
+    document.getElementById('priorityFilter').addEventListener('change', loadRequests);
+    document.getElementById('propertyFilter').addEventListener('change', loadRequests);
+  }
+
+  function applyFilters() {
+    loadRequests();
+    showToast('Filters applied successfully', 'success');
+  }
+
+  function showNewRequestModal() {
+    document.getElementById('newRequestModal').classList.add('show');
+  }
+
+  function hideNewRequestModal() {
+    document.getElementById('newRequestModal').classList.remove('show');
+    document.getElementById('newRequestForm').reset();
+  }
+
+  function submitNewRequest() {
+    const form = document.getElementById('newRequestForm');
+    const formData = new FormData(form);
+    
+    // Validate form
+    if (!form.checkValidity()) {
+      showToast('Please fill in all required fields', 'danger');
+      return;
+    }
+    
+    // Create new request object
+    const newRequest = {
+      id: Date.now(),
+      property: formData.get('property'),
+      propertyId: parseInt(formData.get('property')),
+      issueType: formData.get('issueType'),
+      priority: formData.get('priority'),
+      status: 'pending',
+      description: formData.get('description'),
+      images: [], // In production, handle file uploads here
+      reportedDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      estimatedCost: 0,
+      assignedTo: null,
+      createdAt: new Date().toISOString()
+    };
+    
+    // Add to requests array
+    maintenanceRequests.unshift(newRequest);
+    
+    // Reload requests
+    loadRequests();
+    
+    // Hide modal
+    hideNewRequestModal();
+    
+    // Show success message
+    showToast('Maintenance request submitted successfully', 'success');
+    
+    // In production, send data to server
+    console.log('New request:', newRequest);
+  }
+
+  function showRequestDetails(requestId) {
+    const request = maintenanceRequests.find(r => r.id === requestId);
+    if (!request) return;
+    
+    currentRequest = request;
+    
+    const detailsContent = document.getElementById('requestDetailsContent');
+    
+    detailsContent.innerHTML = `
+      <div class="request-details">
+        <div class="mb-3">
+          <h6>Property</h6>
+          <p>${request.property}</p>
+        </div>
+        
+        <div class="mb-3">
+          <h6>Tenant</h6>
+          <p>${request.tenant}</p>
+        </div>
+        
+        <div class="mb-3">
+          <h6>Issue Type</h6>
+          <p>${request.issueType.charAt(0).toUpperCase() + request.issueType.slice(1)}</p>
+        </div>
+        
+        <div class="mb-3">
+          <h6>Priority</h6>
+          <span class="request-status status-${request.priority}">${request.priority}</span>
+        </div>
+        
+        <div class="mb-3">
+          <h6>Status</h6>
+          <span class="request-status status-${request.status}">${request.status.replace('-', ' ')}</span>
+        </div>
+        
+        <div class="mb-3">
+          <h6>Description</h6>
+          <p>${request.description}</p>
+        </div>
+        
+        <div class="mb-3">
+          <h6>Reported Date</h6>
+          <p>${request.reportedDate}</p>
+        </div>
+        
+        <div class="mb-3">
+          <h6>Due Date</h6>
+          <p>${request.dueDate}</p>
+        </div>
+        
+        ${request.estimatedCost ? `
+          <div class="mb-3">
+            <h6>Estimated Cost</h6>
+            <p>$${request.estimatedCost}</p>
+          </div>
+        ` : ''}
+        
+        ${request.assignedTo ? `
+          <div class="mb-3">
+            <h6>Assigned To</h6>
+            <p>${request.assignedTo}</p>
+          </div>
+        ` : ''}
+        
+        ${request.completedDate ? `
+          <div class="mb-3">
+            <h6>Completed Date</h6>
+            <p>${request.completedDate}</p>
+          </div>
+        ` : ''}
+        
+        ${request.actualCost ? `
+          <div class="mb-3">
+            <h6>Actual Cost</h6>
+            <p>$${request.actualCost}</p>
+          </div>
+        ` : ''}
+        
+        ${request.images && request.images.length > 0 ? `
+          <div class="mb-3">
+            <h6>Images</h6>
+            <div class="request-images">
+              ${request.images.map(img => `
+                <img src="${img}" alt="Issue" class="request-image" onclick="viewImage('${img}')">
+              </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+    
+    document.getElementById('requestDetailsModal').classList.add('show');
+  }
+
+  function hideRequestDetailsModal() {
+    document.getElementById('requestDetailsModal').classList.remove('show');
+  }
+
+  function assignRequest(requestId) {
+    const request = maintenanceRequests.find(r => r.id === requestId);
+    if (!request) return;
+    
+    // Show vendor selection modal
+    const vendors = [
+      { id: 1, name: 'John\'s Plumbing', specialty: 'Plumbing & Heating' },
+      { id: 2, name: 'BrightSpark Electrical', specialty: 'Electrical Services' },
+      { id: 3, name: 'CoolAir HVAC', specialty: 'HVAC & Air Quality' }
+    ];
+    
+    const vendorList = vendors.map(v => `
+      <div class="vendor-item" onclick="selectVendor(${requestId}, ${v.id}, '${v.name}')">
+        <img src="https://picsum.photos/seed/${v.name.toLowerCase().replace(' ', '')}/50/50" alt="${v.name}" class="vendor-avatar">
+        <div class="vendor-info">
+          <div class="vendor-name">${v.name}</div>
+          <div class="vendor-specialty">${v.specialty}</div>
+        </div>
+      </div>
+    `).join('');
+    
+    // Create vendor selection modal
+    const modal = document.createElement('div');
+    modal.className = 'modal show';
+    modal.innerHTML = `
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h5 class="modal-title">Assign Vendor</h5>
+          <button class="modal-close" onclick="this.closest('.modal').remove()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>Select a vendor to handle this maintenance request:</p>
+          <div class="vendor-list">
+            ${vendorList}
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+  }
+
+  function selectVendor(requestId, vendorId, vendorName) {
+    const request = maintenanceRequests.find(r => r.id === requestId);
+    if (!request) return;
+    
+    // Update request
+    request.status = 'in-progress';
+    request.assignedTo = vendorName;
+    request.assignedDate = new Date().toISOString().split('T')[0];
+    
+    // Remove modal
+    document.querySelector('.modal').remove();
+    
+    // Reload requests
+    loadRequests();
+    
+    showToast(`Request assigned to ${vendorName}`, 'success');
+    
+    // In production, send assignment to server
+    console.log('Assigning request:', { requestId, vendorId, vendorName });
+  }
+
+  function updateRequestStatus(requestId, newStatus) {
+    const request = maintenanceRequests.find(r => r.id === requestId);
+    if (!request) return;
+    
+    const oldStatus = request.status;
+    request.status = newStatus;
+    
+    if (newStatus === 'completed') {
+      request.completedDate = new Date().toISOString().split('T')[0];
+    }
+    
+    // Reload requests
+    loadRequests();
+    
+    showToast(`Request marked as ${newStatus}`, 'success');
+    
+    // In production, send status update to server
+    console.log('Updating request status:', { requestId, newStatus, oldStatus });
+  }
+
+  function editRequest() {
+    if (!currentRequest) return;
+    
+    showToast('Edit functionality coming soon!', 'info');
+    // In production, open edit form
+  }
+
+  function viewImage(imageUrl) {
+    // Open image in modal or new tab
+    window.open(imageUrl, '_blank');
+  }
+
+  function exportRequests() {
+    const csvContent = [
+      ['ID', 'Property', 'Tenant', 'Issue Type', 'Priority', 'Status', 'Reported Date', 'Due Date', 'Description'],
+      ...maintenanceRequests.map(r => [
+        r.id,
+        r.property,
+        r.tenant,
+        r.issueType,
+        r.priority,
+        r.status,
+        r.reportedDate,
+        r.dueDate,
+        `"${r.description.replace(/"/g, ' ')}"`
+      ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'maintenance_requests.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    
+    showToast('Requests exported successfully', 'success');
+  }
+
+  function scheduleInspection() {
+    showToast('Opening inspection scheduler...', 'info');
+    // In production, open inspection scheduling modal
+  }
+
+  function orderSupplies() {
+    showToast('Opening supplies ordering system...', 'info');
+    // In production, open supplies ordering modal
+  }
+
+  function generateReport() {
+    showToast('Generating maintenance report...', 'info');
+    // In production, generate and download report
+  }
+
+  function showToast(message, type = 'success') {
+    const existingToast = document.querySelector('.toast');
+    if (existingToast) {
+      existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    const icon = type === 'success' ? 'fa-check-circle' : 'fa-info-circle';
+    toast.innerHTML = `
+      <i class="fas ${icon}"></i>
+      <span>${message}</span>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.animation = 'slideInRight 0.3s ease reverse';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  }
+</script>
+{% endblock %}

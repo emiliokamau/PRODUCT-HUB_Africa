@@ -1,29 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // Utility: Get current page by body id
   const page = document.body.getAttribute("data-page");
-
-  // === Common Components ===
-  if (page) {
-    console.log(`Loaded: ${page}`);
-  }
+  if (page) console.log(`Loaded: ${page}`);
 
   // === MAP INITIALIZATION ===
-  if (document.getElementById("map")) {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          initMap(position.coords.latitude, position.coords.longitude);
-        },
-        () => initMap()
-      );
-    } else {
-      initMap();
-    }
-  }
+  window.initMap = function(lat = -1.286389, lng = 36.817223) {
+    const mapElement = document.getElementById("map");
+    if (!mapElement) return;
 
-  function initMap(lat = -1.286389, lng = 36.817223) {
     const location = { lat: parseFloat(lat), lng: parseFloat(lng) };
-    const map = new google.maps.Map(document.getElementById("map"), {
+    const map = new google.maps.Map(mapElement, {
       zoom: 14,
       center: location
     });
@@ -32,6 +17,15 @@ document.addEventListener("DOMContentLoaded", () => {
       position: location,
       map: map
     });
+  };
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      pos => initMap(pos.coords.latitude, pos.coords.longitude),
+      () => initMap()
+    );
+  } else {
+    initMap();
   }
 
   // === FORM VALIDATION ===
@@ -59,12 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // === DASHBOARD DYNAMIC LOADING ===
-  if (page === "dashboard") {
-    // Sample dynamic section, e.g., load houses
-    console.log("Load dashboard data here.");
-  }
-
   // === CHAT ===
   if (page === "chat") {
     const sendBtn = document.getElementById("sendMessage");
@@ -80,13 +68,12 @@ document.addEventListener("DOMContentLoaded", () => {
           div.textContent = msg;
           messageList.appendChild(div);
           messageBox.value = "";
-          // TODO: Add socket.io emit if real-time
         }
       });
     }
   }
 
-  // === Dark Mode Toggle ===
+  // === DARK MODE ===
   const themeToggle = document.getElementById('themeToggle');
   const body = document.getElementById('body');
   const icon = themeToggle ? themeToggle.querySelector('i') : null;
@@ -103,12 +90,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Load saved theme
     if (localStorage.getItem('theme') === 'dark') {
       body.classList.add('dark-mode');
       icon.classList.replace('fa-moon', 'fa-sun');
     }
-  } else {
-    console.warn('Theme toggle element not found');
   }
 });

@@ -1,0 +1,1091 @@
+{% extends 'base.html' %}
+{% block title %}My Properties - HomeHub{% endblock %}
+{% block content %}
+<style>
+  :root {
+    --primary: #4361ee;
+    --primary-dark: #3a0ca3;
+    --secondary: #7209b7;
+    --accent: #f72585;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --success: #06ffa5;
+    --info: #00b4d8;
+    --warning: #ffbe0b;
+    --danger: #e63946;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    --border-radius: 15px;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #f8f9fa;
+    color: var(--dark);
+    line-height: 1.6;
+  }
+
+  .dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  /* Header Section */
+  .page-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 20px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .page-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23ffffff" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,133.3C960,128,1056,96,1152,90.7C1248,85,1344,107,1392,117.3L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
+    background-size: cover;
+  }
+
+  .header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .header-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+  }
+
+  .header-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+  }
+
+  /* Stats Cards */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .stat-card {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 5px;
+    height: 100%;
+  }
+
+  .stat-card.total::before { background: var(--primary); }
+  .stat-card.occupied::before { background: var(--success); }
+  .stat-card.vacant::before { background: var(--warning); }
+  .stat-card.revenue::before { background: var(--info); }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+  }
+
+  .stat-card.total .stat-icon { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
+  .stat-card.occupied .stat-icon { background: linear-gradient(135deg, var(--success), #00b4d8); }
+  .stat-card.vacant .stat-icon { background: linear-gradient(135deg, var(--warning), #ff9f1c); }
+  .stat-card.revenue .stat-icon { background: linear-gradient(135deg, var(--info), #0077b6); }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--dark);
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Filters Section */
+  .filters-section {
+    background: white;
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+  }
+
+  .filter-group {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .search-box {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+  }
+
+  .search-box input {
+    padding-left: 40px;
+  }
+
+  .search-box i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+  }
+
+  /* Property Cards */
+  .properties-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .property-card {
+    background: white;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    transition: var(--transition);
+    position: relative;
+  }
+
+  .property-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  .property-image-container {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+  }
+
+  .property-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: var(--transition);
+  }
+
+  .property-card:hover .property-image {
+    transform: scale(1.05);
+  }
+
+  .property-status-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .status-occupied {
+    background: rgba(6, 255, 165, 0.9);
+    color: white;
+  }
+
+  .status-vacant {
+    background: rgba(255, 190, 11, 0.9);
+    color: white;
+  }
+
+  .status-maintenance {
+    background: rgba(0, 180, 216, 0.9);
+    color: white;
+  }
+
+  .property-favorite {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: rgba(255, 255, 255, 0.9);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .property-favorite:hover {
+    background: white;
+    transform: scale(1.1);
+  }
+
+  .property-favorite.active {
+    color: var(--accent);
+  }
+
+  .property-details {
+    padding: 1.5rem;
+  }
+
+  .property-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+  }
+
+  .property-location {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .property-features {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+    color: #6c757d;
+  }
+
+  .property-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 1rem;
+  }
+
+  .property-amenities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .amenity-tag {
+    background: rgba(67, 97, 238, 0.1);
+    color: var(--primary);
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  .property-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  .btn-action {
+    flex: 1;
+    padding: 0.5rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .btn-view {
+    background: rgba(67, 97, 238, 0.1);
+    color: var(--primary);
+  }
+
+  .btn-view:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  .btn-edit {
+    background: rgba(6, 255, 165, 0.1);
+    color: var(--success);
+  }
+
+  .btn-edit:hover {
+    background: var(--success);
+    color: white;
+  }
+
+  .btn-delete {
+    background: rgba(247, 37, 133, 0.1);
+    color: var(--danger);
+  }
+
+  .btn-delete:hover {
+    background: var(--danger);
+    color: white;
+  }
+
+  /* Image Gallery */
+  .image-gallery {
+    display: flex;
+    height: 220px;
+    overflow: hidden;
+  }
+
+  .gallery-image {
+    flex: 1;
+    height: 100%;
+    object-fit: cover;
+    transition: var(--transition);
+  }
+
+  .gallery-image:hover {
+    transform: scale(1.05);
+  }
+
+  .gallery-image:first-child {
+    flex: 2;
+  }
+
+  .gallery-secondary {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .gallery-secondary .gallery-image {
+    height: 50%;
+  }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s;
+  }
+
+  .modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-dialog {
+    background: white;
+    border-radius: var(--border-radius);
+    max-width: 500px;
+    width: 90%;
+    animation: slideIn 0.3s;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    padding: 1.5rem;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .modal-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: var(--transition);
+  }
+
+  .modal-close:hover {
+    opacity: 1;
+  }
+
+  .modal-body {
+    padding: 2rem;
+  }
+
+  .modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+  }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+  }
+
+  .empty-state-icon {
+    font-size: 4rem;
+    color: #dee2e6;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state-text {
+    color: #6c757d;
+    margin-bottom: 2rem;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(67, 97, 238, 0.3);
+  }
+
+  .btn-secondary {
+    background: #6c757d;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background: #5a6268;
+  }
+
+  .btn-danger {
+    background: var(--danger);
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background: #d63447;
+  }
+
+  .btn-light {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .btn-light:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+  }
+
+  .btn-outline:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  .form-control, .form-select {
+    padding: 0.75rem 1rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: var(--transition);
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+    outline: none;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .dashboard-container {
+      padding: 1rem;
+    }
+
+    .header-title {
+      font-size: 2rem;
+    }
+
+    .properties-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .filter-group {
+      flex-direction: column;
+    }
+
+    .search-box {
+      width: 100%;
+    }
+  }
+</style>
+
+<div class="dashboard-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <div>
+        <h1 class="header-title">My Properties</h1>
+        <p class="header-subtitle">Manage and monitor all your rental properties in one place</p>
+      </div>
+      <div class="header-actions">
+        <a href="{{ url_for('landlord.add_property') }}" class="btn btn-light">
+          <i class="fas fa-plus"></i> Add New Property
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  {% for category, message in messages %}
+  <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+    <i class="fas fa-{{ 'exclamation-circle' if category == 'error' else 'check-circle' }}"></i>
+    {{ message }}
+    <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+  </div>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card total">
+      <div class="stat-icon"><i class="fas fa-building"></i></div>
+      <div class="stat-value">{{ properties|length }}</div>
+      <div class="stat-label">Total Properties</div>
+    </div>
+    <div class="stat-card occupied">
+      <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+      <div class="stat-value">{{ properties|selectattr('available', 'equalto', False)|list|length }}</div>
+      <div class="stat-label">Occupied</div>
+    </div>
+    <div class="stat-card vacant">
+      <div class="stat-icon"><i class="fas fa-home"></i></div>
+      <div class="stat-value">{{ properties|selectattr('available', 'equalto', True)|list|length }}</div>
+      <div class="stat-label">Vacant</div>
+    </div>
+    <div class="stat-card revenue">
+      <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
+      <div class="stat-value">KES {{ properties|sum(attribute='rent_amount')|int }}</div>
+      <div class="stat-label">Monthly Revenue</div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filter-group">
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" class="form-control" id="searchInput" placeholder="Search properties...">
+      </div>
+      <select class="form-select" id="statusFilter" style="width: 200px;">
+        <option value="">All Status</option>
+        <option value="occupied">Occupied</option>
+        <option value="vacant">Vacant</option>
+        <option value="maintenance">Maintenance</option>
+      </select>
+      <select class="form-select" id="typeFilter" style="width: 200px;">
+        <option value="">All Types</option>
+        <option value="Apartment">Apartment</option>
+        <option value="House">House</option>
+        <option value="Townhouse">Townhouse</option>
+        <option value="Studio">Studio</option>
+      </select>
+      <select class="form-select" id="sortBy" style="width: 200px;">
+        <option value="newest">Newest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="price-high">Price: High to Low</option>
+        <option value="price-low">Price: Low to High</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Properties Grid -->
+{% if properties %}
+  <div class="properties-grid" id="propertiesGrid">
+    {% for property in properties %}
+    <div class="property-card" data-property-id="{{ property.id }}" 
+         data-status="{{ 'occupied' if not property.available else 'vacant' }}"
+         data-type="{{ property.property_type or 'Apartment' }}"
+         data-price="{{ property.rent_amount or 0 }}"
+         data-date="{{ property.availability_date if property.availability_date else '2024-01-01' }}">
+      <!-- Property Image Gallery -->
+      {% if property.get_image_list() %}
+        {% set images = property.get_image_list() %}
+        {% if images|length == 1 %}
+          <div class="property-image-container">
+            <img src="{{ url_for('static', filename=images[0]) }}" 
+                 alt="{{ property.title }}" 
+                 class="property-image">
+          </div>
+        {% elif images|length == 2 %}
+          <div class="image-gallery">
+            <img src="{{ url_for('static', filename=images[0]) }}" 
+                 alt="{{ property.title }}" 
+                 class="gallery-image">
+            <img src="{{ url_for('static', filename=images[1]) }}" 
+                 alt="{{ property.title }}" 
+                 class="gallery-image">
+          </div>
+        {% else %}
+          <div class="image-gallery">
+            <img src="{{ url_for('static', filename=images[0]) }}" 
+                 alt="{{ property.title }}" 
+                 class="gallery-image">
+            <div class="gallery-secondary">
+              <img src="{{ url_for('static', filename=images[1]) }}" 
+                   alt="{{ property.title }}" 
+                   class="gallery-image">
+              <img src="{{ url_for('static', filename=images[2]) }}" 
+                   alt="{{ property.title }}" 
+                   class="gallery-image">
+            </div>
+          </div>
+        {% endif %}
+      {% else %}
+        <div class="property-image-container">
+          <img src="{{ url_for('static', filename='images/property-placeholder.jpg') }}"
+               alt="{{ property.title }}" class="property-image">
+        </div>
+      {% endif %}
+
+      <!-- Status Badge -->
+      <span class="property-status-badge status-{{ 'occupied' if not property.available else 'vacant' }}">
+        {{ 'Occupied' if not property.available else 'Vacant' }}
+      </span>
+
+      <!-- Favorite Button -->
+      <div class="property-favorite {{ 'active' if property.is_favorite else '' }}"
+           onclick="toggleFavorite(this, '{{ property.id }}')">
+        <i class="fas fa-heart"></i>
+      </div>
+
+      <!-- Property Details -->
+      <div class="property-details">
+        <h3 class="property-title">{{ property.title }}</h3>
+        <div class="property-location">
+          <i class="fas fa-map-marker-alt"></i>
+          {{ property.state_province }}, {{ property.city }}
+        </div>
+
+        <!-- Features -->
+        <div class="property-features">
+          <div class="feature-item">
+            <i class="fas fa-bed"></i>
+            <span>{{ property.bedrooms or 0 }} Beds</span>
+          </div>
+          <div class="feature-item">
+            <i class="fas fa-bath"></i>
+            <span>{{ property.bathrooms or 0 }} Baths</span>
+          </div>
+          <div class="feature-item">
+            <i class="fas fa-ruler-combined"></i>
+            <span>{{ property.size or 0 }} sq ft</span>
+          </div>
+        </div>
+
+        <!-- Price -->
+        <div class="property-price">
+          KES {{ "{:,}".format(property.rent_amount|int) if property.rent_amount else '0' }}/month
+        </div>
+
+        <!-- Amenities -->
+        {% if property.amenities %}
+        <div class="property-amenities">
+          {% set amenities_list = property.amenities.split(',') %}
+          {% for amenity in amenities_list[:4] %}
+          <span class="amenity-tag">{{ amenity.strip() }}</span>
+          {% endfor %}
+          {% if amenities_list|length > 4 %}
+          <span class="amenity-tag">+{{ amenities_list|length - 4 }} more</span>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="property-actions">
+          <a href="{{ url_for('landlord.view_property', id=property.id) }}" class="btn-action btn-view">
+            <i class="fas fa-eye"></i> View
+          </a>
+          <a href="{{ url_for('landlord.edit_property', property_id=property.id) }}" class="btn-action btn-edit">
+            <i class="fas fa-edit"></i> Edit
+          </a>
+          <button class="btn-action btn-delete" onclick='confirmDelete({{ property.id }}, {{ property.title|tojson }})'>
+            <i class="fas fa-trash"></i> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-state-icon"><i class="fas fa-home"></i></div>
+    <h2 class="empty-state-title">No Properties Yet</h2>
+    <p class="empty-state-text">Start by adding your first property to begin managing your rental portfolio.</p>
+    <a href="{{ url_for('landlord.add_property') }}" class="btn btn-primary">Add Property</a>
+  </div>
+  {% endif %}
+
+  <!-- Delete Confirmation Modal -->
+  <div id="deleteModal" class="modal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Confirm Delete</h5>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete <strong id="deletePropertyName"></strong>?</p>
+          <p class="text-muted">This action cannot be undone. All associated data will be permanently removed.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+            <i class="fas fa-trash"></i> Delete Property
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let propertyToDelete = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+  // Search functionality
+  const searchInput = document.getElementById('searchInput');
+  const statusFilter = document.getElementById('statusFilter');
+  const typeFilter = document.getElementById('typeFilter');
+  const sortBy = document.getElementById('sortBy');
+  const propertiesGrid = document.getElementById('propertiesGrid');
+  
+  function filterProperties() {
+    const searchTerm = searchInput.value.toLowerCase();
+    const statusValue = statusFilter.value;
+    const typeValue = typeFilter.value;
+    const sortValue = sortBy.value;
+    
+    const propertyCards = Array.from(propertiesGrid.children);
+    
+    // Filter
+    let filteredCards = propertyCards.filter(card => {
+      const title = card.querySelector('.property-title').textContent.toLowerCase();
+      const location = card.querySelector('.property-location').textContent.toLowerCase();
+      const status = card.dataset.status;
+      const type = card.dataset.type;
+      
+      const matchesSearch = title.includes(searchTerm) || location.includes(searchTerm);
+      const matchesStatus = !statusValue || status === statusValue;
+      const matchesType = !typeValue || type === typeValue;
+      
+      return matchesSearch && matchesStatus && matchesType;
+    });
+    
+    // Sort
+    filteredCards.sort((a, b) => {
+      switch(sortValue) {
+        case 'newest':
+          return new Date(b.dataset.date) - new Date(a.dataset.date);
+        case 'oldest':
+          return new Date(a.dataset.date) - new Date(b.dataset.date);
+        case 'price-high':
+          return parseInt(b.dataset.price) - parseInt(a.dataset.price);
+        case 'price-low':
+          return parseInt(a.dataset.price) - parseInt(b.dataset.price);
+        default:
+          return 0;
+      }
+    });
+    
+    // Re-render
+    propertiesGrid.innerHTML = '';
+    filteredCards.forEach(card => propertiesGrid.appendChild(card));
+    
+    // Show message if no results
+    if (filteredCards.length === 0 && propertyCards.length > 0) {
+      propertiesGrid.innerHTML = `
+        <div class="col-12">
+          <div class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h4>No properties found</h4>
+            <p class="text-muted">Try adjusting your filters or search terms</p>
+          </div>
+        </div>
+      `;
+    }
+  }
+  
+  searchInput.addEventListener('input', filterProperties);
+  statusFilter.addEventListener('change', filterProperties);
+  typeFilter.addEventListener('change', filterProperties);
+  sortBy.addEventListener('change', filterProperties);
+
+  // Close modal when clicking outside
+  window.onclick = function(event) {
+    const modal = document.getElementById('deleteModal');
+    if (event.target === modal) {
+      closeModal();
+    }
+  }
+});
+
+// Toggle favorite property
+function toggleFavorite(element, propertyId) {
+  element.classList.toggle('active');
+  
+  fetch(`/landlord/toggle_favorite/${propertyId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      showToast(data.message, 'success');
+    } else {
+      element.classList.toggle('active'); // Revert on error
+      showToast(data.message || 'Error updating favorite', 'error');
+    }
+  })
+  .catch(error => {
+    element.classList.toggle('active'); // Revert on error
+    showToast('An error occurred', 'error');
+  });
+}
+
+// Confirm delete
+function confirmDelete(propertyId, propertyName) {
+  propertyToDelete = propertyId;
+  document.getElementById('deletePropertyName').textContent = propertyName;
+  document.getElementById('deleteModal').classList.add('show');
+  
+  // Set up delete button handler
+  document.getElementById('confirmDeleteBtn').onclick = function() {
+    deleteProperty();
+  };
+}
+
+// Close modal
+function closeModal() {
+  document.getElementById('deleteModal').classList.remove('show');
+  propertyToDelete = null;
+}
+
+// Delete property
+function deleteProperty() {
+  if (!propertyToDelete) return;
+  
+  fetch(`/landlord/delete_property/${propertyToDelete}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.content || ''
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    closeModal();
+    if (data.success) {
+      // Remove property card with animation
+      const card = document.querySelector(`[data-property-id="${propertyToDelete}"]`);
+      if (card) {
+        card.style.transition = 'all 0.3s ease';
+        card.style.opacity = '0';
+        card.style.transform = 'scale(0.8)';
+        
+        setTimeout(() => {
+          card.remove();
+          // Update stats
+          updateStats();
+          // Check if empty
+          if (document.querySelectorAll('.property-card').length === 0) {
+            location.reload();
+          }
+        }, 300);
+      }
+      
+      showToast('Property deleted successfully', 'success');
+    } else {
+      showToast(data.message || 'Error deleting property', 'error');
+    }
+  })
+  .catch(error => {
+    closeModal();
+    showToast('An error occurred', 'error');
+  });
+}
+
+// Update stats after deletion
+function updateStats() {
+  const totalCards = document.querySelectorAll('.property-card').length;
+  const occupiedCards = document.querySelectorAll('.property-card[data-status="occupied"]').length;
+  const vacantCards = document.querySelectorAll('.property-card[data-status="vacant"]').length;
+  
+  const totalElement = document.querySelector('.stat-card.total .stat-value');
+  const occupiedElement = document.querySelector('.stat-card.occupied .stat-value');
+  const vacantElement = document.querySelector('.stat-card.vacant .stat-value');
+  
+  if (totalElement) totalElement.textContent = totalCards;
+  if (occupiedElement) occupiedElement.textContent = occupiedCards;
+  if (vacantElement) vacantElement.textContent = vacantCards;
+}
+
+// Toast notification
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `alert alert-${type === 'error' ? 'danger' : type} position-fixed`;
+  toast.style.cssText = 'top: 20px; right: 20px; z-index: 10000; min-width: 300px; animation: slideInRight 0.3s ease;';
+  toast.innerHTML = `
+    <div class="d-flex align-items-center">
+      <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+      ${message}
+      <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+    </div>
+  `;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideOutRight 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// Add animation styles
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideOutRight {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+  }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

@@ -1,0 +1,893 @@
+{% extends "base.html" %}
+{% block title %}{{ property.title }} - HomeHub{% endblock %}
+{% block content %}
+<style>
+  :root {
+    --primary: #4361ee;
+    --primary-dark: #3a0ca3;
+    --secondary: #7209b7;
+    --accent: #f72585;
+    --light: #f8f9fa;
+    --dark: #212529;
+    --success: #06ffa5;
+    --info: #00b4d8;
+    --warning: #ffbe0b;
+    --danger: #e63946;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    --transition: all 0.3s ease;
+    --border-radius: 15px;
+  }
+
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background-color: #f8f9fa;
+    color: var(--dark);
+    line-height: 1.6;
+  }
+
+  .property-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  /* Back Button */
+  .back-button {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--transition);
+  }
+
+  .back-button:hover {
+    color: var(--primary-dark);
+  }
+
+  .back-button i {
+    margin-right: 0.5rem;
+  }
+
+  /* Property Header */
+  .property-header {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .property-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 1rem;
+  }
+
+  .property-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    color: var(--dark);
+  }
+
+  .meta-item i {
+    color: var(--primary);
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+  }
+
+  .availability-status {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+
+  .available {
+    background: rgba(6, 255, 165, 0.2);
+    color: #00b4d8;
+  }
+
+  .unavailable {
+    background: rgba(247, 37, 133, 0.2);
+    color: var(--accent);
+  }
+
+  /* Property Images */
+  .property-images {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .main-image {
+    width: 100%;
+    height: 500px;
+    object-fit: cover;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+  }
+
+  .image-thumbnails {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .image-thumbnails::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .image-thumbnails::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+
+  .image-thumbnails::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 10px;
+  }
+
+  .thumbnail {
+    min-width: 100px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: var(--transition);
+  }
+
+  .thumbnail:hover {
+    transform: scale(1.05);
+  }
+
+  .thumbnail.active {
+    border-color: var(--primary);
+  }
+
+  /* Property Content */
+  .property-content {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+  }
+
+  .property-details {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 2rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--light);
+    display: flex;
+    align-items: center;
+  }
+
+  .section-title i {
+    color: var(--primary);
+    margin-right: 0.75rem;
+    font-size: 1.5rem;
+  }
+
+  .property-description {
+    line-height: 1.6;
+    color: #555;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+  }
+
+  .amenities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .amenity-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--light);
+    border-radius: 8px;
+    transition: var(--transition);
+  }
+
+  .amenity-item:hover {
+    background: #e9ecef;
+    transform: translateY(-3px);
+  }
+
+  .amenity-item i {
+    color: var(--primary);
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+  }
+
+  .property-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .info-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    transition: var(--transition);
+  }
+
+  .info-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+  }
+
+  .info-card h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--light);
+    display: flex;
+    align-items: center;
+  }
+
+  .info-card h3 i {
+    color: var(--primary);
+    margin-right: 0.5rem;
+  }
+
+  .price {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+  }
+
+  .price-period {
+    font-size: 0.9rem;
+    color: #777;
+  }
+
+  .owner-info {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .owner-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    margin-right: 1rem;
+  }
+
+  .owner-details h4 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .owner-details p {
+    font-size: 0.85rem;
+    color: #777;
+    margin: 0;
+  }
+
+  .property-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    font-size: 1rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(67, 97, 238, 0.3);
+  }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--primary);
+    border: 2px solid var(--primary);
+  }
+
+  .btn-outline:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  .contact-methods {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .contact-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--light);
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+  }
+
+  .contact-btn:hover {
+    background: var(--primary);
+    color: white;
+  }
+
+  .property-map {
+    height: 250px;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-top: 1rem;
+  }
+
+  .property-map iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+
+  .location-info {
+    background: linear-gradient(
+      135deg,
+      rgba(67, 97, 238, 0.1),
+      rgba(58, 12, 163, 0.1)
+    );
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid var(--primary);
+  }
+
+  .location-info h3 {
+    color: var(--primary-dark);
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+  }
+
+  .location-info p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #555;
+  }
+
+  .additional-info {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .additional-info h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--light);
+    display: flex;
+    align-items: center;
+  }
+
+  .additional-info h3 i {
+    color: var(--primary);
+    margin-right: 0.5rem;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+
+  .info-item {
+    padding: 1rem;
+    background: var(--light);
+    border-radius: 8px;
+    transition: var(--transition);
+  }
+
+  .info-item:hover {
+    background: #e9ecef;
+    transform: translateY(-3px);
+  }
+
+  .info-item h4 {
+    font-size: 0.9rem;
+    color: #777;
+    margin-bottom: 0.25rem;
+  }
+
+  .info-item p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark);
+    margin: 0;
+  }
+
+  .utility-item, .rule-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--light);
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+  }
+
+  .utility-item i, .rule-item i {
+    color: var(--primary);
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  .toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .toast-success {
+    background-color: var(--success);
+    color: white;
+  }
+
+  .toast-error {
+    background-color: var(--danger);
+    color: white;
+  }
+
+  .toast-info {
+    background-color: var(--info);
+    color: white;
+  }
+
+  @media (max-width: 992px) {
+    .property-content {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .property-container {
+      padding: 1rem;
+    }
+
+    .main-image {
+      height: 300px;
+    }
+
+    .amenities-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .info-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="property-container">
+  <!-- Back Button -->
+  <a href="{{ url_for('tenant.properties') }}" class="back-button">
+    <i class="fas fa-arrow-left"></i> Back to Properties
+  </a>
+
+  <!-- Property Header -->
+  <div class="property-header">
+    <h1 class="property-title">{{ property.title }}</h1>
+
+    <div class="property-meta">
+      <div class="meta-item">
+        <i class="fas fa-map-marker-alt"></i>
+        <span>{{ property.address_line1 }}, {{ property.city }}</span>
+      </div>
+      <div class="meta-item">
+        <i class="fas fa-bed"></i>
+        <span>{{ property.bedrooms or 0 }} Bedrooms</span>
+      </div>
+      <div class="meta-item">
+        <i class="fas fa-bath"></i>
+        <span>{{ property.bathrooms or 0 }} Bathrooms</span>
+      </div>
+      <div class="meta-item">
+        <i class="fas fa-ruler-combined"></i>
+        <span>{{ property.size or 0 }} sq ft</span>
+      </div>
+    </div>
+
+    <div class="availability-status {% if property.available %}available{% else %}unavailable{% endif %}">
+      {% if property.available %}Available Now{% else %}Currently Occupied{% endif %}
+    </div>
+  </div>
+
+  <!-- Property Images -->
+  <div class="property-images">
+    {% set image_list = property.get_image_list() %}
+    {% set main_image = image_list[0] if image_list else 'images/default-house.jpg' %}
+
+    <img src="{{ url_for('static', filename=main_image) }}" 
+         alt="{{ property.title }}" class="main-image" id="mainImage">
+
+    <!-- Thumbnails -->
+    <div class="image-thumbnails">
+      {% for image in image_list %}
+      <img src="{{ url_for('static', filename=image) }}"
+           alt="{{ property.title }}"
+           class="thumbnail {% if loop.first %}active{% endif %}"
+           onclick="changeImage('{{ url_for('static', filename=image) }}', this)">
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Property Content -->
+  <div class="property-content">
+    <!-- Property Details -->
+    <div class="property-details">
+      <h2 class="section-title">
+        <i class="fas fa-info-circle"></i> Property Description
+      </h2>
+      <p class="property-description">{{ property.description }}</p>
+
+      <h2 class="section-title"><i class="fas fa-star"></i> Amenities</h2>
+      <div class="amenities-grid">
+        {% if property.amenities %}
+          {% set amenities_list = property.amenities.split(',') %}
+          {% for amenity in amenities_list %}
+          <div class="amenity-item">
+            <i class="fas fa-check-circle"></i>
+            <span>{{ amenity.strip() }}</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="amenity-item">
+            <i class="fas fa-check-circle"></i>
+            <span>Basic Amenities</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <h2 class="section-title">
+        <i class="fas fa-bolt"></i> Utilities Included
+      </h2>
+      <div class="amenities-grid">
+        {% if property.utilities %}
+          {% set utilities_list = property.utilities.split(',') %}
+          {% for utility in utilities_list %}
+          <div class="utility-item">
+            <i class="fas fa-check-circle"></i>
+            <span>{{ utility.strip() }}</span>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="utility-item">
+            <i class="fas fa-times-circle"></i>
+            <span>No utilities included</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <h2 class="section-title">
+        <i class="fas fa-map-marked-alt"></i> Location
+      </h2>
+      <div class="location-info">
+        <h3>{{ property.address_line1 }}{% if property.address_line2 %}, {{ property.address_line2 }}{% endif %}, {{ property.city }}, {{ property.state_province }}</h3>
+        <p>
+          This property is located in a vibrant neighborhood with easy access
+          to shopping centers, restaurants, schools, and public
+          transportation. The area is well-connected and offers a convenient
+          lifestyle for residents.
+        </p>
+      </div>
+
+      <div class="property-map">
+        <iframe
+          src="https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9yTPTt-hqYOEXA_3vC1i1S_-A&q={{ property.address_line1 }},{{ property.city }}&zoom=15&maptype=roadmap"
+          allowfullscreen=""
+          loading="lazy"
+        >
+        </iframe>
+      </div>
+
+      <div class="additional-info">
+        <h3><i class="fas fa-list-alt"></i> Additional Information</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <h4>Property Type</h4>
+            <p>{{ property.property_type or 'Apartment' }}</p>
+          </div>
+          <div class="info-item">
+            <h4>Furnishing</h4>
+            <p>{{ property.furnished_status or 'Unfurnished' }}</p>
+          </div>
+          <div class="info-item">
+            <h4>Pets Policy</h4>
+            <p>{{ property.pets_allowed or 'Not Allowed' }}</p>
+          </div>
+          <div class="info-item">
+            <h4>Lease Term</h4>
+            <p>{{ property.lease_term or 'Monthly' }}</p>
+          </div>
+          <div class="info-item">
+            <h4>Security Deposit</h4>
+            <p>KES {{ property.security_deposit or '0' }}</p>
+          </div>
+          <div class="info-item">
+            <h4>Available From</h4>
+            <p>{{ property.availability_date.strftime('%d %B %Y') if property.availability_date else 'Immediately' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="section-title">
+        <i class="fas fa-clipboard-list"></i> House Rules
+      </h2>
+      <div class="amenities-grid">
+        {% if property.smoking_policy %}
+        <div class="rule-item">
+          <i class="fas fa-smoking-ban"></i>
+          <span>Smoking: {{ property.smoking_policy }}</span>
+        </div>
+        {% endif %}
+        {% if property.pets_allowed %}
+        <div class="rule-item">
+          <i class="fas fa-paw"></i>
+          <span>Pets: {{ property.pets_allowed }}</span>
+        </div>
+        {% endif %}
+        {% if property.pet_restrictions %}
+        <div class="rule-item">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Pet Restrictions: {{ property.pet_restrictions }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Property Sidebar -->
+    <div class="property-sidebar">
+      <!-- Pricing Card -->
+      <div class="info-card">
+        <h3><i class="fas fa-tag"></i> Rental Information</h3>
+        <div class="price">KES {{ "{:,}".format(property.rent_amount|int) if property.rent_amount else '0' }}</div>
+        <div class="price-period">per month</div>
+
+        <div class="property-actions">
+          {% if current_user.is_authenticated and current_user.role == 'tenant' %}
+            {% if property.available %}
+            <a href="{{ url_for('tenant.bookings', house_id=property.id) }}" class="btn btn-primary">
+              <i class="fas fa-calendar-check"></i> Book Now
+            </a>
+            <a href="#" class="btn btn-outline" onclick="scheduleTour()">
+              <i class="fas fa-calendar-alt"></i> Schedule Tour
+            </a>
+            {% else %}
+            <button class="btn btn-outline" disabled>
+              <i class="fas fa-ban"></i> Property Occupied
+            </button>
+            <a href="{{ url_for('properties') }}" class="btn btn-primary">
+              <i class="fas fa-search"></i> View Similar Properties
+            </a>
+            {% endif %}
+          {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-primary">
+            <i class="fas fa-sign-in-alt"></i> Login to Book
+          </a>
+          <a href="#" class="btn btn-outline" onclick="scheduleTour()">
+            <i class="fas fa-calendar-alt"></i> Schedule Tour
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Owner Information -->
+      <div class="info-card">
+        <h3><i class="fas fa-user-tie"></i> Property Owner</h3>
+        <div class="owner-info">
+          <div class="owner-avatar">{{ property.owner.name[0]|upper }}</div>
+          <div class="owner-details">
+            <h4>{{ property.owner.name }}</h4>
+            <p>{{ property.owner.email }}</p>
+          </div>
+        </div>
+
+        <p>
+          Listed since {{ property.created_at.strftime('%B %Y') if property.created_at else 'January 2023' }}
+        </p>
+
+        <div class="contact-methods">
+          <a href="tel:{{ property.owner.phone_number or '+254712345678' }}" class="contact-btn" title="Call Owner">
+            <i class="fas fa-phone"></i>
+          </a>
+          <a href="mailto:{{ property.owner.email }}" class="contact-btn" title="Email Owner">
+            <i class="fas fa-envelope"></i>
+          </a>
+          <a href="#" class="contact-btn" title="WhatsApp Owner" onclick="contactWhatsApp()">
+            <i class="fab fa-whatsapp"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="info-card">
+        <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+        <div class="property-actions">
+          <a href="#" class="btn btn-outline" id="savePropertyBtn">
+            <i class="fas fa-heart"></i> Save Property
+          </a>
+          <a href="#" class="btn btn-outline" id="sharePropertyBtn">
+            <i class="fas fa-share-alt"></i> Share Property
+          </a>
+          <a href="#" class="btn btn-outline">
+            <i class="fas fa-calculator"></i> Mortgage Calculator
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Change main image when thumbnail is clicked
+  function changeImage(src, element) {
+    document.getElementById('mainImage').src = src;
+    
+    // Update active thumbnail
+    document.querySelectorAll('.thumbnail').forEach(thumb => {
+      thumb.classList.remove('active');
+    });
+    element.classList.add('active');
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    // Save property functionality
+    const savePropertyBtn = document.getElementById("savePropertyBtn");
+    if (savePropertyBtn) {
+      savePropertyBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+
+        // Toggle saved state
+        const icon = this.querySelector("i");
+        if (icon.classList.contains("fas")) {
+          icon.classList.remove("fas");
+          icon.classList.add("far");
+          this.innerHTML = '<i class="far fa-heart"></i> Save Property';
+          showToast("Property removed from saved list", "info");
+        } else {
+          icon.classList.remove("far");
+          icon.classList.add("fas");
+          this.innerHTML = '<i class="fas fa-heart"></i> Saved Property';
+          showToast("Property saved to your list", "success");
+        }
+      });
+    }
+
+    // Share property functionality
+    const sharePropertyBtn = document.getElementById("sharePropertyBtn");
+    if (sharePropertyBtn) {
+      sharePropertyBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        
+        if (navigator.share) {
+          navigator.share({
+            title: '{{ property.title }}',
+            text: '{{ property.description[:100] }}...',
+            url: window.location.href
+          }).then(() => {
+            showToast("Property shared successfully", "success");
+          }).catch((error) => {
+            showToast("Error sharing property", "error");
+          });
+        } else {
+          // Fallback for browsers that don't support Web Share API
+          const dummy = document.createElement('input');
+          document.body.appendChild(dummy);
+          dummy.value = window.location.href;
+          dummy.select();
+          document.execCommand('copy');
+          document.body.removeChild(dummy);
+          showToast("Property link copied to clipboard", "success");
+        }
+      });
+    }
+
+    // Schedule tour function
+    window.scheduleTour = function() {
+      showToast("Tour scheduling feature coming soon!", "info");
+    }
+
+    // Contact WhatsApp function
+    window.contactWhatsApp = function() {
+      const phone = "{{ property.owner.phone_number or '+254712345678' }}";
+      const message = `Hi, I'm interested in your property: {{ property.title }}`;
+      window.open(`https://wa.me/${phone.replace(/[^\d+]/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+    }
+
+    // Toast notification function
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      
+      document.body.appendChild(toast);
+      
+      // Animate in
+      setTimeout(() => {
+        toast.classList.add('show');
+      }, 100);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, 3000);
+    }
+  });
+</script>
+{% endblock %}
