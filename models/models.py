@@ -5,7 +5,10 @@ from datetime import date, datetime
 
 
 class User(db.Model, UserMixin):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
+
+    #id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     phone_number = db.Column(db.String(20), unique=True, nullable=True)
@@ -157,7 +160,7 @@ class PaymentTransaction(db.Model):
     __tablename__ = "payment_transactions"
 
     id = db.Column(db.Integer, primary_key=True)
-    booking_id = db.Column(db.Integer, db.ForeignKey('booking.id'), nullable=False)
+    booking_id = db.Column(db.Integer, db.ForeignKey('bookings.id'), nullable=False)
     house_id = db.Column(db.Integer, db.ForeignKey('house.id'), nullable=False)
     phone_number = db.Column(db.String(20))
     amount = db.Column(db.Float)
