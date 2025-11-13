@@ -25,9 +25,15 @@ def real_estates():
     houses = House.query.filter_by(category='RealEstate').all()
     return render_template('real_estates.html', houses=houses)
 
+# @house_bp.route('/Explore Properties/<int:id>')
+# def properties(id):
+#     property = House.query.order_by(property.id.desc()).get(id).all()
+#     return render_template('properties.html', image_filename=property.image)
+    
+
 @house_bp.route('/')
 def index():
-    houses = House.query.all()  # Adjust query as needed
+    houses = House.query.order_by(property.id.desc()).limit(12).all()  # Adjust query as needed
     print("Houses data:", houses)  # Debug output
     return render_template('index.html', houses=houses)
 

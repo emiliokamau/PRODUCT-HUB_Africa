@@ -184,7 +184,7 @@ def login():
             logger.debug(f"User {identifier} logged in.")
 
             return redirect(url_for(f"{user.role}.dashboard")) if user.role in [
-                "tenant", "landlord", "service", "admin"
+                "tenant", "landlord", "service_provider", "admin"
             ] else redirect(url_for("portal"))
 
         except Exception as e:

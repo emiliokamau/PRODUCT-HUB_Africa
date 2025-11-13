@@ -659,9 +659,9 @@
       </h3>
     </div>
 
-    <form id="profileForm" method="POST" action="{{ url_for('update_profile') }}" enctype="multipart/form-data">
+    <form id="profileForm" method="POST" action="{{ url_for('tenant.profile') }}" enctype="multipart/form-data">
       <!-- CSRF Token with ID -->
-      <input type="hidden" name="csrf_token" id="profile_csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="csrf_token" id="profile_csrf_token" value="{{ csrf_token }}">
       
       <div class="form-row">
         <div class="form-group">

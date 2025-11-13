@@ -7,8 +7,9 @@ from werkzeug.utils import secure_filename
 from datetime import date, datetime
 from extensions import db, csrf
 from models.models import User, House, Booking, Payment, MaintenanceRequest, ServiceProvider, PaymentMethods
-
-
+from sqlalchemy.orm import joinedload   # For eager loading,3 most recently books
+from models.models import ChatMessage, User 
+from sqlalchemy import or_, desc
 
 
 # Logging setup
@@ -35,24 +36,45 @@ def dashboard():
 
     # Fetch houses and tenants
     houses = House.query.filter_by(owner_id=current_user.id).all()
-    tenants = (
-        db.session.query(User, Booking, House)
-        .join(Booking, Booking.tenant_id == User.id)
-        .join(House, Booking.house_id == House.id)
-        .filter(User.role == "tenant", House.owner_id == current_user.id)
-        .all()
-    )
+    # tenants = (
+    #     db.session.query(User, Booking, House)
+    #     .join(Booking, Booking.tenant_id == User.id)
+    #     .join(House, Booking.house_id == House.id)
+    #     .filter(User.role == "tenant", House.owner_id == current_user.id)
+    #     .all()
+    # )
+    recent_bookings = Booking.query.options(
+        joinedload(Booking.tenant),  # Eagerly loads the tenant (User)
+        joinedload(Booking.house)     # Eagerly loads the House
+    ).join(House).filter(
+        House.owner_id == current_user.id
+    ).order_by(
+        Booking.id.desc()  # Get the most recent ones
+    ).limit(3).all()       # <-- LIMITS to 3 results IN THE DATABASE
 
-    # -------------------------
+    # pending bookings
+    pending_bookings = Booking.query.options(
+        joinedload(Booking.tenant),
+        joinedload(Booking.house)
+    ).join(House).filter(
+        House.owner_id == current_user.id,
+        Booking.status == 'Pending'  # <-- Filter for 'Pending' status
+    ).order_by(
+        Booking.id.desc()
+    ).limit(5).all() # Get the 5 most recent pending bookings
+    
     # Calculate simple dashboard stats (replace with your real logic)
     # -------------------------
     total_properties = len(houses)
-    total_tenants = len(tenants)
+    # We need to count ALL tenants for the stats, so we do a separate, fast count query.
+    total_tenants = Booking.query.join(House).filter(
+        House.owner_id == current_user.id
+    ).distinct(Booking.tenant_id).count()
 
     # Calculate occupancy rate
-    occupied_units = sum(1 for h in houses if any(t[2].id == h.id for t in tenants))
+    occupied_units = sum(1 for h in houses if any(b.house_id == h.id for b in recent_bookings)) # Use recent_bookings if it's relevant here, or stick to your logic
     occupancy_rate = (occupied_units / total_properties * 100) if total_properties > 0 else 0
-
+    
     # Example monthly revenue (replace with actual query later)
     total_revenue = db.session.query(db.func.sum(Payment.amount))\
         .join(Booking, Payment.tenant_id == Booking.tenant_id)\
@@ -84,7 +106,8 @@ def dashboard():
     return render_template(
         "landlord/dashboard.html",
         houses=houses,
-        tenants=tenants,
+        recent_bookings=recent_bookings,
+        pending_bookings=pending_bookings,
         stats=stats,
         maintenance_requests=maintenance_requests
     )
@@ -591,8 +614,36 @@ def messages():
         flash("Access denied.", "danger")
         return redirect(url_for("main.index"))
 
-    # TODO: Load landlord messages
-    return render_template("landlord/messages.html", stats={})
+    # Find all unique user IDs the landlord has chatted with
+    sent_messages = db.session.query(ChatMessage.receiver_id).filter(
+        ChatMessage.sender_id == current_user.id
+    )
+    received_messages = db.session.query(ChatMessage.sender_id).filter(
+        ChatMessage.receiver_id == current_user.id
+    )
+    
+    # Combine them and get unique IDs
+    all_chatted_user_ids = {row[0] for row in sent_messages.union(received_messages).all()}
+
+    # Fetch the User objects for these conversations
+    conversations = []
+    if all_chatted_user_ids:
+        conversations = User.query.filter(User.id.in_(all_chatted_user_ids)).all()
+
+    # We also need to fetch tenants who have an active booking but haven't chatted yet
+    # This is part of your "Send Message" modal
+    active_tenants = User.query.join(Booking, User.id == Booking.tenant_id)\
+                               .join(House, Booking.house_id == House.id)\
+                               .filter(House.owner_id == current_user.id, 
+                                       Booking.status.in_(['Awaiting Deposit', 'Confirmed']))\
+                               .all()
+    
+    # Combine and remove duplicates
+    all_contacts = list(set(conversations + active_tenants))
+    
+    return render_template("landlord/messages.html", 
+                           contacts=all_contacts,
+                           stats={}) # Pass stats if your base.html needs it
 
 
 # ---------------- Profile ----------------

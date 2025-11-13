@@ -1174,642 +1174,552 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  // Initialize modals
-  initializeModals();
-  
-  // Load tenants on page load
-  loadTenants();
-  
-  // Get URL parameters
-  const urlParams = new URLSearchParams(window.location.search);
-  
-  // Apply filters on page load if URL parameters exist
-  if (urlParams.has('search') || urlParams.has('status') || urlParams.has('property')) {
-    document.getElementById('searchTenants').value = urlParams.get('search') || '';
-    document.getElementById('statusFilter').value = urlParams.get('status') || 'all';
-    document.getElementById('propertyFilter').value = urlParams.get('property') || 'all';
-    
-    applyFilters();
-  }
-  
-  // Set today's date as default for payment date
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('paymentDate').value = today;
-  
-  // Set default date range for export
-  document.getElementById('exportStartDate').value = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0];
-  document.getElementById('exportEndDate').value = today;
-});
+// ===================================================================
+// 1. GLOBAL FUNCTION DEFINITIONS
+// (Functions are defined here so HTML 'onclick' can find them)
+// ===================================================================
 
-// Initialize modals
+/**
+ * Initializes all modal open/close listeners.
+ */
 function initializeModals() {
-  // Booking modal
-  const bookingModal = document.getElementById('bookingModal');
-  const bookingModalClose = document.getElementById('bookingModalClose');
-  const bookingModalCloseBtn = document.getElementById('bookingModalCloseBtn');
-  
-  bookingModalClose.addEventListener('click', () => {
-    bookingModal.classList.remove('show');
-  });
-  
-  bookingModalCloseBtn.addEventListener('click', () => {
-    bookingModal.classList.remove('show');
-  });
-  
-  // Payment modal
-  const paymentModal = document.getElementById('paymentModal');
-  const paymentModalClose = document.getElementById('paymentModalClose');
-  const paymentModalCloseBtn = document.getElementById('paymentModalCloseBtn');
-  
-  paymentModalClose.addEventListener('click', () => {
-    paymentModal.classList.remove('show');
-  });
-  
-  paymentModalCloseBtn.addEventListener('click', () => {
-    paymentModal.classList.remove('show');
-  });
-  
-  // Message modal
-  const messageModal = document.getElementById('messageModal');
-  const messageModalClose = document.getElementById('messageModalClose');
-  const messageModalCloseBtn = document.getElementById('messageModalCloseBtn');
-  
-  messageModalClose.addEventListener('click', () => {
-    messageModal.classList.remove('show');
-  });
-  
-  messageModalCloseBtn.addEventListener('click', () => {
-    messageModal.classList.remove('show');
-  });
-  
-  // Maintenance modal
-  const maintenanceModal = document.getElementById('maintenanceModal');
-  const maintenanceModalClose = document.getElementById('maintenanceModalClose');
-  const maintenanceModalCloseBtn = document.getElementById('maintenanceModalCloseBtn');
-  
-  maintenanceModalClose.addEventListener('click', () => {
-    maintenanceModal.classList.remove('show');
-  });
-  
-  maintenanceModalCloseBtn.addEventListener('click', () => {
-    maintenanceModal.classList.remove('show');
-  });
-  
-  // Export modal
-  const exportModal = document.getElementById('exportModal');
-  const exportModalClose = document.getElementById('exportModalClose');
-  const exportModalCloseBtn = document.getElementById('exportModalCloseBtn');
-  
-  exportModalClose.addEventListener('click', () => {
-    exportModal.classList.remove('show');
-  });
-  
-  exportModalCloseBtn.addEventListener('click', () => {
-    exportModal.classList.remove('show');
-  });
-  
-  // Export options
-  const exportOptions = document.querySelectorAll('.export-option');
-  exportOptions.forEach(option => {
-    option.addEventListener('click', () => {
-      exportOptions.forEach(opt => opt.classList.remove('selected'));
-      option.classList.add('selected');
-    });
-  });
-  
-  // Set default export option
-  document.querySelector('.export-option[data-format="csv"]').classList.add('selected');
-  
-  // Process payment button
-  const processPaymentBtn = document.getElementById('processPaymentBtn');
-  processPaymentBtn.addEventListener('click', () => {
-    const spinner = processPaymentBtn.querySelector('.fa-spinner');
-    spinner.style.display = 'inline-flex';
+    // Booking modal
+    const bookingModal = document.getElementById('bookingModal');
+    const bookingModalClose = document.getElementById('bookingModalClose');
+    const bookingModalCloseBtn = document.getElementById('bookingModalCloseBtn');
     
-    // Simulate payment processing
-    setTimeout(() => {
-      spinner.style.display = 'none';
-      showToast('Payment processed successfully!', 'success');
-      bookingModal.classList.remove('show');
-    }, 2000);
-  });
-  
-  // Submit payment button
-  const submitPaymentBtn = document.getElementById('submitPaymentBtn');
-  submitPaymentBtn.addEventListener('click', () => {
-    if (validatePaymentForm()) {
-      const spinner = submitPaymentBtn.querySelector('.fa-spinner');
-      spinner.style.display = 'inline-flex';
-      
-      // Collect form data
-      const paymentData = {
-        tenantId: document.getElementById('tenantSelect').value,
-        amount: document.getElementById('paymentAmount').value,
-        date: document.getElementById('paymentDate').value,
-        method: document.getElementById('paymentMethod').value,
-        notes: document.getElementById('paymentNotes').value
-      };
-      
-      // Send payment data to server
-      fetch('/api/payments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(paymentData)
-      })
-      .then(response => response.json())
-      .then(data => {
-        spinner.style.display = 'none';
-        if (data.success) {
-          showToast('Payment submitted successfully!', 'success');
-          paymentModal.classList.remove('show');
-          document.getElementById('paymentForm').reset();
-        } else {
-          showToast(`Failed to submit payment: ${data.message}`, 'error');
-        }
-      })
-      .catch(error => {
-        spinner.style.display = 'none';
-        console.error('Error submitting payment:', error);
-        showToast('Failed to submit payment. Please try again.', 'error');
-      });
+    if(bookingModal) {
+        if (bookingModalClose) bookingModalClose.addEventListener('click', () => bookingModal.classList.remove('show'));
+        if (bookingModalCloseBtn) bookingModalCloseBtn.addEventListener('click', () => bookingModal.classList.remove('show'));
     }
-  });
-  
-  // Send message button
-  const sendMessageBtn = document.getElementById('sendMessageBtn');
-  sendMessageBtn.addEventListener('click', () => {
-    if (validateMessageForm()) {
-      const spinner = sendMessageBtn.querySelector('.fa-spinner');
-      spinner.style.display = 'inline-flex';
-      
-      // Collect form data
-      const messageData = {
-        recipients: Array.from(document.getElementById('messageRecipients').selectedOptions).map(option => option.value),
-        subject: document.getElementById('messageSubject').value,
-        content: document.getElementById('messageContent').value
-      };
-      
-      // Send message data to server
-      fetch('/api/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(messageData)
-      })
-      .then(response => response.json())
-      .then(data => {
-        spinner.style.display = 'none';
-        if (data.success) {
-          showToast('Message sent successfully!', 'success');
-          messageModal.classList.remove('show');
-          document.getElementById('messageForm').reset();
-        } else {
-          showToast(`Failed to send message: ${data.message}`, 'error');
-        }
-      })
-      .catch(error => {
-        spinner.style.display = 'none';
-        console.error('Error sending message:', error);
-        showToast('Failed to send message. Please try again.', 'error');
-      });
-    }
-  });
-  
-  // Submit maintenance button
-  const submitMaintenanceBtn = document.getElementById('submitMaintenanceBtn');
-  submitMaintenanceBtn.addEventListener('click', () => {
-    if (validateMaintenanceForm()) {
-      const spinner = submitMaintenanceBtn.querySelector('.fa-spinner');
-      spinner.style.display = 'inline-flex';
-      
-      // Collect form data
-      const maintenanceData = {
-        propertyId: document.getElementById('maintenanceProperty').value,
-        tenantId: document.getElementById('maintenanceTenant').value,
-        title: document.getElementById('maintenanceTitle').value,
-        description: document.getElementById('maintenanceDescription').value,
-        priority: document.getElementById('maintenancePriority').value
-      };
-      
-      // Send maintenance data to server
-      fetch('/api/maintenance', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(maintenanceData)
-      })
-      .then(response => response.json())
-      .then(data => {
-        spinner.style.display = 'none';
-        if (data.success) {
-          showToast('Maintenance request submitted successfully!', 'success');
-          maintenanceModal.classList.remove('show');
-          document.getElementById('maintenanceForm').reset();
-        } else {
-          showToast(`Failed to submit maintenance request: ${data.message}`, 'error');
-        }
-      })
-      .catch(error => {
-        spinner.style.display = 'none';
-        console.error('Error submitting maintenance request:', error);
-        showToast('Failed to submit maintenance request. Please try again.', 'error');
-      });
-    }
-  });
-  
-  // Export data button
-  const exportDataBtn = document.getElementById('exportDataBtn');
-  exportDataBtn.addEventListener('click', () => {
-    const selectedFormat = document.querySelector('.export-option.selected').dataset.format;
-    const exportType = document.getElementById('exportData').value;
-    const startDate = document.getElementById('exportStartDate').value;
-    const endDate = document.getElementById('exportEndDate').value;
     
-    const spinner = exportDataBtn.querySelector('.fa-spinner');
-    spinner.style.display = 'inline-flex';
+    // Payment modal
+    const paymentModal = document.getElementById('paymentModal');
+    const paymentModalClose = document.getElementById('paymentModalClose');
+    const paymentModalCloseBtn = document.getElementById('paymentModalCloseBtn');
     
-    // Build export parameters
-    const params = new URLSearchParams();
-    params.set('format', selectedFormat);
-    params.set('type', exportType);
-    if (startDate) params.set('start_date', startDate);
-    if (endDate) params.set('end_date', endDate);
-    
-    // Export data
-    fetch(`/api/export?${params.toString()}`)
-      .then(response => {
-        if (response.ok) {
-          return response.blob();
-        } else {
-          throw new Error('Failed to export data');
-        }
-      })
-      .then(blob => {
-        spinner.style.display = 'none';
-        
-        // Create download link
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `tenants_export_${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        
-        showToast('Export completed successfully!', 'success');
-        exportModal.classList.remove('show');
-      })
-      .catch(error => {
-        spinner.style.display = 'none';
-        console.error('Error exporting data:', error);
-        showToast('Failed to export data. Please try again.', 'error');
-      });
-  });
-  
-  // Tenant select change event
-  const tenantSelect = document.getElementById('tenantSelect');
-  tenantSelect.addEventListener('change', () => {
-    const selectedOption = tenantSelect.options[tenantSelect.selectedIndex];
-    const rentAmount = selectedOption.getAttribute('data-rent');
-    if (rentAmount) {
-      document.getElementById('paymentAmount').value = rentAmount;
+    if(paymentModal) {
+        if (paymentModalClose) paymentModalClose.addEventListener('click', () => paymentModal.classList.remove('show'));
+        if (paymentModalCloseBtn) paymentModalCloseBtn.addEventListener('click', () => paymentModal.classList.remove('show'));
     }
-  });
+    
+    // Message modal
+    const messageModal = document.getElementById('messageModal');
+    const messageModalClose = document.getElementById('messageModalClose');
+    const messageModalCloseBtn = document.getElementById('messageModalCloseBtn');
+    
+    if(messageModal) {
+        if (messageModalClose) messageModalClose.addEventListener('click', () => messageModal.classList.remove('show'));
+        if (messageModalCloseBtn) messageModalCloseBtn.addEventListener('click', () => messageModal.classList.remove('show'));
+    }
+    
+    // Maintenance modal
+    const maintenanceModal = document.getElementById('maintenanceModal');
+    const maintenanceModalClose = document.getElementById('maintenanceModalClose');
+    const maintenanceModalCloseBtn = document.getElementById('maintenanceModalCloseBtn');
+    
+    if(maintenanceModal) {
+        if (maintenanceModalClose) maintenanceModalClose.addEventListener('click', () => maintenanceModal.classList.remove('show'));
+        if (maintenanceModalCloseBtn) maintenanceModalCloseBtn.addEventListener('click', () => maintenanceModal.classList.remove('show'));
+    }
+    
+    // Export modal
+    const exportModal = document.getElementById('exportModal');
+    const exportModalClose = document.getElementById('exportModalClose');
+    const exportModalCloseBtn = document.getElementById('exportModalCloseBtn');
+    
+    if(exportModal) {
+        if (exportModalClose) exportModalClose.addEventListener('click', () => exportModal.classList.remove('show'));
+        if (exportModalCloseBtn) exportModalCloseBtn.addEventListener('click', () => exportModal.classList.remove('show'));
+    
+        // Export options
+        const exportOptions = document.querySelectorAll('.export-option');
+        exportOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                exportOptions.forEach(opt => opt.classList.remove('selected'));
+                option.classList.add('selected');
+            });
+        });
+    
+        // Set default export option
+        const defaultExport = document.querySelector('.export-option[data-format="csv"]');
+        if (defaultExport) {
+            defaultExport.classList.add('selected');
+        }
+    }
 }
 
-// Load tenants from API
-function loadTenants() {
-  // This would typically fetch data from an API
-  // For now, we'll just animate the stats cards
-  animateStats();
-}
-
-// Animate stats on page load
+/**
+ * Animates stats cards on page load.
+ */
 function animateStats() {
-  const statCards = document.querySelectorAll('.stat-card');
-  statCards.forEach((card, index) => {
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(20px)';
-    
-    setTimeout(() => {
-      card.style.transition = 'all 0.5s ease';
-      card.style.opacity = '1';
-      card.style.transform = 'translateY(0)';
-    }, index * 100);
-  });
+    const statCards = document.querySelectorAll('.stat-card');
+    statCards.forEach((card, index) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            card.style.transition = 'all 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, index * 100);
+    });
 }
 
-// Apply filters
+/**
+ * Reloads the page with new URL filter parameters.
+ */
 function applyFilters() {
-  const search = document.getElementById('searchTenants').value;
-  const status = document.getElementById('statusFilter').value;
-  const property = document.getElementById('propertyFilter').value;
-  
-  // Build query parameters
-  const params = new URLSearchParams();
-  if (search) params.set('search', search);
-  if (status !== 'all') params.set('status', status);
-  if (property !== 'all') params.set('property', property);
-  
-  // Update URL
-  const url = `${window.location.pathname}?${params.toString()}`;
-  window.location.href = url;
+    const search = document.getElementById('searchTenants').value;
+    const status = document.getElementById('statusFilter').value;
+    const property = document.getElementById('propertyFilter').value;
+    
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (status !== 'all') params.set('status', status);
+    if (property !== 'all') params.set('property', property);
+    
+    window.location.href = `${window.location.pathname}?${params.toString()}`;
 }
 
-// View booking details
+/**
+ * Fetches booking details and displays them in the booking modal.
+ */
 function viewBookingDetails(bookingId) {
-  // Show loading state
-  const bookingDetailsContent = document.getElementById('bookingDetailsContent');
-  bookingDetailsContent.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading booking details...</div>';
-  
-  // Show modal
-  document.getElementById('bookingModal').classList.add('show');
-  
-  // Fetch booking details
-  fetch(`/api/bookings/${bookingId}`)
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        // Populate modal with booking details
-        const booking = data.booking;
-        bookingDetailsContent.innerHTML = `
-          <div class="booking-details">
-            <div class="detail-row">
-              <span class="detail-label">Tenant Name:</span>
-              <span class="detail-value">${booking.tenant_name}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Property:</span>
-              <span class="detail-value">${booking.house.title}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Move-in Date:</span>
-              <span class="detail-value">${booking.move_in_date ? new Date(booking.move_in_date).toLocaleDateString() : 'Not specified'}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Rent Amount:</span>
-              <span class="detail-value">KES ${booking.house.rent_amount.toLocaleString()}/month</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Status:</span>
-              <span class="detail-value">
-                <span class="tenant-status status-${booking.status.toLowerCase()}">${booking.status}</span>
-              </span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Contact Email:</span>
-              <span class="detail-value">${booking.tenant_email || 'Not provided'}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Contact Phone:</span>
-              <span class="detail-value">${booking.tenant_phone || 'Not provided'}</span>
-            </div>
-          </div>
-        `;
-      } else {
-        bookingDetailsContent.innerHTML = `<div class="alert alert-danger">Failed to load booking details: ${data.message}</div>`;
-      }
-    })
-    .catch(error => {
-      console.error('Error loading booking details:', error);
-      bookingDetailsContent.innerHTML = '<div class="alert alert-danger">Failed to load booking details. Please try again.</div>';
-    });
+    const bookingDetailsContent = document.getElementById('bookingDetailsContent');
+    bookingDetailsContent.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    
+    document.getElementById('bookingModal').classList.add('show');
+    
+    fetch(`/api/bookings/${bookingId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const booking = data.booking;
+                bookingDetailsContent.innerHTML = `
+                    <div class="booking-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Tenant Name:</span>
+                            <span class="detail-value">${booking.tenant_name}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Property:</span>
+                            <span class="detail-value">${booking.house.title}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Move-in Date:</span>
+                            <span class="detail-value">${booking.move_in_date ? new Date(booking.move_in_date).toLocaleDateString() : 'N/A'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Rent:</span>
+                            <span class="detail-value">KES ${booking.house.rent_amount.toLocaleString()}/month</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Status:</span>
+                            <span class="detail-value">
+                                <span class="tenant-status status-${booking.status.toLowerCase()}">${booking.status}</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                bookingDetailsContent.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading booking details:', error);
+            bookingDetailsContent.innerHTML = '<div class="alert alert-danger">Failed to load details.</div>';
+        });
 }
 
-// Approve booking
+/**
+ * Sends an API request to approve a booking.
+ */
 function approveBooking(bookingId) {
-  if (confirm('Are you sure you want to approve this booking?')) {
-    // Show loading state
-    showToast('Processing approval...', 'info');
-    
-    // Approve booking
-    fetch(`/api/bookings/${bookingId}/approve`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        showToast('Booking approved successfully!', 'success');
-        // Reload the page to show updated data
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      } else {
-        showToast(`Failed to approve booking: ${data.message}`, 'error');
-      }
-    })
-    .catch(error => {
-      console.error('Error approving booking:', error);
-      showToast('Failed to approve booking. Please try again.', 'error');
-    });
-  }
+    if (confirm('Are you sure you want to approve this booking?')) {
+        showToast('Processing approval...', 'info');
+        
+        fetch(`/api/bookings/${bookingId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Booking approved successfully!', 'success');
+                setTimeout(() => { window.location.reload(); }, 1500);
+            } else {
+                showToast(`Failed to approve: ${data.message}`, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error approving booking:', error);
+            showToast('An error occurred. Please try again.', 'error');
+        });
+    }
 }
 
-// Reject booking
+/**
+ * Sends an API request to reject a booking.
+ */
 function rejectBooking(bookingId) {
-  if (confirm('Are you sure you want to reject this booking?')) {
-    // Show loading state
-    showToast('Processing rejection...', 'info');
-    
-    // Reject booking
-    fetch(`/api/bookings/${bookingId}/reject`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        showToast('Booking rejected successfully!', 'success');
-        // Reload the page to show updated data
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      } else {
-        showToast(`Failed to reject booking: ${data.message}`, 'error');
-      }
-    })
-    .catch(error => {
-      console.error('Error rejecting booking:', error);
-      showToast('Failed to reject booking. Please try again.', 'error');
-    });
-  }
+    if (confirm('Are you sure you want to reject this booking?')) {
+        showToast('Processing rejection...', 'info');
+        
+        fetch(`/api/bookings/${bookingId}/reject`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Booking rejected successfully!', 'success');
+                setTimeout(() => { window.location.reload(); }, 1500);
+            } else {
+                showToast(`Failed to reject: ${data.message}`, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error rejecting booking:', error);
+            showToast('An error occurred. Please try again.', 'error');
+        });
+    }
 }
 
-// Show payment modal
-function showPaymentModal() {
-  document.getElementById('paymentModal').classList.add('show');
-}
+// Modal visibility functions
+function showPaymentModal() { document.getElementById('paymentModal').classList.add('show'); }
+function showSendMessageModal() { document.getElementById('messageModal').classList.add('show'); }
+function showMaintenanceModal() { document.getElementById('maintenanceModal').classList.add('show'); }
+function showExportModal() { document.getElementById('exportModal').classList.add('show'); }
+function showAddTenantModal() { showToast('Add Tenant feature coming soon!', 'info'); }
 
-// Show send message modal
-function showSendMessageModal() {
-  document.getElementById('messageModal').classList.add('show');
-}
-
-// Show maintenance modal
-function showMaintenanceModal() {
-  document.getElementById('maintenanceModal').classList.add('show');
-}
-
-// Show export modal
-function showExportModal() {
-  document.getElementById('exportModal').classList.add('show');
-}
-
-// Show add tenant modal
-function showAddTenantModal() {
-  showToast('Add Tenant feature coming soon!', 'info');
-}
-
-// Validate payment form
+/**
+ * Validates the payment form fields.
+ */
 function validatePaymentForm() {
-  let isValid = true;
-  
-  // Validate tenant selection
-  const tenantSelect = document.getElementById('tenantSelect');
-  if (!tenantSelect.value) {
-    tenantSelect.classList.add('is-invalid');
-    isValid = false;
-  } else {
-    tenantSelect.classList.remove('is-invalid');
-  }
-  
-  // Validate amount
-  const paymentAmount = document.getElementById('paymentAmount');
-  if (!paymentAmount.value || paymentAmount.value <= 0) {
-    paymentAmount.classList.add('is-invalid');
-    isValid = false;
-  } else {
-    paymentAmount.classList.remove('is-invalid');
-  }
-  
-  // Validate date
-  const paymentDate = document.getElementById('paymentDate');
-  if (!paymentDate.value) {
-    paymentDate.classList.add('is-invalid');
-    isValid = false;
-  } else {
-    paymentDate.classList.remove('is-invalid');
-  }
-  
-  // Validate payment method
-  const paymentMethod = document.getElementById('paymentMethod');
-  if (!paymentMethod.value) {
-    paymentMethod.classList.add('is-invalid');
-    isValid = false;
-  } else {
-    paymentMethod.classList.remove('is-invalid');
-  }
-  
-  return isValid;
+    let isValid = true;
+    const fields = ['tenantSelect', 'paymentAmount', 'paymentDate', 'paymentMethod'];
+    
+    fields.forEach(id => {
+        const field = document.getElementById(id);
+        if (!field.value || (field.type === 'number' && field.value <= 0)) {
+            field.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            field.classList.remove('is-invalid');
+        }
+    });
+    return isValid;
 }
 
-// Validate message form
+/**
+ * Validates the message form fields.
+ */
 function validateMessageForm() {
-  let isValid = true;
-  
-  // Validate recipients
-  const messageRecipients = document.getElementById('messageRecipients');
-  if (messageRecipients.selectedOptions.length === 0) {
-    messageRecipients.classList.add('is-invalid');
-    isValid = false;
-  } else {
-    messageRecipients.classList.remove('is-invalid');
-  }
-  
-  // Validate subject
-  const messageSubject = document.getElementById('messageSubject');
-  if (!messageSubject.value.trim()) {
-    messageSubject.classList.add('is-invalid');
-    isValid = false;
-  } else {
-    messageSubject.classList.remove('is-invalid');
-  }
-  
-  // Validate content
-  const messageContent = document.getElementById('messageContent');
-  if (!messageContent.value.trim()) {
-    messageContent.classList.add('is-invalid');
-    isValid = false;
-  } else {
-    messageContent.classList.remove('is-invalid');
-  }
-  
-  return isValid;
+    let isValid = true;
+    const recipients = document.getElementById('messageRecipients');
+    const subject = document.getElementById('messageSubject');
+    const content = document.getElementById('messageContent');
+
+    if (recipients.selectedOptions.length === 0) {
+        recipients.classList.add('is-invalid'); isValid = false;
+    } else {
+        recipients.classList.remove('is-invalid');
+    }
+
+    if (!subject.value.trim()) {
+        subject.classList.add('is-invalid'); isValid = false;
+    } else {
+        subject.classList.remove('is-invalid');
+    }
+
+    if (!content.value.trim()) {
+        content.classList.add('is-invalid'); isValid = false;
+    } else {
+        content.classList.remove('is-invalid');
+    }
+    return isValid;
 }
 
-// Validate maintenance form
+/**
+ * Validates the maintenance form fields.
+ */
 function validateMaintenanceForm() {
-  let isValid = true;
-  
-  // Validate property
-  const maintenanceProperty = document.getElementById('maintenanceProperty');
-  if (!maintenanceProperty.value) {
-    maintenanceProperty.classList.add('is-invalid');
-    isValid = false;
-  } else {
-    maintenanceProperty.classList.remove('is-invalid');
-  }
-  
-  // Validate title
-  const maintenanceTitle = document.getElementById('maintenanceTitle');
-  if (!maintenanceTitle.value.trim()) {
-    maintenanceTitle.classList.add('is-invalid');
-    isValid = false;
-  } else {
-    maintenanceTitle.classList.remove('is-invalid');
-  }
-  
-  // Validate description
-  const maintenanceDescription = document.getElementById('maintenanceDescription');
-  if (!maintenanceDescription.value.trim()) {
-    maintenanceDescription.classList.add('is-invalid');
-    isValid = false;
-  } else {
-    maintenanceDescription.classList.remove('is-invalid');
-  }
-  
-  // Validate priority
-  const maintenancePriority = document.getElementById('maintenancePriority');
-  if (!maintenancePriority.value) {
-    maintenancePriority.classList.add('is-invalid');
-    isValid = false;
-  } else {
-    maintenancePriority.classList.remove('is-invalid');
-  }
-  
-  return isValid;
+    let isValid = true;
+    const fields = ['maintenanceProperty', 'maintenanceTitle', 'maintenanceDescription', 'maintenancePriority'];
+
+    fields.forEach(id => {
+        const field = document.getElementById(id);
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            field.classList.remove('is-invalid');
+        }
+    });
+    return isValid;
 }
 
-// Show toast notification
+/**
+ * Displays a toast notification.
+ */
 function showToast(message, type = 'info') {
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  
-  // Animate in
-  setTimeout(() => {
-    toast.classList.add('show');
-  }, 100);
-  
-  // Remove after 3 seconds
-  setTimeout(() => {
-    toast.classList.remove('show');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
     setTimeout(() => {
-      document.body.removeChild(toast);
-    }, 300);
-  }, 3000);
+        toast.classList.add('show');
+    }, 100);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            if (document.body.contains(toast)) {
+                document.body.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
 }
+
+
+// ===================================================================
+// 2. SCRIPT INITIALIZATION
+// (This code runs AFTER the page is loaded and functions are defined)
+// ===================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // Initialize all modal close buttons
+    initializeModals();
+    
+    // Animate stats cards
+    animateStats();
+    
+    // Set default dates
+    const today = new Date().toISOString().split('T')[0];
+    const paymentDate = document.getElementById('paymentDate');
+    if (paymentDate) paymentDate.value = today;
+
+    const exportStartDate = document.getElementById('exportStartDate');
+    if (exportStartDate) {
+        exportStartDate.value = new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString().split('T')[0];
+        document.getElementById('exportEndDate').value = today;
+    }
+
+    // --- Attach all event listeners ---
+
+    const processPaymentBtn = document.getElementById('processPaymentBtn');
+    if(processPaymentBtn) {
+        processPaymentBtn.addEventListener('click', () => {
+            const spinner = processPaymentBtn.querySelector('.fa-spinner');
+            spinner.style.display = 'inline-flex';
+            
+            setTimeout(() => {
+                spinner.style.display = 'none';
+                showToast('Payment processed successfully!', 'success');
+                document.getElementById('bookingModal').classList.remove('show');
+            }, 2000);
+        });
+    }
+    
+    const submitPaymentBtn = document.getElementById('submitPaymentBtn');
+    if(submitPaymentBtn) {
+        submitPaymentBtn.addEventListener('click', () => {
+            if (validatePaymentForm()) {
+                const spinner = submitPaymentBtn.querySelector('.fa-spinner');
+                spinner.style.display = 'inline-flex';
+                
+                const paymentData = {
+                    tenantId: document.getElementById('tenantSelect').value,
+                    amount: document.getElementById('paymentAmount').value,
+                    date: document.getElementById('paymentDate').value,
+                    method: document.getElementById('paymentMethod').value,
+                    notes: document.getElementById('paymentNotes').value
+                };
+                
+                fetch('/api/payments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(paymentData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    spinner.style.display = 'none';
+                    if (data.success) {
+                        showToast('Payment submitted successfully!', 'success');
+                        document.getElementById('paymentModal').classList.remove('show');
+                        document.getElementById('paymentForm').reset();
+                    } else {
+                        showToast(`Failed to submit payment: ${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    spinner.style.display = 'none';
+                    console.error('Error submitting payment:', error);
+                    showToast('Failed to submit payment. Please try again.', 'error');
+                });
+            }
+        });
+    }
+    
+    const sendMessageBtn = document.getElementById('sendMessageBtn');
+    if(sendMessageBtn) {
+        sendMessageBtn.addEventListener('click', () => {
+            if (validateMessageForm()) {
+                const spinner = sendMessageBtn.querySelector('.fa-spinner');
+                spinner.style.display = 'inline-flex';
+                
+                const messageData = {
+                    recipients: Array.from(document.getElementById('messageRecipients').selectedOptions).map(option => option.value),
+                    subject: document.getElementById('messageSubject').value,
+                    content: document.getElementById('messageContent').value
+                };
+                
+                fetch('/api/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(messageData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    spinner.style.display = 'none';
+                    if (data.success) {
+                        showToast('Message sent successfully!', 'success');
+                        document.getElementById('messageModal').classList.remove('show');
+                        document.getElementById('messageForm').reset();
+                    } else {
+                        showToast(`Failed to send message: ${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    spinner.style.display = 'none';
+                    console.error('Error sending message:', error);
+                    showToast('Failed to send message. Please try again.', 'error');
+                });
+            }
+        });
+    }
+    
+    const submitMaintenanceBtn = document.getElementById('submitMaintenanceBtn');
+    if(submitMaintenanceBtn) {
+        submitMaintenanceBtn.addEventListener('click', () => {
+            if (validateMaintenanceForm()) {
+                const spinner = submitMaintenanceBtn.querySelector('.fa-spinner');
+                spinner.style.display = 'inline-flex';
+                
+                const maintenanceData = {
+                    propertyId: document.getElementById('maintenanceProperty').value,
+                    tenantId: document.getElementById('maintenanceTenant').value,
+                    title: document.getElementById('maintenanceTitle').value,
+                    description: document.getElementById('maintenanceDescription').value,
+                    priority: document.getElementById('maintenancePriority').value
+                };
+                
+                fetch('/api/maintenance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify(maintenanceData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    spinner.style.display = 'none';
+                    if (data.success) {
+                        showToast('Maintenance request submitted successfully!', 'success');
+                        document.getElementById('maintenanceModal').classList.remove('show');
+                        document.getElementById('maintenanceForm').reset();
+                    } else {
+                        showToast(`Failed to submit maintenance request: ${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    spinner.style.display = 'none';
+                    console.error('Error submitting maintenance request:', error);
+                    showToast('Failed to submit maintenance request. Please try again.', 'error');
+                });
+            }
+        });
+    }
+    
+    const exportDataBtn = document.getElementById('exportDataBtn');
+    if(exportDataBtn) {
+        exportDataBtn.addEventListener('click', () => {
+            const selectedFormatEl = document.querySelector('.export-option.selected');
+            if (!selectedFormatEl) {
+                showToast('Please select an export format.', 'error');
+                return;
+            }
+            const selectedFormat = selectedFormatEl.dataset.format;
+            const exportType = document.getElementById('exportData').value;
+            const startDate = document.getElementById('exportStartDate').value;
+            const endDate = document.getElementById('exportEndDate').value;
+            
+            const spinner = exportDataBtn.querySelector('.fa-spinner');
+            spinner.style.display = 'inline-flex';
+            
+            const params = new URLSearchParams();
+            params.set('format', selectedFormat);
+            params.set('type', exportType);
+            if (startDate) params.set('start_date', startDate);
+            if (endDate) params.set('end_date', endDate);
+            
+            fetch(`/api/export?${params.toString()}`)
+                .then(response => {
+                    if (response.ok) {
+                        return response.blob();
+                    } else {
+                        throw new Error('Failed to export data');
+                    }
+                })
+                .then(blob => {
+                    spinner.style.display = 'none';
+                    
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `tenants_export_${new Date().toISOString().split('T')[0]}.${selectedFormat}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    showToast('Export completed successfully!', 'success');
+                    document.getElementById('exportModal').classList.remove('show');
+                })
+                .catch(error => {
+                    spinner.style.display = 'none';
+                    console.error('Error exporting data:', error);
+                    showToast('Failed to export data. Please try again.', 'error');
+                });
+        });
+    }
+    
+    const tenantSelect = document.getElementById('tenantSelect');
+    if(tenantSelect) {
+        tenantSelect.addEventListener('change', () => {
+            const selectedOption = tenantSelect.options[tenantSelect.selectedIndex];
+            const rentAmount = selectedOption.getAttribute('data-rent');
+            if (rentAmount) {
+                document.getElementById('paymentAmount').value = rentAmount;
+            }
+        });
+    }
+});
 </script>
 {% endblock %}

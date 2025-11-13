@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
-from models.models import House
-
+from models.models import House, db
+from flask_login import current_user
 
 main_bp = Blueprint('main', __name__)
 
@@ -112,8 +112,87 @@ def subscribe_post():
 
 @main_bp.route('/properties')
 def properties_list():
-    houses = House.query.all()
-    return render_template('properties.html', houses=houses)
+    # Get query parameters
+        page = request.args.get('page', 1, type=int)
+        per_page = 12
+        query = request.args.get('query', '')
+        property_type = request.args.get('property_type', '')
+        price_range = request.args.get('price_range', '')
+        bedrooms = request.args.get('bedrooms', '', type=int)
+        sort = request.args.get('sort', 'newest')
+    
+    
+    # Start with base query
+        houses_query = House.query.filter_by(available=True)
+        #.order_by(House.id.desc()).get(id).all()----------causes a crash
+         # --- DEBUGGING PRINT ---
+    # This will print in your terminal. Check it to see the values.
+        print(f"URL Parameters -> query: '{query}', type: '{property_type}', price: '{price_range}', beds: '{bedrooms}'")
+        
+        all_properties = House.query.all()
+        print(f"DEBUG: Total properties in DB: {len(all_properties)}")
+        for prop in all_properties:
+            print(f"  - ID: {prop.id}, Title: {prop.title}, Available: {prop.available}")
+    # --- END DEBUGGING STEP ---
+    
+    # Apply filters
+        if query:
+           houses_query = houses_query.filter(
+                db.or_(
+                    House.title.contains(query),
+                    House.description.contains(query),
+                    House.location.contains(query)
+                )
+            )
+    
+        if property_type:
+            houses_query = houses_query.filter(House.property_type == property_type)
+    
+        if price_range:
+            if price_range == '0-10000':
+                houses_query = houses_query.filter(House.price <= 10000)
+            elif price_range == '10000-25000':
+                houses_query = houses_query.filter(House.price.between(10000, 25000))
+            elif price_range == '25000-50000':
+                houses_query = houses_query.filter(House.price.between(25000, 50000))
+            elif price_range == '50000+':
+                houses_query = houses_query.filter(House.price > 50000)
+    
+        if bedrooms:
+            houses_query = houses_query.filter(House.bedrooms == bedrooms)
+    
+    # Apply sorting
+        if sort == 'newest':
+            houses_query = houses_query.order_by(House.id.desc())
+        elif sort == 'price_low':
+            houses_query = houses_query.order_by(House.rent_amount.asc())
+        elif sort == 'price_high':
+            houses_query = houses_query.order_by(House.rent_amount.desc())
+        elif sort == 'popular':
+        # This would need additional logic based on views, bookings, etc.
+            houses_query = houses_query.order_by(House.id.desc())
+    
+    # Paginate results
+        houses = houses_query.paginate(page=page, per_page=per_page, error_out=False)
+    # --- ANOTHER DEBUGGING STEP ---
+        print(f"DEBUG: Properties after filtering/pagination: {len(houses.items)}")
+    # --- END DEBUGGING STEP ---
+    # Calculate total pages for pagination
+        #total_pages = properties.pages
+    
+        return render_template(
+            'properties.html',
+            properties=houses.items,
+            page=page,
+            #total_pages=houses_pages,
+            query=query,
+            property_type=property_type,
+            price_range=price_range,
+            bedrooms=bedrooms,
+            sort=sort,
+            is_guest=not current_user.is_authenticated
+          
+        )
 
 @main_bp.route('/property/<int:house_id>')
 def view_property(house_id):

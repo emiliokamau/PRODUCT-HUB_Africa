@@ -141,11 +141,11 @@ def profile():
             db.session.rollback()
             flash(f"An error occurred: {str(e)}", "error")
 
-        return redirect(url_for('service_provider.profile'))
+        return redirect(url_for('service_provider_profile.profile'))
 
     # Render profile template
     return render_template(
-        'service_provider/profile.html',
+        'service_provider_profile.html',
         provider=provider,
         current_user=current_user
     )

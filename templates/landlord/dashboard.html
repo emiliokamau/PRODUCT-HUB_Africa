@@ -789,35 +789,38 @@
     <div class="content-card">
       <div class="card-header">
         <h3 class="card-title">
-          <i class="fas fa-users"></i>
-          Recent Tenants
+          <i class="fas fa-check-square"></i>
+          Pending Bookings
         </h3>
-        <a
-          href="{{ url_for('landlord.tenants') }}"
-          class="card-action"
-        >
+        <a href="{{ url_for('landlord.tenants') }}" class="card-action">
           View All
         </a>
       </div>
-      <div class="card-body">
-        {% if tenants %}
-          {% for tenant, booking, house in tenants[:3] %}
-          <div class="property-item">
+      <div class="card-body" id="pending-bookings-list">
+        {% if pending_bookings %}
+          {% for booking in pending_bookings %}
+          <div class="property-item" id="booking-item-{{ booking.id }}">
             <div class="property-info">
-              <p><strong>{{ tenant.name }}</strong></p>
-              <p>{{ house.title }}</p>
-              <small>{{ booking.lease_start_date.strftime('%b %d, %Y') }} - Duration: {{ booking.stay_duration }}</small>
-
+              <p><strong>{{ booking.tenant.name }}</strong></p>
+              <p>{{ booking.house.title }}</p>
+              <small>
+                Move-in: {{ booking.move_in_date | datetimeformat('%b %d, %Y') | default('N/A') }}
+              </small>
             </div>
             <div>
-              <a href="{{ url_for('landlord.tenants') }}" class="btn btn-sm btn-outline">
-                View
-              </a>
+              <button class="btn btn-sm btn-outline" style="--primary: #06ffa5; color: #06ffa5; border-color: #06ffa5;" 
+                      onclick="handleBooking({{ booking.id }}, 'approve')">
+                Approve
+              </button>
+              <button class="btn btn-sm btn-outline" style="--primary: #e63946; color: #e63946; border-color: #e63946;" 
+                      onclick="handleBooking({{ booking.id }}, 'reject')">
+                Reject
+              </button>
             </div>
           </div>
           {% endfor %}
         {% else %}
-        <p>No tenants yet.</p>
+          <p>No pending bookings.</p>
         {% endif %}
       </div>
     </div>
@@ -992,5 +995,46 @@
       revenueChart.update();
     });
   });
+//new added booking
+  function handleBooking(bookingId, action) {
+    if (!confirm(`Are you sure you want to ${action} this booking?`)) {
+      return;
+    }
+
+    fetch(`/api/bookings/${bookingId}/${action}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // This token is available from your app.py context processor
+        'X-CSRFToken': '{{ csrf_token }}' 
+      },
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        // Show success message (you can make this a nicer alert)
+        alert(data.message);
+        
+        // Remove the item from the list
+        const item = document.getElementById(`booking-item-${bookingId}`);
+        if (item) {
+          item.remove();
+        }
+
+        // Check if list is now empty
+        const list = document.getElementById('pending-bookings-list');
+        if (!list.querySelector('.property-item')) {
+          list.innerHTML = '<p>No pending bookings.</p>';
+        }
+
+      } else {
+        alert('Error: ' + (data.message || 'Unknown error'));
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred. Please try again.');
+    });
+  }
 </script>
 {% endblock %}

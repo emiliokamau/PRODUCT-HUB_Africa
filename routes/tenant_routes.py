@@ -4,7 +4,7 @@ from datetime import date, date, datetime
 from io import BytesIO
 import os
 from models.models import Document
-from flask import Blueprint, current_app, flash, jsonify, render_template, request, redirect, url_for
+from flask import Blueprint, current_app, flash, jsonify, render_template, request, redirect, url_for, abort
 from flask_login import login_required, current_user
 import pyotp
 from models.models import Booking, MaintenanceRequest, Message, House, Notification, Payment, User
@@ -14,9 +14,13 @@ from werkzeug.utils import secure_filename
 import base64
 from .forms import BookingForm
 from utils import booking_to_dict
+import uuid
+from dateutil.relativedelta import relativedelta
+import requests
+from models.models import MaintenanceRequest, Payment
+from models.models import ChatMessage
 
-
-from routes.service_routes import requests  # Needed for encoding password for STK push
+#from routes.service_routes import requests  # Needed for encoding password for STK push,this can causecircular loop
 
 tenant_bp = Blueprint('tenant', __name__, url_prefix='/tenant')
 
@@ -112,68 +116,84 @@ def mpesa_callback():
 @tenant_bp.route('/dashboard')
 @login_required
 def dashboard():
-    # Ensure the user is a tenant
+    # 1. Ensure the user is a tenant
     if current_user.role != 'tenant':
         flash('Access restricted to tenants.', category='error')
         return redirect(url_for('auth.login'))
 
-    # Fetch the tenant's active booking and associated house
-    active_booking = Booking.query.filter_by(
-        tenant_id=current_user.id, status='active'
-    ).first()
+    # 2. Fetch ALL data needed for the dashboard in one place
 
-    house = None
-    landlord = None
-    if active_booking:
-        house = House.query.get(active_booking.house_id)
-        if house and house.owner_id:
-            landlord = User.query.filter_by(
-                id=house.owner_id, role='landlord'
-            ).first()
+    # This is our new "smart" list for the main booking card(s)
+    active_bookings = Booking.query.filter(
+        Booking.tenant_id == current_user.id,
+        Booking.status.notin_(['Rejected', 'Revoked', 'Expired', 'Cancelled'])
+    ).order_by(Booking.created_at.desc()).all()
 
-    # Fetch other required data
-    bookings = Booking.query.filter_by(tenant_id=current_user.id).all()
+    # These are for your other cards (Payment History, Maintenance, etc.)
     payments = Payment.query.filter_by(
         tenant_id=current_user.id
     ).order_by(Payment.date.desc()).all()
+    
     maintenance_requests = MaintenanceRequest.query.filter_by(
         tenant_id=current_user.id
     ).order_by(MaintenanceRequest.date_submitted.desc()).all()
+    
     notifications = Notification.query.filter_by(
         tenant_id=current_user.id
     ).order_by(Notification.date.desc()).all()
+    
     events = Event.query.filter_by(tenant_id=current_user.id).all()
 
+    # This is for your "Open Requests" stat card
     open_requests_count = len([
         req for req in maintenance_requests
         if req.status.lower() in ['open', 'in progress']
     ])
+    
+    # --- ✅ NEW LOGIC TO FIND THE PRIMARY LANDLORD ---
+    landlord = None
+    confirmed_booking = None
+    for b in active_bookings:
+        if b.status == 'Confirmed':
+            confirmed_booking = b
+            break
+    
+    if confirmed_booking and confirmed_booking.house and confirmed_booking.house.owner:
+        landlord = confirmed_booking.house.owner
+    # This is for your "Next Payment" stat card
+    # We update the logic to get the *correct* next payment from our new plan
+    next_payment = None
+    confirmed_booking = Booking.query.filter_by(
+        tenant_id=current_user.id, 
+        status='Confirmed'
+    ).first()
+    
+    if confirmed_booking and confirmed_booking.next_rent_payment_due:
+         next_payment = {
+             'due_date': confirmed_booking.next_rent_payment_due,
+             'amount': confirmed_booking.house.rent_amount
+         }
 
-    # Next payment
-    next_payment = Payment.query.filter_by(
-        tenant_id=current_user.id, status='Pending'
-    ).order_by(Payment.due_date.asc()).first()
-
-    # Payment chart data
+    # This is for your "Payment Trends" chart
     payment_labels = [p.date.strftime('%b %Y') for p in payments]
     payment_data = [p.amount for p in payments]
 
+    # 3. Render the template ONE time with ALL the data
     return render_template(
         'tenant.html',
-        property=house,               # renamed to match your template
-        bookings=bookings,
+        active_bookings=active_bookings,  # For our new main card
         payments=payments,
         maintenance_requests=maintenance_requests,
         notifications=notifications,
-        landlord=landlord,            # ✅ always available in template (or None)
         events=events,
         open_requests_count=open_requests_count,
         next_payment=next_payment,
         payment_labels=payment_labels,
-        payment_data=payment_data
+        payment_data=payment_data,
+        landlord=landlord
+        # We REMOVE the old 'property', 'landlord', and 'bookings' variables
+        # because they are now replaced by the 'active_bookings' loop
     )
-
-
 # Make a booking for a house
 @tenant_bp.route('/book/<int:house_id>', methods=['GET', 'POST'])
 @login_required
@@ -250,12 +270,22 @@ def booking_page(booking_id):
     # Ensure the current tenant owns this booking
     if booking.tenant_id != current_user.id:
         os.abort(403)
-
+    
+    if booking.status == 'Pending':
+        flash('This booking is still awaiting landlord approval.', 'info')
+        return redirect(url_for('tenant.all_bookings'))
+    if booking.status == 'Confirmed':
+        flash('You have already paid the deposit for this booking.', 'success')
+        return redirect(url_for('tenant.all_bookings'))
+    if booking.status not in ['Awaiting Deposit']:
+        flash('This booking cannot be paid for.', 'danger')
+        return redirect(url_for('tenant.all_bookings'))
+    
     # Convert to dictionary for template
-    booking_data = booking_to_dict(booking)
+    #booking_data = booking_to_dict(booking)
 
     # Render template
-    return render_template('tenant/tenant_booking_page.html', booking=booking_data)
+    return render_template('tenant/tenant_booking_page.html', booking=booking)
 
 
 
@@ -348,11 +378,17 @@ def payment_history():
 # -----------------------------
 # Receipts
 # -----------------------------
-@tenant_bp.route('/receipts')
-@login_required
-def receipts():
-    receipts = receipts.query.filter_by(tenant_id=current_user.id).order_by(receipts.date.desc()).all()
-    return render_template('tenant/receipts.html', receipts=receipts)
+# @tenant_bp.route('/receipts')
+# @login_required
+# def receipts():
+#     # ✅ FIX: Query the 'Payment' model, not the 'receipts' variable
+#     # We also filter for 'Paid' status to only show completed receipts
+#     all_receipts = Payment.query.filter_by(
+#         tenant_id=current_user.id, 
+#         status='Paid'
+#     ).order_by(Payment.date.desc()).all()
+
+#     return render_template('tenant/receipt.html', receipts=all_receipts)
 
 @tenant_bp.route('/submit_request', methods=['GET', 'POST'])
 @login_required
@@ -377,42 +413,83 @@ def submit_request():
 
     return render_template('submit_request.html')
 
+@tenant_bp.route('/requests')
+@login_required
+def requests():
+    # This is the page for the "View All" link
+    all_requests = MaintenanceRequest.query.filter_by(
+        tenant_id=current_user.id
+    ).order_by(MaintenanceRequest.date_submitted.desc()).all()
+    
+    # You'll need to create a new template for this: 'tenant_requests.html'
+    return render_template('tenant/tenant_requests.html', requests=all_requests)
 # -----------------------------
 # Pay Rent - Submit Payment
 # -----------------------------
 @tenant_bp.route('/pay_rent', methods=['GET', 'POST'])
 @login_required
 def pay_rent():
+    # Find the tenant's confirmed booking
+    booking = Booking.query.filter_by(
+        tenant_id=current_user.id,
+        status='Confirmed'
+    ).first()
+
+    if not booking:
+        flash("You do not have an active, confirmed booking.", "danger")
+        return redirect(url_for('tenant.dashboard'))
+
     if request.method == 'POST':
-        # Validate amount
         try:
             amount = float(request.form.get('amount'))
-            if amount <= 0:
-                flash("Invalid payment amount.", "danger")
+            if amount != booking.house.rent_amount:
+                flash(f"Incorrect rent amount. Please pay KES {booking.house.rent_amount}.", "danger")
                 return redirect(url_for('tenant.pay_rent'))
         except (ValueError, TypeError):
             flash("Please enter a valid numeric amount.", "danger")
             return redirect(url_for('tenant.pay_rent'))
 
-        # Create payment record with 'Pending' status
-        payment = Payment(
+        # Here you would call your MPESA STK push logic
+        # For now, we simulate success just like in your /process_payment route
+        
+        # 1. Create the Payment record for this rent payment
+        rent_payment = Payment(
             tenant_id=current_user.id,
+            booking_id=booking.id,
             amount=amount,
             date=datetime.utcnow(),
-            status='Pending'
+            status='Paid',
+            # e.g., "Rent - November 2025"
+            payment_for=f"Rent - {booking.next_rent_payment_due.strftime('%B %Y')}",
+            receipt_id=f"RCPT-{uuid.uuid4().hex[:10].upper()}"
         )
-        db.session.add(payment)
+        
+        # 2. Update the *next* payment due date
+        # (This assumes monthly payment, update as-needed)
+        booking.next_rent_payment_due = booking.next_rent_payment_due + relativedelta(months=1)
+        
+        db.session.add(rent_payment)
         db.session.commit()
+        
+        flash("Rent paid successfully! A receipt has been generated.", "success")
+        return redirect(url_for('tenant.payment_history'))
 
-        flash("Payment initiated. Please complete the payment.", "success")
-        return redirect(url_for('tenant.process_payment', payment_id=payment.id))
-
-    return render_template('pay_rent.html')
+    return render_template('pay_rent.html', booking=booking)
 
 
-@tenant_bp.route('/profile')
+@tenant_bp.route('/profile', methods=['GET', 'POST']) # <-- Add 'POST'
 @login_required
 def profile():
+    if request.method == 'POST':
+        # Handle the form submission
+        current_user.name = request.form.get('name')
+        current_user.email = request.form.get('email')
+        # ... handle profile picture upload ...
+        
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        return redirect(url_for('tenant.profile'))
+
     return render_template('profile.html', tenant=current_user)
 
 @tenant_bp.route('/feedback', methods=['GET', 'POST'])
@@ -488,7 +565,12 @@ def move_out(booking_id):
     db.session.commit()
     return redirect(url_for('tenant.dashboard'))
 
-
+@tenant_bp.route('/Browse properties')
+@login_required
+def browse_properties():
+    houses = House.query.filter_by(available=True).all()
+    return render_template("properties.html", houses=houses)
+    
 
 # View all bookings
 @tenant_bp.route('/all_bookings')
@@ -509,7 +591,18 @@ def messages():
 
     return render_template("tenant/messages.html", messages=tenant_messages)
 
-
+@tenant_bp.route('/receipt/<string:receipt_id>')
+@login_required
+def view_receipt(receipt_id):
+    payment = Payment.query.filter_by(receipt_id=receipt_id).first_or_404()
+    
+    # Security check: must be the tenant
+    if payment.tenant_id != current_user.id:
+        # (We can also add a check for the landlord later)
+        os.abort(403) 
+        
+    # Make sure you have created the 'tenant/receipt.html' template
+    return render_template('tenant/receipt.html', payment=payment)
 
 # Contact service providers
 @tenant_bp.route('/contact_providers')
@@ -524,25 +617,24 @@ def contact_providers():
     )
 
 # Chat with landlord
-@tenant_bp.route('/chat/<int:landlord_id>', methods=['GET', 'POST'])
+@tenant_bp.route('/chat/history/<int:landlord_id>', methods=['GET'])
 @login_required
-def chat(landlord_id):
-    if request.method == 'POST':
-        message = Message(
-            sender_id=current_user.id,
-            receiver_id=landlord_id,
-            content=request.form['message']
-        )
-        db.session.add(message)
-        db.session.commit()
-
+def chat_history(landlord_id):
     messages = Message.query.filter(
         ((Message.sender_id == current_user.id) & (Message.receiver_id == landlord_id)) |
         ((Message.sender_id == landlord_id) & (Message.receiver_id == current_user.id))
     ).order_by(Message.timestamp.asc()).all()
 
-    landlord = User.query.get(landlord_id)
-    return render_template('chat.html', messages=messages, user=landlord)
+    # Convert messages to a simple dictionary format for JSON
+    messages_list = [
+        {
+            'sender_id': msg.sender_id,
+            'content': msg.content,
+            'timestamp': msg.timestamp.isoformat()
+        } for msg in messages
+    ]
+    
+    return jsonify(messages=messages_list)
 
 
 # routes/tenant_routes.py

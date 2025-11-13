@@ -22,7 +22,7 @@ class User(db.Model, UserMixin):
 
     first_name = db.Column(db.String(100))
     last_name = db.Column(db.String(100))
-    profile_picture = db.Column(db.String(255))
+    #profile_picture = db.Column(db.String(255))
 
     # Relationships
     houses = db.relationship('House', backref='owner', lazy=True)
@@ -38,7 +38,7 @@ class User(db.Model, UserMixin):
         backref='receiver',
         lazy=True
     )
-    payments = db.relationship('Payment', backref='tenant', lazy=True)
+    payments = db.relationship('Payment', back_populates='tenant')
     maintenance_requests = db.relationship('MaintenanceRequest', backref='tenant', lazy=True)
     notifications = db.relationship('Notification', backref='tenant', lazy=True)
     events = db.relationship('Event', backref='tenant', lazy=True)
@@ -214,6 +214,9 @@ class Booking(db.Model):
     payment_method = db.Column(db.String(50))
     agree_terms = db.Column(db.Boolean, default=False)
     payment_status = db.Column(db.String(20), default="Pending")  # Pending, Paid, Failed
+    
+    payments = db.relationship('Payment', back_populates='booking')
+    next_rent_payment_due = db.Column(db.DateTime, nullable=True)
 
 
 
@@ -267,22 +270,22 @@ class Review(db.Model):
     service_provider = db.relationship('ServiceProvider', backref='reviews')
 
 
-lease_start_date = db.Column(db.Date, nullable=False)
-lease_term = db.Column(db.String(50), nullable=False)
+# lease_start_date = db.Column(db.Date, nullable=False)
+# lease_term = db.Column(db.String(50), nullable=False)
 
-occupants_count = db.Column(db.Integer, nullable=False)
-pets = db.Column(db.String(10), nullable=True)
+# occupants_count = db.Column(db.Integer, nullable=False)
+# pets = db.Column(db.String(10), nullable=True)
 
-emergency_contact_name = db.Column(db.String(100), nullable=False)
-emergency_contact_phone = db.Column(db.String(50), nullable=False)
-emergency_contact_relationship = db.Column(db.String(50), nullable=False)
+# emergency_contact_name = db.Column(db.String(100), nullable=False)
+# emergency_contact_phone = db.Column(db.String(50), nullable=False)
+# emergency_contact_relationship = db.Column(db.String(50), nullable=False)
 
-payment_method = db.Column(db.String(50), nullable=False)
-first_name = db.Column(db.String(100), nullable=False)
-last_name = db.Column(db.String(100), nullable=False)
-email = db.Column(db.String(100), nullable=False)
-phone = db.Column(db.String(50), nullable=False)
-current_address = db.Column(db.String(255), nullable=False)
+# payment_method = db.Column(db.String(50), nullable=False)
+# first_name = db.Column(db.String(100), nullable=False)
+# last_name = db.Column(db.String(100), nullable=False)
+# email = db.Column(db.String(100), nullable=False)
+# phone = db.Column(db.String(50), nullable=False)
+# current_address = db.Column(db.String(255), nullable=False)
 
 
 class Document(db.Model):
@@ -319,6 +322,15 @@ class Payment(db.Model):
     date = db.Column(db.Date, nullable=False)
     due_date = db.Column(db.Date)
     status = db.Column(db.String(20), default='Pending')
+    
+    booking_id = db.Column(db.Integer, db.ForeignKey('bookings.id'), nullable=True)
+    payment_for = db.Column(db.String(100), nullable=True)
+    receipt_id = db.Column(db.String(100), unique=True, nullable=True)
+    checkout_request_id = db.Column(db.String(100), nullable=True, index=True)
+    
+    # Define relationships (optional but good practice)
+    tenant = db.relationship('User', back_populates='payments')
+    booking = db.relationship('Booking', back_populates='payments')
 
 
 class MaintenanceRequest(db.Model):
@@ -359,15 +371,15 @@ class ChatMessage(db.Model):
     user = db.relationship('User', foreign_keys=[user_id], back_populates='sent_chat_messages')
     agent = db.relationship('User', foreign_keys=[support_agent_id], back_populates='received_chat_messages')
 
-class Receipt(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    tenant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'))
-    amount = db.Column(db.Float, nullable=False)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
+# class Receipt(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     tenant_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+#     payment_id = db.Column(db.Integer, db.ForeignKey('payment.id'))
+#     amount = db.Column(db.Float, nullable=False)
+#     date = db.Column(db.DateTime, default=datetime.utcnow)
 
-    tenant = db.relationship('User', backref='receipts')
-    payment = db.relationship('Payment', backref='receipt')
+#     tenant = db.relationship('User', backref='receipts')
+#     payment = db.relationship('Payment', backref='receipt')
 
 
 

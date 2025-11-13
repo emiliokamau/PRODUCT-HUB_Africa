@@ -719,403 +719,238 @@
 {% endblock %} 
 
 {% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
 <script>
-  // Sample data - in production, this would come from your backend
-  let conversations = [
-    {
-      id: 1,
-      name: 'John Doe',
-      avatar: 'https://picsum.photos/seed/john/50/50',
-      lastMessage: 'Hi, I have a question about the rent payment',
-      time: '2 min ago',
-      unread: 2,
-      online: true,
-      property: 'Property A - Apartment 101'
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      avatar: 'https://picsum.photos/seed/jane/50/50',
-      lastMessage: 'Thank you for fixing the plumbing issue',
-      time: '1 hour ago',
-      unread: 0,
-      online: false,
-      property: 'Property B - House 202'
-    },
-    {
-      id: 3,
-      name: 'Mike Johnson',
-      avatar: 'https://picsum.photos/seed/mike/50/50',
-      lastMessage: 'Can I schedule a viewing for this weekend?',
-      time: '3 hours ago',
-      unread: 1,
-      online: true,
-      property: 'Property C - Studio 305'
-    },
-    {
-      id: 4,
-      name: 'Sarah Williams',
-      avatar: 'https://picsum.photos/seed/sarah/50/50',
-      lastMessage: 'The lease agreement looks good, I\'ll sign it',
-      time: 'Yesterday',
-      unread: 0,
-      online: false,
-      property: 'Property A - Apartment 203'
-    },
-    {
-      id: 5,
-      name: 'David Brown',
-      avatar: 'https://picsum.photos/seed/david/50/50',
-      lastMessage: 'Is parking included in the rent?',
-      time: '2 days ago',
-      unread: 0,
-      online: false,
-      property: 'Property D - Townhouse 105'
-    }
-  ];
-
-  let messages = {
-    1: [
-      { id: 1, sender: 'tenant', content: 'Hi, I have a question about the rent payment', time: '10:30 AM' },
-      { id: 2, sender: 'landlord', content: 'Hello! Sure, what would you like to know?', time: '10:32 AM' },
-      { id: 3, sender: 'tenant', content: 'I was wondering if I can pay this month\'s rent on the 5th instead of the 1st', time: '10:35 AM' },
-      { id: 4, sender: 'landlord', content: 'That should be fine. Just let me know in advance next time.', time: '10:36 AM' }
-    ],
-    2: [
-      { id: 1, sender: 'tenant', content: 'The plumbing issue has been fixed, thank you!', time: 'Yesterday' },
-      { id: 2, sender: 'landlord', content: 'Great to hear! Let me know if you have any other issues.', time: 'Yesterday' },
-      { id: 3, sender: 'tenant', content: 'Thank you for fixing the plumbing issue', time: 'Yesterday' }
-    ]
-  };
-
-  let currentConversation = null;
-  let isTyping = false;
-
-  document.addEventListener('DOMContentLoaded', function() {
-    loadConversations();
-    setupEventListeners();
-  });
-
-  function loadConversations() {
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // --- 1. GET ALL HTML ELEMENTS ---
+    const socket = io();
+    const chatPlaceholder = document.getElementById('emptyState');
+    const chatHeader = document.getElementById('chatHeader');
+    const chatUserAvatar = document.getElementById('chatUserAvatar');
+    const chatUserName = document.getElementById('chatUserName');
+    const chatUserStatus = document.getElementById('chatUserStatus');
+    const chatMessages = document.getElementById('messagesArea');
+    const chatInputArea = document.getElementById('messageInputArea');
+    const chatInput = document.getElementById('messageInput');
+    const sendChatBtn = document.querySelector('.message-action-btn.send');
     const conversationsList = document.getElementById('conversationsList');
-    conversationsList.innerHTML = '';
-
-    conversations.forEach(conv => {
-      const conversationItem = document.createElement('div');
-      conversationItem.className = 'conversation-item';
-      conversationItem.onclick = () => selectConversation(conv.id);
-      
-      conversationItem.innerHTML = `
-        <img src="${conv.avatar}" alt="${conv.name}" class="conversation-avatar">
-        <div class="conversation-info">
-          <div class="conversation-name">${conv.name}</div>
-          <div class="conversation-message">${conv.lastMessage}</div>
-        </div>
-        <div class="conversation-meta">
-          <div class="conversation-time">${conv.time}</div>
-          ${conv.unread > 0 ? `<span class="unread-badge">${conv.unread}</span>` : ''}
-        </div>
-      `;
-      
-      conversationsList.appendChild(conversationItem);
-    });
-  }
-
-  function selectConversation(conversationId) {
-    currentConversation = conversations.find(c => c.id === conversationId);
+    const searchInput = document.getElementById('searchConversations');
     
-    if (!currentConversation) return;
-
-    // Update active state
-    document.querySelectorAll('.conversation-item').forEach(item => {
-      item.classList.remove('active');
-    });
-    event.currentTarget.classList.add('active');
-
-    // Update chat header
-    document.getElementById('chatUserName').textContent = currentConversation.name;
-    document.getElementById('chatUserStatus').textContent = currentConversation.property;
-    document.getElementById('chatUserAvatar').src = currentConversation.avatar;
-
-    // Clear unread badge
-    currentConversation.unread = 0;
-    loadConversations();
-
-    // Load messages
-    loadMessages(conversationId);
-
-    // Show message input area
-    document.getElementById('messageInputArea').style.display = 'block';
-    document.getElementById('emptyState').style.display = 'none';
-
-    // Hide conversations on mobile
-    if (window.innerWidth <= 992) {
-      document.getElementById('conversationsPanel').classList.remove('mobile-show');
-    }
-  }
-
-  function loadMessages(conversationId) {
-    const messagesArea = document.getElementById('messagesArea');
-    const conversationMessages = messages[conversationId] || [];
-
-    messagesArea.innerHTML = '';
-
-    // Add date separator
-    const dateSeparator = document.createElement('div');
-    dateSeparator.className = 'date-separator';
-    dateSeparator.innerHTML = '<span>Today</span>';
-    messagesArea.appendChild(dateSeparator);
-
-    conversationMessages.forEach(msg => {
-      addMessageToUI(msg);
-    });
-
-    // Scroll to bottom
-    messagesArea.scrollTop = messagesArea.scrollHeight;
-  }
-
-  function addMessageToUI(message) {
-    const messagesArea = document.getElementById('messagesArea');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${message.sender === 'landlord' ? 'sent' : 'received'}`;
+    let currentReceiverId = null;
+    let currentUserId = {{ current_user.id }};
     
-    const messageTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    // This will store the real conversation data from the backend
+    let allContacts = [];
     
-    messageDiv.innerHTML = `
-      <div class="message-bubble">
-        <div class="message-content">${message.content}</div>
-        <div class="message-time">${messageTime}</div>
-        ${message.sender === 'landlord' ? `
-          <div class="message-status">
-            <i class="fas fa-check" style="font-size: 0.75rem;"></i>
-          </div>
-        ` : ''}
-      </div>
-    `;
-    
-    messagesArea.appendChild(messageDiv);
-    messagesArea.scrollTop = messagesArea.scrollHeight;
-  }
-
-  function sendMessage() {
-    const input = document.getElementById('messageInput');
-    const message = input.value.trim();
-    
-    if (!message || !currentConversation) return;
-
-    // Add message to UI
-    const newMessage = {
-      id: Date.now(),
-      sender: 'landlord',
-      content: message,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    
-    addMessageToUI(newMessage);
-
-    // Add to messages array
-    if (!messages[currentConversation.id]) {
-      messages[currentConversation.id] = [];
-    }
-    messages[currentConversation.id].push(newMessage);
-
-    // Clear input
-    input.value = '';
-    input.style.height = 'auto';
-
-    // Simulate sending to backend
-    console.log('Sending message:', message);
-
-    // Simulate typing indicator
-    setTimeout(() => showTypingIndicator(), 1000);
-    setTimeout(() => {
-      hideTypingIndicator();
-      simulateReply();
-    }, 3000);
-  }
-
-  function showTypingIndicator() {
-    const messagesArea = document.getElementById('messagesArea');
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'message received';
-    typingDiv.id = 'typingIndicator';
-    typingDiv.innerHTML = `
-      <div class="typing-indicator">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-      </div>
-    `;
-    messagesArea.appendChild(typingDiv);
-    messagesArea.scrollTop = messagesArea.scrollHeight;
-  }
-
-  function hideTypingIndicator() {
-    const typingIndicator = document.getElementById('typingIndicator');
-    if (typingIndicator) {
-      typingIndicator.remove();
-    }
-  }
-
-  function simulateReply() {
-    const replies = [
-      'Thanks for letting me know!',
-      'I understand. I\'ll get back to you on that.',
-      'That sounds good to me.',
-      'No problem, happy to help!',
-      'I appreciate your quick response.'
+    // --- 2. LOAD INITIAL CONTACTS ---
+    // We use the 'contacts' list passed from the landlord_routes.py 'messages' function
+    const contactsData = [
+        {% for contact in contacts %}
+        {
+            id: {{ contact.id }},
+            name: '{{ contact.name }}',
+            avatar: '{{ url_for('static', filename=contact.profile_picture or 'images/default-avatar.png') }}',
+            lastMessage: 'Click to view messages...',
+            time: '',
+            unread: 0
+        },
+        {% endfor %}
     ];
+    allContacts = contactsData;
+    loadConversations(allContacts);
 
-    const reply = replies[Math.floor(Math.random() * replies.length)];
-    const replyMessage = {
-      id: Date.now(),
-      sender: 'tenant',
-      content: reply,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
+    // --- 3. CONNECT TO SOCKET.IO ---
+    socket.on('connect', () => {
+        console.log('Socket.IO connected for Landlord');
+        socket.emit('join_peer_room'); 
+    });
 
-    addMessageToUI(replyMessage);
-    messages[currentConversation.id].push(replyMessage);
-  }
-
-  function handleKeyPress(event) {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      sendMessage();
-    }
-  }
-
-  function showNewMessageModal() {
-    document.getElementById('newMessageModal').style.display = 'flex';
-  }
-
-  function hideNewMessageModal() {
-    document.getElementById('newMessageModal').style.display = 'none';
-  }
-
-  function createNewConversation() {
-    const tenantSelect = document.getElementById('tenantSelect');
-    const messageContent = document.getElementById('newMessageContent');
+    // --- 4. FUNCTION DEFINITIONS ---
     
-    if (!tenantSelect.value || !messageContent.value.trim()) {
-      alert('Please select a tenant and enter a message');
-      return;
+    function loadConversations(contacts) {
+        conversationsList.innerHTML = '';
+        if (contacts.length === 0) {
+            conversationsList.innerHTML = '<p class="p-3 text-muted">No contacts found.</p>';
+            return;
+        }
+
+        contacts.forEach(conv => {
+            const conversationItem = document.createElement('div');
+            conversationItem.className = 'conversation-item';
+            conversationItem.dataset.userId = conv.id;
+            conversationItem.dataset.userName = conv.name;
+            conversationItem.dataset.userAvatar = conv.avatar;
+            conversationItem.onclick = () => selectConversation(conv);
+            
+            conversationItem.innerHTML = `
+                <img src="${conv.avatar}" alt="${conv.name}" class="conversation-avatar">
+                <div class="conversation-info">
+                  <div class="conversation-name">${conv.name}</div>
+                  <div class="conversation-message">${conv.lastMessage}</div>
+                </div>
+                <div class="conversation-meta">
+                  <div class="conversation-time">${conv.time}</div>
+                  ${conv.unread > 0 ? `<span class="unread-badge">${conv.unread}</span>` : ''}
+                </div>
+            `;
+            conversationsList.appendChild(conversationItem);
+        });
     }
 
-    // Create new conversation
-    const newConv = {
-      id: Date.now(),
-      name: tenantSelect.options[tenantSelect.selectedIndex].text.split(' - ')[0],
-      avatar: `https://picsum.photos/seed/user${Date.now()}/50/50`,
-      lastMessage: messageContent.value.trim(),
-      time: 'Just now',
-      unread: 0,
-      online: true,
-      property: tenantSelect.options[tenantSelect.selectedIndex].text.split(' - ')[1]
-    };
-
-    conversations.unshift(newConv);
-    loadConversations();
-    selectConversation(newConv.id);
-
-    // Add initial message
-    messages[newConv.id] = [{
-      id: Date.now(),
-      sender: 'landlord',
-      content: messageContent.value.trim(),
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }];
-
-    hideNewMessageModal();
-    document.getElementById('tenantSelect').value = '';
-    document.getElementById('newMessageContent').value = '';
-  }
-
-  function showConversationsList() {
-    document.getElementById('conversationsPanel').classList.add('mobile-show');
-  }
-
-  function attachFile() {
-    // Create file input
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.onchange = function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        console.log('File attached:', file.name);
-        // Handle file upload here
-      }
-    };
-    fileInput.click();
-  }
-
-  function insertEmoji() {
-    // Simple emoji picker - in production, use a proper emoji picker library
-    const emojis = ['😊', '😂', '❤️', '👍', '🎉', '🔥', '💯', '✨'];
-    const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-    const input = document.getElementById('messageInput');
-    input.value += emoji;
-    input.focus();
-  }
-
-  function startVideoCall() {
-    alert('Video call feature coming soon!');
-  }
-
-  function startVoiceCall() {
-    alert('Voice call feature coming soon!');
-  }
-
-  function showConversationOptions() {
-    alert('More options coming soon!');
-  }
-
-  function setupEventListeners() {
-    // Search conversations
-    document.getElementById('searchConversations').addEventListener('input', function(e) {
-      const searchTerm = e.target.value.toLowerCase();
-      const filteredConversations = conversations.filter(conv => 
-        conv.name.toLowerCase().includes(searchTerm) ||
-        conv.property.toLowerCase().includes(searchTerm)
-      );
-      
-      const conversationsList = document.getElementById('conversationsList');
-      conversationsList.innerHTML = '';
-      
-      filteredConversations.forEach(conv => {
-        const conversationItem = document.createElement('div');
-        conversationItem.className = 'conversation-item';
-        conversationItem.onclick = () => selectConversation(conv.id);
+    async function selectConversation(contact) {
+        currentReceiverId = contact.id;
         
-        conversationItem.innerHTML = `
-          <img src="${conv.avatar}" alt="${conv.name}" class="conversation-avatar">
-          <div class="conversation-info">
-            <div class="conversation-name">${conv.name}</div>
-            <div class="conversation-message">${conv.lastMessage}</div>
-          </div>
-          <div class="conversation-meta">
-            <div class="conversation-time">${conv.time}</div>
-            ${conv.unread > 0 ? `<span class="unread-badge">${conv.unread}</span>` : ''}
-          </div>
+        // Highlight the active chat
+        document.querySelectorAll('.conversation-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector(`.conversation-item[data-user-id="${contact.id}"]`).classList.add('active');
+
+        // Show the chat window
+        chatPlaceholder.style.display = 'none';
+        chatHeader.style.display = 'flex';
+        chatMessages.style.display = 'block'; // Use 'block'
+        chatInputArea.style.display = 'block'; // Use 'block'
+        
+        // Set header and load messages
+        chatUserName.textContent = contact.name;
+        chatUserStatus.textContent = 'Tenant'; // You can update this later
+        chatUserAvatar.src = contact.avatar;
+        chatMessages.innerHTML = '<div>Loading history...</div>';
+        
+        try {
+            // We re-use the tenant's history route
+            const response = await fetch(`/tenant/chat/history/${currentReceiverId}`);
+            const data = await response.json();
+            chatMessages.innerHTML = ''; // Clear "loading"
+            
+            data.messages.forEach(msg => {
+                appendMessage(msg, false); // false = not a new message
+            });
+            // Scroll to the bottom (oldest message)
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        } catch (error) {
+            console.error('Error fetching chat history:', error);
+            chatMessages.innerHTML = '<div>Error loading messages.</div>';
+        }
+    }
+
+    function sendMessage() {
+        const content = chatInput.value.trim();
+        if (content && currentReceiverId) {
+            socket.emit('send_peer_message', {
+                'receiver_id': currentReceiverId,
+                'content': content
+            });
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+        }
+    }
+
+    function appendMessage(msg, isNewMessage = true) {
+        const msgDiv = document.createElement('div');
+        const isSender = msg.sender_id === currentUserId;
+        
+        msgDiv.className = `message ${isSender ? 'sent' : 'received'}`;
+        
+        const messageTime = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        msgDiv.innerHTML = `
+            <div class="message-bubble">
+                <div class="message-content">${msg.content}</div>
+                <div class="message-time">${messageTime}</div>
+            </div>
         `;
         
-        conversationsList.appendChild(conversationItem);
-      });
+        if (isNewMessage) {
+            // Add to the bottom
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        } else {
+            // Add to the top (when loading history)
+            chatMessages.prepend(msgDiv);
+        }
+    }
+
+    // --- 5. EVENT LISTENERS ---
+
+    // Send button
+    sendChatBtn.addEventListener('click', sendMessage);
+    
+    // Enter key
+    chatInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
     });
 
     // Auto-resize textarea
-    const messageInput = document.getElementById('messageInput');
-    messageInput.addEventListener('input', function() {
-      this.style.height = 'auto';
-      this.style.height = this.scrollHeight + 'px';
+    chatInput.addEventListener('input', function() {
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
+    });
+    
+    // Search filter
+    searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        const filteredContacts = allContacts.filter(contact => 
+            contact.name.toLowerCase().includes(searchTerm)
+        );
+        loadConversations(filteredContacts);
     });
 
-    // Handle window resize
-    window.addEventListener('resize', function() {
-      if (window.innerWidth > 992) {
-        document.getElementById('conversationsPanel').classList.remove('mobile-show');
-      }
+    // Listen for new messages from the server
+    socket.on('receive_peer_message', function(msg) {
+        // Update the conversation list preview
+        const chatItem = document.querySelector(`.conversation-item[data-user-id="${msg.sender_id}"]`);
+        if (chatItem) {
+            chatItem.querySelector('.conversation-message').innerText = msg.content;
+            chatItem.querySelector('.conversation-time').innerText = 'Just now';
+        }
+        
+        // Only append if it belongs to the currently open chat
+        if (currentReceiverId && msg.sender_id == currentReceiverId) {
+            appendMessage(msg, true);
+        } else if (msg.sender_id != currentUserId) {
+            // Add a notification dot if chat is not open
+            if(chatItem) {
+                let badge = chatItem.querySelector('.unread-badge');
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'unread-badge';
+                    chatItem.querySelector('.conversation-meta').appendChild(badge);
+                }
+                let count = parseInt(badge.innerText) || 0;
+                badge.innerText = count + 1;
+            }
+        }
     });
-  }
+
+    // --- OTHER MODAL FUNCTIONS (placeholder) ---
+    window.showNewMessageModal = function() {
+        alert('This feature is being upgraded! Please select a tenant from the list.');
+        // document.getElementById('newMessageModal').style.display = 'flex';
+    }
+    window.hideNewMessageModal = function() {
+        document.getElementById('newMessageModal').style.display = 'none';
+    }
+    window.createNewConversation = function() {
+        alert('This feature is being upgraded!');
+        hideNewMessageModal();
+    }
+    window.showConversationsList = function() {
+        document.getElementById('conversationsPanel').classList.add('mobile-show');
+    }
+    window.attachFile = function() { alert('File attachments coming soon!'); }
+    window.insertEmoji = function() { alert('Emoji picker coming soon!'); }
+    window.startVideoCall = function() { alert('Video call feature coming soon!'); }
+    window.startVoiceCall = function() { alert('Voice call feature coming soon!'); }
+    window.showConversationOptions = function() { alert('More options coming soon!'); }
+
+});
 </script>
 {% endblock %}

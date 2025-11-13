@@ -586,6 +586,89 @@
       grid-template-columns: 1fr;
     }
   }
+
+  /* Add these styles to your existing CSS */
+  .chat-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    z-index: 999;
+    transition: var(--transition);
+    font-weight: 500;
+  }
+
+  .chat-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  }
+
+  .chat-button i {
+    font-size: 1.2rem;
+  }
+
+  /* Modify the chat modal styles */
+  #chat-modal {
+    display: none;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    height: 500px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    flex-direction: column;
+  }
+
+
+.chat-modal-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 1rem;
+    border-radius: 15px 15px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.chat-modal-header h5 {
+    margin: 0;
+}
+.chat-modal-header button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.chat-modal-messages {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.chat-modal-input-area {
+    padding: 1rem;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 10px;
+}
+.chat-modal-input-area input {
+    flex: 1;
+}
 </style>
 
 <!-- Main Content -->
@@ -693,100 +776,69 @@
   </div>
 
   <!-- Content Grid -->
-  <div class="content-grid">
-    <!-- Property Details Card -->
+   {% if active_bookings %}
+    {% for booking in active_bookings %}
+        <div class="content-card">
+            <div class="card-header">
+                <h3 class="card-title">{{ booking.house.title }}</h3>
+                <span class="booking-status status-{{ booking.status.lower() }}">
+                    {{ booking.status | replace('_', ' ') | title }}
+                </span>
+            </div>
+            <div class="card-body">
+                
+                {% if booking.status == 'Pending' %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-clock"></i>
+                        <strong>Awaiting Landlord Approval.</strong>
+                        <p>Your request was sent on {{ booking.created_at | datetimeformat }}. You will be notified when the landlord responds.</p>
+                    </div>
+                    <a href="{{ url_for('tenant.all_bookings') }}" class="btn btn-outline btn-sm">View All Bookings</a>
+
+                {% elif booking.status == 'Awaiting Deposit' %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i>
+                        <strong>Your booking is approved!</strong>
+                        <p>Please pay the security deposit of <strong>KES {{ booking.house.security_deposit }}</strong> to confirm your house.</p>
+                    </div>
+                    
+                    {% if booking.deposit_due_by %}
+                    <div class="alert alert-warning" id="countdown-timer-{{ booking.id }}" data-due-date="{{ booking.deposit_due_by.isoformat() }}">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        This offer will expire in: <strong class_name="countdown-text"></strong>
+                    </div>
+                    {% endif %}
+
+                    <a href="{{ url_for('tenant.booking_page', booking_id=booking.id) }}" class="btn btn-primary">
+                        <i class="fas fa-credit-card"></i> Pay Deposit Now
+                    </a>
+
+                {% elif booking.status == 'Confirmed' %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-home"></i>
+                        <strong>Booking Confirmed!</strong> This is your active tenancy.
+                    </div>
+                    <p><strong>Next Rent Due:</strong> {{ booking.next_rent_payment_due | datetimeformat('%b %d, %Y') | default('N/A') }}</p>
+                    <a href="{{ url_for('tenant.pay_rent') }}" class="btn btn-primary">
+                        <i class="fas fa-money-bill-wave"></i> Pay Rent
+                    </a>
+                    <a href="#payment-history" class="btn btn-outline">View Payment History</a>
+                {% endif %}
+                
+            </div>
+        </div>
+    {% endfor %}
+    {% else %}
     <div class="content-card">
-      <div class="card-header">
-        <h3 class="card-title">Property Details</h3>
-        <a href="{{ url_for('tenant.lease', id=property.id) if property else '#' }}" class="card-action">View Lease</a>
-      </div>
-      <div class="card-body">
-        {% if property and active_booking %}
-        <div class="property-details">
-          <p>
-            <i class="fas fa-map-marker-alt"></i>
-            <strong>Address:</strong> {{ property.address_line1 }}{% if property.address_line2 %}, {{ property.address_line2 }}{% endif %}
-          </p>
-          <p>
-            <i class="fas fa-dollar-sign"></i> <strong>Rent:</strong> ${{ property.rent_amount }}/month
-          </p>
-          <p>
-            <i class="fas fa-calendar-alt"></i>
-            <strong>Lease Ends:</strong> {{ active_booking.lease_end_date.strftime('%b %d, %Y') if active_booking.lease_end_date else 'N/A' }}
-          </p>
+        <div class="card-body">
+            <p>No active property assigned. Please contact your landlord or check your bookings.</p>
+            <a href="{{ url_for('tenant.properties') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-search"></i> Browse Properties
+            </a>
         </div>
-
-        <div class="card-action">
-          {% if landlord %}
-          <a href="{{ url_for('tenant.chat', landlord_id=landlord.id) }}" class="btn btn-primary btn-sm">
-            <i class="fas fa-envelope"></i> Contact Landlord
-          </a>
-          {% else %}
-          <a href="#" class="btn btn-secondary btn-sm disabled">
-            <i class="fas fa-envelope"></i> No Landlord Assigned
-          </a>
-          {% endif %}
-        </div>
-
-        {% else %}
-        <p>
-          No active property assigned. Please contact your landlord or check your bookings.
-        </p>
-        <a href="{{ url_for('tenant.properties') }}" class="btn btn-primary btn-sm">
-          <i class="fas fa-search"></i> Browse Properties
-        </a>
-        {% endif %}
-      </div>
     </div>
-
-    <!-- Bookings Card -->
-    <div class="content-card">
-      <div class="card-header">
-        <h3 class="card-title">My Bookings</h3>
-        {% if property %}
-        <a href="{{ url_for('tenant.all_bookings', house_id=booking.house_id) if booking else '#' }}" class="card-action">View All</a>
-        {% else %}
-        <a href="#" class="card-action disabled">No Property</a>
-        {% endif %}
-      </div>
-      <div class="card-body">
-        {% if bookings %}
-        {% for booking in bookings %}
-        <div class="booking-item">
-          <div class="booking-info">
-            <p><strong>Property ID:</strong> {{ booking.house_id }}</p>
-            <p>
-              <strong>Lease Period:</strong> 
-              {{ booking.lease_start_date.strftime('%b %d, %Y') if booking.lease_start_date else 'N/A' }} - 
-              {{ booking.lease_end_date.strftime('%b %d, %Y') if booking.lease_end_date else 'N/A' }}
-            </p>
-          </div>
-          <div>
-            <span class="booking-status {% if booking.status == 'active' %}status-active{% elif booking.status == 'pending' %}status-pending{% else %}status-expired{% endif %}">
-              {{ booking.status|title }}
-            </span>
-          </div>
-        </div>
-        {% endfor %}
-        {% if bookings|length > 0 %}
-        <div class="card-action">
-          {% if bookings and bookings[0] %}
-          <form action="{{ url_for('tenant.move_out', booking_id=bookings[0].id) }}" method="POST" style="display: inline">
-            <button type="submit" class="btn btn-danger btn-sm">
-              <i class="fas fa-sign-out-alt"></i> Request Move-Out
-            </button>
-          </form>
-          {% endif %}
-        </div>
-        {% endif %}
-        {% else %}
-        <p>No bookings found.</p>
-        <a href="{{ url_for('tenant.properties') }}" class="btn btn-primary btn-sm">
-          <i class="fas fa-plus"></i> Book a Property
-        </a>
-        {% endif %}
-      </div>
-    </div>
+   {% endif %}
+    
 
     <!-- Notifications Card -->
     <div class="content-card">
@@ -836,9 +888,11 @@
           {% endif %}
         </div>
 
-        <a href="{{ url_for('tenant.chat', landlord_id=landlord.id) }}" class="btn btn-primary btn-sm">
-          <i class="fas fa-envelope"></i> Send Message
-        </a>
+        <button class="btn btn-primary btn-sm" 
+                 
+                
+            <i class="fas fa-envelope"></i> Contact Landlord
+        </button>
         {% else %}
         <p>No landlord assigned. Please check your bookings.</p>
         {% endif %}
@@ -925,7 +979,12 @@
                 </span>
               </td>
               <td>
-                <a href="{{ url_for('tenant.view_receipt', id=payment.id) }}" class="table-action">
+                <td>{{ payment.payment_for | default('N/A') }}</td>
+                <td>
+                  <a href="{{ url_for('tenant.view_receipt', receipt_id=payment.receipt_id) }}" class="table-action">
+                      <i class="fas fa-receipt"></i> View Receipt
+                   </a>
+                </td>
                   <i class="fas fa-receipt"></i> View Receipt
                 </a>
               </td>
@@ -1022,6 +1081,24 @@
     </div>
   </div>
 
+
+
+  
+   <div id="chat-modal" class="chat-modal-container">
+        <div class="chat-modal-header">
+        <h5 id="chat-with-name">Chat with Landlord</h5>
+        <button id="close-chat">&times;</button>
+    </div>
+ 
+    <div id="chat-messages" class="chat-modal-messages">
+            </div>
+    
+    <div class="chat-modal-input-area">
+        <input type="text" id="chat-input" placeholder="Type your message..." class="form-control">
+        <button id="send-chat" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+
   <!-- Footer Links -->
   <footer class="dashboard-footer">
     <a href="/terms" class="footer-link">Terms of Service</a> |
@@ -1029,96 +1106,292 @@
   </footer>
 </main>
 
+
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    // ================================
-    // Alert Close
-    // ================================
-    const alertCloseButtons = document.querySelectorAll('.alert-close');
-    alertCloseButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        this.parentElement.style.display = 'none';
-      });
-    });
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 
+<script>
     // ================================
-    // Payment Filter
+    // GLOBAL FUNCTIONS
+    // (Called by HTML onchange/onclick)
     // ================================
+
+    /**
+     * Filters the payment history table based on status.
+     */
     function filterPayments(status) {
-      const rows = document.querySelectorAll('.payment-row');
-      rows.forEach(row => {
-        if (status === 'all' || row.dataset.status.toLowerCase() === status) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
+        const rows = document.querySelectorAll('.payment-row');
+        rows.forEach(row => {
+            // Check if row.dataset.status exists before calling toLowerCase()
+            const rowStatus = row.dataset.status ? row.dataset.status.toLowerCase() : 'paid'; // Default to 'paid' if dataset is missing
+            if (status === 'all' || rowStatus === status) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+      }
+
+    /**
+     * Initializes all countdown timers on the page.
+     */
+    function initializeCountdowns() {
+        document.querySelectorAll('[id^="countdown-timer-"]').forEach(timer => {
+            const dueDate = new Date(timer.dataset.dueDate + 'Z'); // Add 'Z' for UTC
+            const textEl = timer.querySelector('.countdown-text') || timer.querySelector('strong');
+
+            if (!textEl) {
+                console.error("Could not find countdown text element in timer:", timer);
+                return; 
+            }
+
+            function updateTimer() {
+                const now = new Date();
+                const diff = dueDate - now;
+
+                if (diff <= 0) {
+                    textEl.innerHTML = "Offer Expired";
+                    if (intervalId) clearInterval(intervalId); // Stop the timer
+                    return;
+                }
+
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const s = Math.floor((diff % (1000 * 60)) / 1000);
+
+                textEl.innerHTML = `${d}d ${h}h ${m}m ${s}s`;
+            }
+            
+            const intervalId = setInterval(updateTimer, 1000);
+            updateTimer(); // Run once immediately
+        });
     }
 
     // ================================
-    // Calendar (FullCalendar)
+    // SCRIPT INITIALIZATION
+    // (This single block runs AFTER the page is loaded)
     // ================================
-    const calendarEl = document.getElementById('calendar');
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-      initialView: 'dayGridMonth',
-      height: 250,
-      events: {{ (events or []) | tojson | safe }},
-      eventTimeFormat: {
-        hour: 'numeric',
-        minute: '2-digit',
-        meridiem: 'short'
-      }
-    });
-    calendar.render();
+    document.addEventListener('DOMContentLoaded', function() {
+    
+        // 1. INITIALIZE PAGE FEATURES
+        initializeCountdowns();
 
-    // ================================
-    // Payment Chart (Chart.js)
-    // ================================
-    const ctx = document.getElementById('paymentChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels: {{ (payment_labels or []) | tojson | safe }},
-        datasets: [{
-          label: 'Payments',
-          data: {{ (payment_data or []) | tojson | safe }},
-          backgroundColor: 'rgba(37, 99, 235, 0.6)',
-          borderColor: 'rgba(37, 99, 235, 1)',
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              callback: function(value) {
-                return '$' + value;
-              }
+        // 2. ALERT CLOSE BUTTONS
+        const alertCloseButtons = document.querySelectorAll('.alert-close');
+        alertCloseButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                this.parentElement.style.display = 'none';
+            });
+        });
+
+        // 3. CALENDAR (FullCalendar)
+        const calendarEl = document.getElementById('calendar');
+        if (calendarEl) {
+            try {
+                const calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    height: 250,
+                    events: {{ (events or []) | tojson | safe }},
+                    eventTimeFormat: {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        meridiem: 'short'
+                    }
+                });
+                calendar.render();
+            } catch (e) {
+                console.error("Error initializing FullCalendar:", e);
             }
-          }
-        },
-        plugins: {
-          legend: {
-            display: false
-          },
-          tooltip: {
-            callbacks: {
-              label: function(context) {
-                return '$' + context.raw;
-              }
-            }
-          }
         }
-      }
+        
+
+
+        // Hide the chat button if there's no landlord
+        const chatButton = document.getElementById('chat-button');
+        if (chatButton && !{{ 'true' if landlord else 'false' }}) {
+            chatButton.style.display = 'none';
+        }
+        
+
+
+        // 4. PAYMENT CHART (Chart.js)
+        const ctx = document.getElementById('paymentChart');
+        if (ctx) {
+            try {
+                new Chart(ctx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: {{ (payment_labels or []) | tojson | safe }},
+                        datasets: [{
+                            label: 'Payments',
+                            data: {{ (payment_data or []) | tojson | safe }},
+                            backgroundColor: 'rgba(37, 99, 235, 0.6)',
+                            borderColor: 'rgba(37, 99, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) { return '$' + value; }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) { return '$' + context.raw; }
+                                }
+                            }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Error initializing Chart.js:", e);
+            }
+        }
+
+        // 5. PEER-TO-PEER CHAT SCRIPT
+        const socket = io();
+        const chatModal = document.getElementById('chat-modal');
+        const closeChatBtn = document.getElementById('close-chat');
+        const chatMessages = document.getElementById('chat-messages');
+        const chatInput = document.getElementById('chat-input');
+        const sendChatBtn = document.getElementById('send-chat');
+        const chatWithName = document.getElementById('chat-with-name');
+        
+        let currentReceiverId = null;
+        let currentUserId = {{ current_user.id }}; 
+
+        // Fired when the socket connection is established
+        socket.on('connect', () => {
+            console.log('Socket.IO connected');
+            socket.emit('join_peer_room'); 
+        });
+
+        // Function to open the chat (attached to window)
+        // Update the openChat function in your existing script
+        window.openChat = async function(receiverId, receiverName) {
+
+          //toggleChat();
+        // Check if we have a valid landlord ID
+        if (!receiverId) {
+            alert("No landlord assigned. Please check your bookings.");
+            return;
+        }
+    
+        currentReceiverId = receiverId;
+        chatWithName.innerText = `Chat with ${receiverName}`;
+        chatMessages.innerHTML = '<div>Loading history...</div>';
+        chatModal.style.display = 'flex';
+    
+        try {
+            const response = await fetch(`/tenant/chat/history/${receiverId}`);
+            const data = await response.json();
+            chatMessages.innerHTML = ''; // Clear "loading"
+        
+            if (data.messages && data.messages.length > 0) {
+                data.messages.forEach(msg => {
+                    appendMessage(msg, false); // Add to top
+                });
+            } else {
+                chatMessages.innerHTML = '<div style="text-align:center; color: #6c757d; font-style: italic;">No messages yet. Say hi!</div>';
+            }
+        } catch (error) {
+            console.error('Error fetching chat history:', error);
+            chatMessages.innerHTML = '<div>Error loading messages.</div>';
+        }
+          };
+
+
+
+
+        // Function to close the chat
+        // Update the close chat functionality
+        if (closeChatBtn) {
+            closeChatBtn.addEventListener('click', () => {
+                chatModal.style.display = 'none';
+                currentReceiverId = null;
+            });
+        }
+
+        // Function to send a message
+        function sendMessage() {
+            const content = chatInput.value.trim();
+            if (content && currentReceiverId) {
+                socket.emit('send_peer_message', {
+                    'receiver_id': currentReceiverId,
+                    'content': content
+                });
+                chatInput.value = '';
+            }
+        }
+        
+        if (sendChatBtn) {
+            sendChatBtn.addEventListener('click', sendMessage);
+        }
+        if (chatInput) {
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // Prevent form submission
+                    sendMessage();
+                }
+            });
+        }
+
+        // Function to add a message to the chat window
+        function appendMessage(msg, isNewMessage = true) {
+            const msgDiv = document.createElement('div');
+            const isSender = msg.sender_id === currentUserId;
+            
+            msgDiv.innerText = msg.content;
+            msgDiv.style.padding = '8px 12px';
+            msgDiv.style.borderRadius = '10px';
+            msgDiv.style.marginBottom = '10px';
+            msgDiv.style.maxWidth = '80%';
+            
+            if (isSender) {
+                msgDiv.style.background = 'var(--primary-color, #2563eb)';
+                msgDiv.style.color = 'white';
+                msgDiv.style.alignSelf = 'flex-end';
+            } else {
+                msgDiv.style.background = '#f1f1f1';
+                msgDiv.style.color = '#333';
+                msgDiv.style.alignSelf = 'flex-start';
+            }
+            
+            if (isNewMessage) {
+                // Remove the "No messages yet" placeholder if it exists
+                const placeholder = chatMessages.querySelector('div');
+                if (placeholder && placeholder.innerText.startsWith('No messages')) {
+                    chatMessages.innerHTML = '';
+                }
+                chatMessages.appendChild(msgDiv); // Add to the bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+            } else {
+                chatMessages.prepend(msgDiv); // Add to the top (when loading history)
+            }
+        }
+
+        // Listen for new messages
+        socket.on('receive_peer_message', function(msg) {
+            if (currentReceiverId && 
+                ((msg.sender_id == currentUserId && msg.receiver_id == currentReceiverId) ||
+                 (msg.sender_id == currentReceiverId && msg.receiver_id == currentUserId))
+            ) {
+                appendMessage(msg, true); // Append as a new message
+            }
+        });
     });
-  });
 </script>
 {% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Receipt #{{ payment.receipt_id }}{% endblock %}
+{% block content %}
+<style>
+    .receipt-container { max-width: 800px; margin: 2rem auto; background: #fff; border: 1px solid #ddd; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+    .receipt-header { background: #f8f9fa; padding: 2rem; border-bottom: 1px solid #ddd; }
+    .receipt-title { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .receipt-id { font-size: 1rem; color: #6c757d; }
+    .receipt-body { padding: 2rem; }
+    .receipt-row { display: flex; margin-bottom: 1rem; }
+    .receipt-label { width: 30%; font-weight: 600; color: #6c757d; }
+    .receipt-value { width: 70%; }
+    .receipt-total { padding-top: 1.5rem; margin-top: 1.5rem; border-top: 2px solid #212529; }
+    .total-label { font-size: 1.2rem; font-weight: 700; }
+    .total-amount { font-size: 2rem; font-weight: 700; color: #4361ee; }
+</style>
+
+<div class="receipt-container">
+    <div class="receipt-header">
+        <h1 class="receipt-title">Payment Receipt</h1>
+        <p class="receipt-id">Receipt ID: <strong>{{ payment.receipt_id }}</strong></p>
+    </div>
+    <div class="receipt-body">
+        <div class="receipt-row">
+            <div class="receipt-label">Payment Date:</div>
+            <div class="receipt-value">{{ payment.date | datetimeformat('%B %d, %Y') }}</div>
+        </div>
+        <div class="receipt-row">
+            <div class="receipt-label">Paid To (Landlord):</div>
+            <div class="receipt-value">{{ payment.booking.house.owner.name }}</div>
+        </div>
+        <div class="receipt-row">
+            <div class="receipt-label">Paid From (Tenant):</div>
+            <div class="receipt-value">{{ payment.tenant.name }}</div>
+        </div>
+        <div class="receipt-row">
+            <div class="receipt-label">Property:</div>
+            <div class="receipt-value">{{ payment.booking.house.title }}</div>
+        </div>
+        <hr>
+        <div class="receipt-row">
+            <div class="receipt-label">Payment For:</div>
+            <div class="receipt-value"><strong>{{ payment.payment_for }}</strong></div>
+        </div>
+        
+        <div class="receipt-row receipt-total">
+            <div class="receipt-label total-label">Total Paid:</div>
+            <div class="receipt-value total-amount">KES {{ "{:,.2f}".format(payment.amount) }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

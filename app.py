@@ -3,7 +3,7 @@ from config import Config
 from extensions import db, migrate, login_manager, csrf
 from flask_socketio import SocketIO
 from flask_cors import CORS
-from models.models import User, House, ChatMessage, SupportTicket, Booking
+#from models.models import User, House, ChatMessage, SupportTicket, Booking, Payment
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy import or_
@@ -16,12 +16,24 @@ from wtforms.validators import DataRequired, Email
 from flask import Blueprint
 from flask import jsonify, session
 from flask_login import current_user
+#import uuid
+#from dateutil.relativedelta import relativedelta
 
 
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    
+    
+    
+    #IMPORTS
+    from flask_socketio import SocketIO, join_room, leave_room, emit
+    from models.models import User, House, ChatMessage, SupportTicket, Booking, Payment, Message
+    from datetime import datetime, timedelta
+    from dateutil.relativedelta import relativedelta
+    import uuid
+    #from models.models import MaintenanceRequest
 
     # SESSION TIMEOUT SETTINGS
     app.permanent_session_lifetime = timedelta(minutes=20)
@@ -43,7 +55,7 @@ def create_app():
     print("Final DB URI =", app.config['SQLALCHEMY_DATABASE_URI'])
     print("UPLOAD_FOLDER =", app.config['UPLOAD_FOLDER'])
     print("CHAT_UPLOAD_FOLDER =", app.config['CHAT_UPLOAD_FOLDER'])
-
+    
     # Create chat upload directory
     os.makedirs(app.config['CHAT_UPLOAD_FOLDER'], exist_ok=True)
 
@@ -131,6 +143,8 @@ def create_app():
 
     app.jinja_env.filters['timeago'] = timeago
     app.jinja_env.filters['datetimeformat'] = datetimeformat
+    
+    
 
     # Blueprints
     from routes.auth_routes import auth_bp
@@ -219,15 +233,30 @@ def create_app():
     @csrf.exempt
     def api_approve_booking(booking_id):
         booking = Booking.query.get_or_404(booking_id)
+        booking.status = 'Awaiting Deposit'
+        booking.deposit_due_by = datetime.utcnow() + timedelta(days=2) # 48-hour deadline
+        db.session.commit()
+        return jsonify(success=True, message='Booking approved! Waiting for tenant deposit.')
+    
+    @api_bp.route('/bookings/<int:booking_id>/revoke', methods=['POST'])
+    @login_required
+    @csrf.exempt
+    def api_revoke_booking(booking_id):
+        booking = Booking.query.get_or_404(booking_id)
 
         if booking.house.owner_id != current_user.id:
             return jsonify(success=False, message='Unauthorized'), 403
 
-        booking.status = 'Approved'
-        db.session.commit()
-        return jsonify(success=True, message='Booking approved successfully!')
-
-
+    # CRITICAL: Landlord can ONLY revoke if deposit has not been paid
+        if booking.status == 'Awaiting Deposit':
+            booking.status = 'Revoked'
+            db.session.commit()
+            return jsonify(success=True, message='Booking approval revoked.')
+        elif booking.status == 'Confirmed':
+            return jsonify(success=False, message='Cannot revoke a confirmed booking (deposit paid).')
+        else:
+            return jsonify(success=False, message='Invalid booking state.')
+    
     @api_bp.route('/bookings/<int:booking_id>/reject', methods=['POST'])
     @login_required
     @csrf.exempt
@@ -253,17 +282,45 @@ def create_app():
             if booking.tenant_id != current_user.id:
                 return jsonify(success=False, message="Unauthorized"), 403
 
+            # Check status
+            if booking.status != 'Awaiting Deposit':
+                return jsonify(success=False, message=f"Booking is not awaiting deposit. Status is: {booking.status}"), 400
+
             # Example validation (optional)
-            if booking.deposit_paid:
-                return jsonify(success=False, message="Deposit already paid"), 400
+            # if booking.deposit_paid:
+            #     return jsonify(success=False, message="Deposit already paid"), 400
 
             # Simulate MPESA payment success (for now)
             booking.deposit_paid = True
+            booking.status = 'Confirmed'
+
+            # 2. Set the first rent payment due date
+            if booking.move_in_date:
+            # Set it to 1 month from their move-in date
+                booking.next_rent_payment_due = booking.move_in_date + relativedelta(months=1)
+            else:
+            # Fallback
+                booking.next_rent_payment_due = datetime.utcnow() + relativedelta(months=1)
+
+        # 3. Create the first Payment record (for the deposit)
+            new_deposit_amount = booking.house.security_deposit + (booking.house.rent_amount / 2)
+            deposit_payment = Payment(
+                tenant_id=current_user.id,
+                booking_id=booking.id,
+                amount=new_deposit_amount,
+                date=datetime.utcnow(),
+                status='Paid',
+                payment_for='Security Deposit',
+                receipt_id=f"RCPT-{uuid.uuid4().hex[:10].upper()}"
+            )
+
+            db.session.add(deposit_payment)
             db.session.commit()
 
-            return jsonify(success=True, message="Deposit paid successfully")
+            return jsonify(success=True, message="Deposit paid successfully! Your booking is confirmed.")
 
         except Exception as e:
+            db.session.rollback()
             # Always return JSON, even for errors
             print("Payment error:", e)
             return jsonify(success=False, message=f"Server error: {str(e)}"), 500
@@ -275,13 +332,78 @@ def create_app():
 
     app.register_blueprint(api_bp)
 
+
+     # ------------------------------------------------------------------
+    # NEW: SOCKET.IO LOGIC FOR PEER-TO-PEER (TENANT-LANDLORD) CHAT
+    # ------------------------------------------------------------------
+    
+    # We use your 'socketio' variable, which is already initialized
+    
+    @socketio.on('join_peer_room')
+    def handle_join_peer_room():
+        """Called when a user opens a chat window."""
+        if current_user.is_authenticated:
+            # We create a private "room" for this user, using their ID.
+            # Only they can receive messages sent to this room.
+            join_room(current_user.id)
+            print(f"User {current_user.id} joined their private peer room.")
+
+    @socketio.on('leave_peer_room')
+    def handle_leave_peer_room():
+        """Called when a user closes a chat window."""
+        if current_user.is_authenticated:
+            leave_room(current_user.id)
+            print(f"User {current_user.id} left their private peer room.")
+
+    @socketio.on('send_peer_message')
+    def handle_send_peer_message(data):
+        """Called when a user sends a tenant-landlord message."""
+        if not current_user.is_authenticated:
+            return  # Ignore unauthenticated
+
+        receiver_id = data.get('receiver_id')
+        content = data.get('content')
+
+        if not receiver_id or not content:
+            return  # Ignore empty messages
+
+        # Save the message to the database
+        # Note: Your model might be 'ChatMessage', 
+        # I've used 'Message' here based on tenant_routes.py
+        # try:
+        #     from models.models import Message # Import here
+        # except ImportError:
+        #     from models.models import ChatMessage as Message # Fallback
+            
+        message = Message(
+            sender_id=current_user.id,
+            receiver_id=int(receiver_id),
+            content=content,
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(message)
+        db.session.commit()
+
+        # Create a payload to send
+        message_payload = {
+            'sender_id': message.sender_id,
+            'receiver_id': message.receiver_id,
+            'content': message.content,
+            'timestamp': message.timestamp.isoformat()
+        }
+
+        # Emit the message to the sender (so they see their own message)
+        emit('receive_peer_message', message_payload, room=current_user.id)
+        
+        # Emit the message to the recipient's private room
+        emit('receive_peer_message', message_payload, room=int(receiver_id))
     # ------------------------------------------------------------------
     # EXISTING ROUTES
     # ------------------------------------------------------------------
-    @app.route('/uploads/properties/<filename>')
-    def uploaded_file(filename):
-        return send_from_directory(os.path.join(app.root_path, 'static/uploads/properties'), filename)
-
+#from flask import render_template, request, jsonify, redirect, url_for, flash
+#from app import app, db
+#from models import Property
+#from flask_login import login_required, current_user
     @app.route('/')
     def root():
         logger.info("Redirecting to index page")
@@ -290,12 +412,145 @@ def create_app():
     @app.route("/index")
     def index():
         try:
-            houses = House.query.all()
+            houses = House.query.order_by(House.id.desc()).limit(12).all()
             return render_template("index.html", houses=houses)
         except Exception as e:
             logger.error(f"Error fetching houses: {str(e)}")
             flash("Error loading houses. Please try again.", "danger")
             return render_template("index.html", houses=[])
+     
+    # @app.route('/properties')
+    # def properties_list():
+    # # Get query parameters
+    #     page = request.args.get('page', 1, type=int)
+    #     per_page = 12
+    #     query = request.args.get('query', '')
+    #     property_type = request.args.get('property_type', '')
+    #     price_range = request.args.get('price_range', '')
+    #     bedrooms = request.args.get('bedrooms', '', type=int)
+    #     sort = request.args.get('sort', 'newest')
+    
+    
+    # # Start with base query
+    #     houses_query = House.query.filter_by(available=True)
+    #     #.order_by(House.id.desc()).get(id).all()----------causes a crash
+    #      # --- DEBUGGING PRINT ---
+    # # This will print in your terminal. Check it to see the values.
+    #     print(f"URL Parameters -> query: '{query}', type: '{property_type}', price: '{price_range}', beds: '{bedrooms}'")
+        
+    #     all_properties = House.query.all()
+    #     print(f"DEBUG: Total properties in DB: {len(all_properties)}")
+    #     for prop in all_properties:
+    #         print(f"  - ID: {prop.id}, Title: {prop.title}, Available: {prop.available}")
+    # # --- END DEBUGGING STEP ---
+    
+    # # Apply filters
+    #     if query:
+    #        houses_query = houses_query.filter(
+    #             db.or_(
+    #                 House.title.contains(query),
+    #                 House.description.contains(query),
+    #                 House.location.contains(query)
+    #             )
+    #         )
+    
+    #     if property_type:
+    #         houses_query = houses_query.filter(House.property_type == property_type)
+    
+    #     if price_range:
+    #         if price_range == '0-10000':
+    #             houses_query = houses_query.filter(House.price <= 10000)
+    #         elif price_range == '10000-25000':
+    #             houses_query = houses_query.filter(House.price.between(10000, 25000))
+    #         elif price_range == '25000-50000':
+    #             houses_query = houses_query.filter(House.price.between(25000, 50000))
+    #         elif price_range == '50000+':
+    #             houses_query = houses_query.filter(House.price > 50000)
+    
+    #     if bedrooms:
+    #         houses_query = houses_query.filter(House.bedrooms == bedrooms)
+    
+    # # Apply sorting
+    #     if sort == 'newest':
+    #         houses_query = houses_query.order_by(House.id.desc())
+    #     elif sort == 'price_low':
+    #         houses_query = houses_query.order_by(House.rent_amount.asc())
+    #     elif sort == 'price_high':
+    #         houses_query = houses_query.order_by(House.rent_amount.desc())
+    #     elif sort == 'popular':
+    #     # This would need additional logic based on views, bookings, etc.
+    #         houses_query = houses_query.order_by(House.id.desc())
+    
+    # # Paginate results
+    #     houses = houses_query.paginate(page=page, per_page=per_page, error_out=False)
+    # # --- ANOTHER DEBUGGING STEP ---
+    #     print(f"DEBUG: Properties after filtering/pagination: {len(houses.items)}")
+    # # --- END DEBUGGING STEP ---
+    # # Calculate total pages for pagination
+    #     #total_pages = properties.pages
+    
+    #     return render_template(
+    #         'properties.html',
+    #         properties=houses.items,
+    #         page=page,
+    #         #total_pages=houses_pages,
+    #         query=query,
+    #         property_type=property_type,
+    #         price_range=price_range,
+    #         bedrooms=bedrooms,
+    #         sort=sort,
+    #         is_guest=not current_user.is_authenticated
+          
+    #     )
+
+    @app.route('/property/<int:property_id>')
+    def view_property(property_id):
+        property = House.query.get_or_404(property_id)
+        return render_template('property_detail.html', property=property)
+
+    @app.route('/book_property/<int:property_id>')
+    @login_required
+    def book_property(property_id):
+        property = House.query.get_or_404(property_id)
+        # Implement booking logic here
+        return redirect(url_for('view_property', property_id=property_id))
+
+    # API endpoints for AJAX calls
+    @app.route('/api/favorites', methods=['POST'])
+    @login_required
+    def add_to_favorites():
+        property_id = request.json.get('property_id')
+        # Implement adding to favorites logic here
+        return jsonify({'success': True})
+
+    @app.route('/api/favorites/<int:property_id>', methods=['DELETE'])
+    @login_required
+    def remove_from_favorites(property_id):
+        # Implement removing from favorites logic here
+        return jsonify({'success': True})
+    # @app.route('/properties/<int:id>')
+    # def properties(id):
+    #     property = House.query.order_by(House.id.desc()).get(id).all()
+    #     return render_template('properties.html', image_filename=property.image)
+    
+    @app.route('/uploads/properties/<filename>')
+    def uploaded_file(filename):
+        return send_from_directory(os.path.join(app.root_path, 'static/uploads/properties'), filename)
+
+    # @app.route('/')
+    # def root():
+    #     logger.info("Redirecting to index page")
+    #     return render_template('index.html')
+
+    # @app.route("/index")
+    # def index():
+    #     try:
+    #         houses = House.query.order_by(House.id.desc()).limit(12).all()
+    #         return render_template("index.html", houses=houses)
+    #     except Exception as e:
+    #         logger.error(f"Error fetching houses: {str(e)}")
+    #         flash("Error loading houses. Please try again.", "danger")
+    #         return render_template("index.html", houses=[])
 
     @app.route("/subscribe", methods=["GET", "POST"])
     def subscribe():
@@ -328,7 +583,7 @@ def create_app():
         elif role == 'tenant':
             return redirect(url_for('tenant.dashboard'))
         elif role == 'service_provider':
-            return redirect(url_for('service_provider.dashboard'))
+            return redirect(url_for('service_provider_dashboard.dashboard'))
         else:
             logger.warning(f"Unrecognized role for user {current_user.id}: {role}")
             flash("Unrecognized role. Contact system administrator.", "danger")
