@@ -19,6 +19,8 @@ class User(db.Model, UserMixin):
     mpesa_details = db.Column(db.String(50), nullable=True)
     profile_picture = db.Column(db.String(255), nullable=True)
     language = db.Column(db.String(10), default='en')
+    is_verified = db.Column(db.Boolean, default=False)
+    verification_code = db.Column(db.String(6), nullable=True)
 
     first_name = db.Column(db.String(100))
     last_name = db.Column(db.String(100))

@@ -1,10 +1,15 @@
+from flask import session, request  # ✅ Add this import at the top with others
+from datetime import timedelta  # ✅ If not already added in app configuration
+
 """
 Authentication Blueprint
 ------------------------
 Handles login, signup, profile management, password changes,
 2FA verification, support requests, and file uploads.
 """
-
+import random
+import string
+#from flask import session, request
 # =========================
 # 📦 Standard Library Imports
 # =========================
@@ -142,68 +147,94 @@ class PasswordForm(FlaskForm):
 # 🔐 Authentication Routes
 # =========================
 
-from flask import session  # ✅ Add this import at the top with others
-from datetime import timedelta  # ✅ If not already added in app configuration
+# from flask import session  # ✅ Add this import at the top with others
+# from datetime import timedelta  # ✅ If not already added in app configuration
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
-    """User login with optional 2FA verification."""
+    # 1. If already logged in, redirect to the portal route
+    if current_user.is_authenticated:
+        # Do not call the function directly. Use redirect.
+        # The 'portal' function in app.py handles the role logic.
+        return redirect(url_for('portal'))
+
     form = LoginForm()
     
     if form.validate_on_submit():
-        try:
-            identifier = form.identifier.data
-            user = User.query.filter(
-                (User.email == identifier) | (User.phone_number == identifier)
-            ).first()
+        identifier = form.identifier.data
+        password = form.password.data
+        remember = form.remember_me.data
+        
+        # 2. Find user
+        user = User.query.filter(
+            (User.email == identifier) | (User.phone_number == identifier)
+        ).first()
 
-            if not user:
-                flash("Email or phone number not recognized.", "danger")
-                return render_template("login.html", form=form)
+        # 3. Check Password
+        if not user or not user.check_password(password):
+            flash('Incorrect email/phone or password.', category='danger')
+            return render_template('login.html', form=form)
 
-            if not user.check_password(form.password.data):
-                flash("Incorrect password.", "danger")
-                return render_template("login.html", form=form)
+        # 4. CRITICAL: Check Email Verification
+        if not user.is_verified:
+            flash('Please verify your email address before logging in.', category='warning')
+            # Set session variable so verify route knows who it is
+            session['email_to_verify'] = user.email
+            return redirect(url_for('auth.verify_email'))
 
-            # ✅ 2FA logic stays the same
-            if user.two_factor_enabled:
-                if not form.two_factor_code.data:
-                    flash("2FA code required.", "warning")
-                    return render_template("login.html", form=form, requires_2fa=True)
-                if not verify_2fa_code(user, form.two_factor_code.data):
-                    flash("Invalid 2FA code.", "danger")
-                    return render_template("login.html", form=form)
+        # 5. Check Two-Factor Authentication (2FA)
+        if user.two_factor_enabled:
+            # Check if code was entered in the form
+            code = form.two_factor_code.data
+            
+            if code:
+                # Verify the code using your helper function
+                if verify_2fa_code(user, code):
+                    login_user(user, remember=remember)
+                    session.permanent = True
+                    flash('Logged in successfully!', category='success')
+                    return redirect(url_for('portal'))
+                else:
+                    flash('Invalid 2FA code. Please try again.', category='danger')
+                    # We return the template but keep the identifier filled in
+                    return render_template('login.html', form=form, show_2fa=True)
+            else:
+                # 2FA is enabled but code box was empty or hidden.
+                # Re-render login page with 'show_2fa' flag to unhide the input box
+                flash('Two-Factor Authentication is enabled. Enter your code.', category='info')
+                return render_template('login.html', form=form, show_2fa=True)
 
-            login_user(user, remember=form.remember_me.data)
+        # 6. Standard Login (No 2FA)
+        login_user(user, remember=remember)
+        session.permanent = True
+        flash('Logged in successfully!', category='success')
+        
+        # Redirect to the main portal route
+        return redirect(url_for('portal'))
 
-            # ✅ This enables session timeout tracking
-            session.permanent = True  
-
-            flash("Login successful.", "success")
-            logger.debug(f"User {identifier} logged in.")
-
-            return redirect(url_for(f"{user.role}.dashboard")) if user.role in [
-                "tenant", "landlord", "service_provider", "admin"
-            ] else redirect(url_for("portal"))
-
-        except Exception as e:
-            logger.error(f"Login error: {e}", exc_info=True)
-            flash("An error occurred during login. Try again.", "danger")
-
-    return render_template("login.html", form=form)
-
-
+    return render_template('login.html', form=form)
 
 @auth_bp.route("/signup", methods=["GET", "POST"])
 def signup():
-    """User registration with optional profile picture."""
+    """User registration with email verification step."""
     form = SignupForm()
     if form.validate_on_submit():
         try:
             full_phone = f"+254{form.phone_number.data}"
+            
+            # 1. Check if user already exists
+            if User.query.filter((User.email == form.email.data) | (User.phone_number == full_phone)).first():
+                flash("Email or phone already registered.", "danger")
+                return render_template("signup.html", form=form)
+
+            # 2. Handle Profile Picture
             profile_picture_path = save_profile_picture(form.profile_picture.data)
 
+            # 3. Generate 6-digit OTP
+            otp = ''.join(random.choices(string.digits, k=6))
+
+            # 4. Create User (Marked as NOT verified)
             user = User(
                 name=form.full_name.data,
                 email=form.email.data,
@@ -212,24 +243,89 @@ def signup():
                 mpesa_details=form.mpesa_details.data if form.role.data in ["landlord", "service"] else None,
                 profile_picture=profile_picture_path,
                 language=form.language.data,
+                is_verified=False,      # <--- Important: User is not active yet
+                verification_code=otp   # <--- Store the code
             )
             user.set_password(form.password.data)
+            
             db.session.add(user)
             db.session.commit()
 
-            flash("Account created. Please login.", "success")
-            logger.debug(f"User {form.email.data} created.")
-            return redirect(url_for("auth.login"))
+            # 5. Simulate Sending Email (Replace with Flask-Mail in production)
+            print(f"============================================")
+            print(f"SENDING EMAIL TO: {user.email}")
+            print(f"VERIFICATION CODE: {otp}")
+            print(f"============================================")
 
-        except IntegrityError:
-            db.session.rollback()
-            flash("Email or phone already registered.", "danger")
+            # 6. Store email in session so verify route knows who it is
+            session['email_to_verify'] = user.email
+            
+            flash("Account created! Please check your email for the verification code.", "info")
+            
+            # 7. Redirect to Verification Page (NOT Login)
+            return redirect(url_for("auth.verify_email"))
+
         except Exception as e:
             db.session.rollback()
             logger.error(f"Signup error: {e}", exc_info=True)
             flash("Error creating account. Try again.", "danger")
 
     return render_template("signup.html", form=form)
+
+
+@auth_bp.route("/verify_email", methods=["GET", "POST"])
+def verify_email():
+    """Handles the one-time email verification code."""
+    # Get the email of the user trying to verify
+    email = session.get('email_to_verify')
+    
+    # If session expired or direct access, send to login
+    if not email:
+        return redirect(url_for('auth.login'))
+        
+    # We don't necessarily need a WTForm class for this simple logic, 
+    # but we need to handle the POST request from the 6-digit input.
+    if request.method == "POST":
+        submitted_code = request.form.get('code')
+        
+        user = User.query.filter_by(email=email).first()
+        
+        if user and user.verification_code == submitted_code:
+            # Code matches! Verify user.
+            user.is_verified = True
+            user.verification_code = None # Clear code for security
+            db.session.commit()
+            
+            # Clear the session variable
+            session.pop('email_to_verify', None)
+            
+            flash("Email verified successfully! You can now log in.", "success")
+            return redirect(url_for('auth.login'))
+        else:
+            flash("Invalid or expired verification code.", "danger")
+
+    return render_template("verify_email.html", email=email)
+
+
+@auth_bp.route("/resend_verification")
+def resend_verification():
+    """Resends the OTP to the user in the session."""
+    email = session.get('email_to_verify')
+    if not email:
+        flash("Session expired. Please log in.", "warning")
+        return redirect(url_for('auth.login'))
+        
+    user = User.query.filter_by(email=email).first()
+    if user:
+        # Generate new code
+        otp = ''.join(random.choices(string.digits, k=6))
+        user.verification_code = otp
+        db.session.commit()
+        
+        print(f"RESENT CODE FOR {email}: {otp}")
+        flash(f"A new code has been sent to {email}", "success")
+        
+    return redirect(url_for('auth.verify_email'))
 
 
 @auth_bp.route("/logout")

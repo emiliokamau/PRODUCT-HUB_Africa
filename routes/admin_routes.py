@@ -85,7 +85,7 @@ def delete_property(house_id):
 @login_required
 def view_reports():
     stats = get_stats()
-    return render_template('admin.view_reports.html', stats=stats)
+    return render_template('\view_reports.html', stats=stats)
 
 # --- Platform Settings ---
 @admin_bp.route('/platform_settings',  methods=['GET', 'POST'])

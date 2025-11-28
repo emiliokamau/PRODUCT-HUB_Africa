@@ -551,73 +551,53 @@
         <!-- Loading Spinner -->
         <div id="loadingSpinner" class="loading-spinner"></div>
         
-        <form id="loginForm" action="/login" method="POST">
-          <!-- CSRF Token -->
-          <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <form id="loginForm" method="POST" action="{{ url_for('auth.login') }}">
+            {{ form.hidden_tag() }}
 
-          <div class="form-group">
-            <label for="identifier" class="form-label">Email or Phone Number</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-person"></i></span>
-              <input
-                type="text"
-                class="form-control"
-                id="identifier"
-                name="identifier"
-                placeholder="Enter your email or phone"
-                required
-              />
+            <div class="form-group">
+                <label for="identifier" class="form-label">Email or Phone Number</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-person"></i></span>
+                    {{ form.identifier(class="form-control", placeholder="Enter your email or phone") }}
+                </div>
+               {% for error in form.identifier.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
             </div>
-            <div class="invalid-feedback">Please enter a valid email or phone number.</div>
-          </div>
 
-          <div class="form-group">
-            <label for="password" class="form-label">Password</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-lock"></i></span>
-              <input
-                type="password"
-                class="form-control"
-                id="password"
-                name="password"
-                placeholder="Enter your password"
-                required
-              />
-              <span class="password-toggle" onclick="togglePassword()">
-                <i class="bi bi-eye" id="passwordToggleIcon"></i>
-              </span>
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    {{ form.password(class="form-control", placeholder="Enter your password") }}
+                    <span class="password-toggle" onclick="togglePassword()">
+                        <i class="bi bi-eye" id="passwordToggleIcon"></i>
+                    </span>
+                </div>
+                {% for error in form.password.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
             </div>
-            <div class="invalid-feedback">Please enter your password.</div>
-          </div>
 
-          <div class="form-group form-check">
-            <input
-              type="checkbox"
-              class="form-check-input"
-              id="rememberMe"
-              name="remember_me"
-            />
-            <label class="form-check-label" for="rememberMe">Remember me</label>
-          </div>
-
-          <div class="form-group" id="twoFactorGroup" style="display: none">
-            <label for="two_factor_code" class="form-label">Two-Factor Authentication Code</label>
-            <div class="input-group">
-              <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
-              <input
-                type="text"
-                class="form-control"
-                id="two_factor_code"
-                name="two_factor_code"
-                placeholder="Enter 6-digit code"
-                maxlength="6"
-              />
+            <div class="form-group form-check">
+                {{ form.remember_me(class="form-check-input") }}
+                <label class="form-check-label" for="remember_me">Remember me</label>
             </div>
-          </div>
 
-          <button type="submit" class="btn btn-primary w-100" id="loginButton">
-            Log In
-          </button>
+            <div class="form-group" id="twoFactorGroup" style="display: {{ 'block' if show_2fa else 'none' }}">
+                <label for="two_factor_code" class="form-label">Two-Factor Authentication Code</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                    {{ form.two_factor_code(class="form-control", placeholder="Enter 6-digit code", maxlength="6", autocomplete="off") }}
+                </div>
+                {% for error in form.two_factor_code.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" id="loginButton">
+                Log In
+            </button>
         </form>
 
         <div class="divider">
@@ -795,16 +775,7 @@
         alert("Facebook login would be implemented here");
       });
 
-      // Two-factor authentication handling
-      document.getElementById("identifier").addEventListener("blur", function() {
-        // In a real implementation, you might check if this user has 2FA enabled
-        // For demo purposes, we'll just show the 2FA field if the identifier contains "2fa"
-        if (this.value.includes("2fa")) {
-          document.getElementById("twoFactorGroup").style.display = "block";
-        } else {
-          document.getElementById("twoFactorGroup").style.display = "none";
-        }
-      });
+      
     </script>
   </body>
 </html>

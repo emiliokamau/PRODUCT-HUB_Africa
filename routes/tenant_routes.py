@@ -19,6 +19,8 @@ from dateutil.relativedelta import relativedelta
 import requests
 from models.models import MaintenanceRequest, Payment
 from models.models import ChatMessage
+import qrcode
+
 
 #from routes.service_routes import requests  # Needed for encoding password for STK push,this can causecircular loop
 
@@ -506,7 +508,7 @@ def feedback():
     return render_template('tenant_feedback.html')
 
 
-@tenant_bp.route('/2fa_setup', methods=['GET', 'POST'])
+@tenant_bp.route('/two_factor.html', methods=['GET', 'POST'])
 @login_required
 def twofa_setup():
     # Ensure the user is a tenant
@@ -521,7 +523,7 @@ def twofa_setup():
 
         if not secret:
             flash('2FA setup session expired. Please try again.', category='error')
-            return redirect(url_for('tenant.2fa_setup'))
+            return redirect(url_for('tenant.two_factor.html'))
 
         # Verify the provided code
         totp = pyotp.TOTP(secret)
@@ -547,15 +549,16 @@ def twofa_setup():
         name=current_user.email,
         issuer_name='HomeHub'
     )
-    qr = qr_code.QRCode(version=1, box_size=10, border=5)
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
     qr.add_data(totp_uri)
     qr.make(fit=True)
     img = qr.make_image(fill='black', back_color='white')
     buffered = BytesIO()
+    #buffered = io.BytesIO()
     img.save(buffered)
-    qr_code = base64.b64encode(buffered.getvalue()).decode('utf-8')
+    qr_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
 
-    return render_template('2fa_setup.html', qr_code=qr_code, secret=secret)
+    return render_template('two_factor.html', qrcode=qr_b64, secret=secret)
 
 @tenant_bp.route('/move_out/<int:booking_id>', methods=['POST'])
 @login_required
